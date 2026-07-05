@@ -36,6 +36,12 @@ export interface Inflable {
   precio: number;
   activo: boolean;
   color: string;
+  /** Descripción para ficha/catálogo (opcional). */
+  descripcion?: string;
+  /** Dimensiones en metros (opcionales): ancho × largo × alto. */
+  ancho?: number;
+  largo?: number;
+  alto?: number;
 }
 
 /** Config del panel. PIN es disuasión casual, NO seguridad real (todo client-side). */

@@ -1,21 +1,22 @@
 import { TituloSeccion } from "@/components/landing/TituloSeccion";
-import { FOTOS, GALERIA_TODAS } from "@/data/fotos";
 import { SITIO } from "@/data/site";
 import { useLanding } from "@/context/LandingContext";
+import { useCatalogo } from "@/context/CatalogoContext";
 
 /** Fotos que se muestran en la tira (el visor abre la galería completa). */
 const TIRA = ["rampa-salon", "castillo-salon", "noche", "castillo-parque", "castillo-pasto"];
 
 export function Galeria() {
   const { abrirVisor } = useLanding();
+  const { fotos: FOTOS, galeria } = useCatalogo();
 
   const abrir = (clave: string) =>
     abrirVisor({
       titulo: "Astefil en acción",
       tag: "📸 Fotos reales",
       desc: "Fiestas reales en jardines, salones y patios como el tuyo. Deslizá para ver todas.",
-      fotos: GALERIA_TODAS,
-      indiceInicial: Math.max(0, GALERIA_TODAS.indexOf(clave)),
+      fotos: galeria,
+      indiceInicial: Math.max(0, galeria.indexOf(clave)),
     });
 
   return (

@@ -3,6 +3,7 @@ import type { Inflable, Reserva } from "@/admin/types";
 import { AdminProvider, useAdmin } from "@/admin/store/AdminContext";
 import { Rail, type Vista } from "@/admin/components/Rail";
 import { Gate } from "@/admin/components/Gate";
+import { Login } from "@/admin/components/Login";
 import { Toast } from "@/admin/components/Toast";
 import { ReservaDialog } from "@/admin/components/ReservaDialog";
 import { InflableDialog } from "@/admin/components/InflableDialog";
@@ -22,7 +23,7 @@ export function AdminPage() {
 }
 
 function AdminInner() {
-  const { cargando, config } = useAdmin();
+  const { cargando, config, online, sesion } = useAdmin();
   const [gateOk, setGateOk] = useState(false);
   const [vista, setVista] = useState<Vista>("inicio");
 
@@ -41,7 +42,17 @@ function AdminInner() {
   const abrirInflable = (i: Inflable | null) => setDlgInflable({ open: true, inflable: i });
   const abrirDia = (iso: string) => setDlgDia({ open: true, iso });
 
-  if (cargando) {
+  // Modo Supabase: login real. Sin sesión → pantalla de login.
+  if (online && sesion === false) {
+    return (
+      <div className="font-body text-tinta">
+        <Login onEntrar={() => {}} />
+        <Toast />
+      </div>
+    );
+  }
+
+  if (cargando || (online && sesion === null)) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-cielo">
         <span className="sticker">Cargando panel… 🎈</span>
@@ -49,7 +60,8 @@ function AdminInner() {
     );
   }
 
-  if (!gateOk && config.pin !== "") {
+  // Modo local: gate de PIN (disuasión casual).
+  if (!online && !gateOk && config.pin !== "") {
     return (
       <div className="font-body text-tinta">
         <Gate onUnlock={() => setGateOk(true)} />

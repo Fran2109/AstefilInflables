@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { X, ChevronLeft, ChevronRight } from "lucide-react";
-import { FOTOS } from "@/data/fotos";
 import { BULLETS_VISOR } from "@/data/productos";
 import { linkWhatsApp } from "@/lib/whatsapp";
 import { Button } from "@/components/ui/button";
+import { useCatalogo } from "@/context/CatalogoContext";
 import type { VisorConfig } from "@/context/LandingContext";
 
 interface VisorProps {
@@ -18,11 +18,12 @@ interface VisorProps {
  */
 export function Visor({ cfg, onCerrar, onPrecargar }: VisorProps) {
   const abierto = cfg !== null;
+  const { fotos: FOTOS } = useCatalogo();
 
   // Solo fotos que existen realmente.
   const fotos = useMemo(
     () => (cfg ? cfg.fotos.filter((f) => FOTOS[f]) : []),
-    [cfg]
+    [cfg, FOTOS]
   );
   const [idx, setIdx] = useState(0);
   const toqueX = useRef<number | null>(null);
@@ -160,6 +161,28 @@ export function Visor({ cfg, onCerrar, onPrecargar }: VisorProps) {
           </span>
           <h3 className="font-display text-2xl leading-[1.05] md:text-[2rem]">{cfg.titulo}</h3>
           <p className="text-[.98rem] leading-[1.55] text-[#3c2f28]">{cfg.desc}</p>
+
+          {cfg.modelos && cfg.modelos.length > 0 && (
+            <div className="rounded-xl border-3 border-tinta bg-white p-3">
+              <h4 className="mb-2 font-alt text-[.92rem] font-extrabold">
+                Modelos disponibles ({cfg.modelos.length})
+              </h4>
+              <ul className="flex flex-col gap-1.5">
+                {cfg.modelos.map((m) => (
+                  <li key={m.id} className="flex items-baseline justify-between gap-3 text-[.9rem]">
+                    <span className="font-alt font-bold">{m.nombre}</span>
+                    {m.ancho && m.largo && (
+                      <span className="flex-none font-alt text-[.78rem] font-bold text-[#5a4a41]">
+                        {m.ancho} × {m.largo}
+                        {m.alto ? " × " + m.alto : ""} m
+                      </span>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
           <ul className="flex flex-col gap-2 text-[.9rem] text-[#3c2f28]">
             {BULLETS_VISOR.map((b) => (
               <li key={b} className="flex items-start gap-2">

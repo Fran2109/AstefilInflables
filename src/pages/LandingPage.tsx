@@ -1,4 +1,5 @@
 import { LandingProvider } from "@/context/LandingContext";
+import { CatalogoProvider } from "@/context/CatalogoContext";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { WhatsAppFloat } from "@/components/layout/WhatsAppFloat";
@@ -15,22 +16,24 @@ import { CtaFinal } from "@/components/landing/CtaFinal";
 
 export function LandingPage() {
   return (
-    <LandingProvider>
-      <Header />
-      <main id="inicio">
-        <Hero />
-        <Marquee />
-        <Catalogo />
-        <Galeria />
-        <Testimonios />
-        <Cotizador />
-        <ComoFunciona />
-        <Zonas />
-        <Faq />
-        <CtaFinal />
-      </main>
-      <Footer />
-      <WhatsAppFloat />
-    </LandingProvider>
+    <CatalogoProvider>
+      <LandingProvider>
+        <Header />
+        <main id="inicio">
+          <Hero />
+          <Marquee />
+          <Catalogo />
+          <Galeria />
+          <Testimonios />
+          <Cotizador />
+          <ComoFunciona />
+          <Zonas />
+          <Faq />
+          <CtaFinal />
+        </main>
+        <Footer />
+        <WhatsAppFloat />
+      </LandingProvider>
+    </CatalogoProvider>
   );
 }

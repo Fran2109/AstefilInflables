@@ -17,4 +17,17 @@ export interface Producto {
   fotos: string[];
   /** Categorías sin foto todavía (Deportivos, Livings): id de la ilustración SVG. */
   ilustracionId?: "deportivo" | "living";
+  /** Categorías del inventario que agrupa esta card (para listar modelos reales). */
+  cats?: string[];
+}
+
+/** Un modelo real del inventario, expuesto públicamente para el catálogo. */
+export interface ModeloPublico {
+  id: string;
+  nombre: string;
+  cat: string;
+  descripcion?: string;
+  ancho?: number;
+  largo?: number;
+  alto?: number;
 }

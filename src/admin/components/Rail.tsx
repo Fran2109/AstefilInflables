@@ -12,6 +12,7 @@ const TABS: { id: Vista; ico: string; label: string }[] = [
 ];
 
 const MODO_TXT: Record<string, [string, string]> = {
+  supabase: ["Sincronizado en la nube ☁️", "bg-verde"],
   navegador: ["Guardado en este navegador", "bg-verde"],
   memoria: ["Solo memoria: se pierde al recargar", "bg-amarillo"],
 };

@@ -8,6 +8,7 @@ import {
 } from "react";
 import { scrollAId } from "@/lib/scroll";
 import { Visor } from "@/components/landing/Visor";
+import type { ModeloPublico } from "@/types/catalogo";
 
 /** Config con la que se abre el visor (producto o galería completa). */
 export interface VisorConfig {
@@ -20,6 +21,8 @@ export interface VisorConfig {
   inflableId?: string;
   /** Foto por la que arranca (índice dentro de `fotos`). */
   indiceInicial?: number;
+  /** Modelos reales de esta categoría (nombre + medidas), para listar en el detalle. */
+  modelos?: ModeloPublico[];
 }
 
 interface LandingContextValue {

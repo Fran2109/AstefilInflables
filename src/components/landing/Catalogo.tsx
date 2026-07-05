@@ -1,12 +1,14 @@
 import { Button } from "@/components/ui/button";
 import { TituloSeccion } from "@/components/landing/TituloSeccion";
 import { ProductoCard } from "@/components/landing/ProductoCard";
-import { PRODUCTOS } from "@/data/productos";
 import { JUEGOS_SALON } from "@/data/site";
 import { useLanding } from "@/context/LandingContext";
+import { useCatalogo } from "@/context/CatalogoContext";
 
 export function Catalogo() {
   const { precargar } = useLanding();
+  const { productos, modelos } = useCatalogo();
+  const juegos = modelos.filter((m) => m.cat === "Juego de salón");
 
   return (
     <section id="catalogo" className="py-16">
@@ -23,7 +25,7 @@ export function Catalogo() {
         </TituloSeccion>
 
         <div className="mt-9 grid grid-cols-1 gap-[26px] sm:grid-cols-2 lg:grid-cols-3">
-          {PRODUCTOS.map((p) => (
+          {productos.map((p) => (
             <ProductoCard key={p.id} producto={p} />
           ))}
         </div>
@@ -38,7 +40,7 @@ export function Catalogo() {
             </p>
           </div>
           <div className="flex flex-wrap gap-2.5">
-            {JUEGOS_SALON.map((j) => (
+            {(juegos.length ? juegos.map((j) => j.nombre) : JUEGOS_SALON).map((j) => (
               <span key={j} className="chip">
                 {j}
               </span>

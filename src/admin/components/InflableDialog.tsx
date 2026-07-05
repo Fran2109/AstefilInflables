@@ -18,6 +18,10 @@ export function InflableDialog({ open, onClose, inflable }: Props) {
   const [cat, setCat] = useState(CATEGORIAS[0]);
   const [precio, setPrecio] = useState("");
   const [activo, setActivo] = useState(true);
+  const [descripcion, setDescripcion] = useState("");
+  const [ancho, setAncho] = useState("");
+  const [largo, setLargo] = useState("");
+  const [alto, setAlto] = useState("");
 
   useEffect(() => {
     if (!open) return;
@@ -25,12 +29,31 @@ export function InflableDialog({ open, onClose, inflable }: Props) {
     setCat(inflable?.cat || CATEGORIAS[0]);
     setPrecio(inflable?.precio ? String(inflable.precio) : "");
     setActivo(inflable ? inflable.activo : true);
+    setDescripcion(inflable?.descripcion || "");
+    setAncho(inflable?.ancho ? String(inflable.ancho) : "");
+    setLargo(inflable?.largo ? String(inflable.largo) : "");
+    setAlto(inflable?.alto ? String(inflable.alto) : "");
   }, [open, inflable]);
+
+  // Convierte texto a número o undefined (campo dimensional vacío = sin dato).
+  const numOpt = (v: string) => {
+    const n = Number(v.replace(",", "."));
+    return v.trim() && n > 0 ? n : undefined;
+  };
 
   const guardar = async () => {
     if (!nombre.trim()) return mostrarToast("Poné un nombre");
     await guardarInflable(
-      { nombre: nombre.trim(), cat, precio: Number(precio) || 0, activo },
+      {
+        nombre: nombre.trim(),
+        cat,
+        precio: Number(precio) || 0,
+        activo,
+        descripcion: descripcion.trim(),
+        ancho: numOpt(ancho),
+        largo: numOpt(largo),
+        alto: numOpt(alto),
+      },
       inflable?.id
     );
     onClose();
@@ -89,11 +112,23 @@ export function InflableDialog({ open, onClose, inflable }: Props) {
         <Campo label="Precio base ($)" htmlFor="i-precio">
           <input id="i-precio" type="number" min={0} step={500} placeholder="0 = sin definir" className={campoInputCls} value={precio} onChange={(e) => setPrecio(e.target.value)} />
         </Campo>
-        <Campo label="Disponibilidad" ancho>
+        <Campo label="Disponibilidad">
           <label className="inline-flex cursor-pointer items-center gap-2 font-body text-[.95rem]">
             <input type="checkbox" className="h-[18px] w-[18px] accent-verde" checked={activo} onChange={(e) => setActivo(e.target.checked)} />
             Disponible para alquilar
           </label>
+        </Campo>
+        <Campo label="Medidas (m): ancho · largo · alto" ancho>
+          <div className="flex items-center gap-2">
+            <input aria-label="Ancho en metros" type="number" min={0} step={0.1} placeholder="ancho" className={campoInputCls} value={ancho} onChange={(e) => setAncho(e.target.value)} />
+            <span className="font-alt font-bold text-[#5a4a41]">×</span>
+            <input aria-label="Largo en metros" type="number" min={0} step={0.1} placeholder="largo" className={campoInputCls} value={largo} onChange={(e) => setLargo(e.target.value)} />
+            <span className="font-alt font-bold text-[#5a4a41]">×</span>
+            <input aria-label="Alto en metros" type="number" min={0} step={0.1} placeholder="alto" className={campoInputCls} value={alto} onChange={(e) => setAlto(e.target.value)} />
+          </div>
+        </Campo>
+        <Campo label="Descripción" htmlFor="i-desc" ancho>
+          <textarea id="i-desc" rows={3} placeholder="Texto para la ficha del inflable" className={campoInputCls} value={descripcion} onChange={(e) => setDescripcion(e.target.value)} />
         </Campo>
       </div>
     </Modal>

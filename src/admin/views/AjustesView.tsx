@@ -16,7 +16,7 @@ function descargar(nombre: string, contenido: string, tipo: string) {
 }
 
 export function AjustesView() {
-  const { config, reservas, inflables, setNombre, setPin, cargarEjemplos, borrarTodo, importarBackup, mostrarToast } =
+  const { config, reservas, inflables, online, emailUsuario, cerrarSesion, setNombre, setPin, cargarEjemplos, borrarTodo, importarBackup, mostrarToast } =
     useAdmin();
   const [nombre, setNombreLocal] = useState(config.nombre || "");
   const fileRef = useRef<HTMLInputElement>(null);
@@ -92,13 +92,28 @@ export function AjustesView() {
           />
         </Fila>
 
-        <Fila titulo="PIN de acceso" desc="Cambiá el PIN de entrada. Dejalo vacío para entrar sin PIN.">
-          <Button variant="blanco" size="mini" onClick={cambiarPin}>
-            Cambiar PIN
-          </Button>
-        </Fila>
+        {online ? (
+          <Fila titulo="Sesión" desc={emailUsuario ? "Conectado como " + emailUsuario + "." : "Conectado a la nube."}>
+            <Button variant="blanco" size="mini" onClick={cerrarSesion}>
+              Cerrar sesión
+            </Button>
+          </Fila>
+        ) : (
+          <Fila titulo="PIN de acceso" desc="Cambiá el PIN de entrada. Dejalo vacío para entrar sin PIN.">
+            <Button variant="blanco" size="mini" onClick={cambiarPin}>
+              Cambiar PIN
+            </Button>
+          </Fila>
+        )}
 
-        <Fila titulo="Copia de seguridad" desc="Los datos viven en este navegador. Exportá un JSON cada tanto y guardalo donde quieras.">
+        <Fila
+          titulo="Copia de seguridad"
+          desc={
+            online
+              ? "Tus datos viven en Supabase (nube). Igual podés exportar un JSON de respaldo cuando quieras."
+              : "Los datos viven en este navegador. Exportá un JSON cada tanto y guardalo donde quieras."
+          }
+        >
           <div className="flex flex-wrap gap-2">
             <Button variant="azul" size="mini" onClick={exportarJson}>⬇ Exportar JSON</Button>
             <Button variant="blanco" size="mini" onClick={() => fileRef.current?.click()}>⬆ Importar</Button>
@@ -121,8 +136,9 @@ export function AjustesView() {
       </Panel>
 
       <p className="text-[.82rem] text-[#5a4a41]">
-        Prototipo v1 · Los datos se guardan en este dispositivo (localStorage). Para multi-dispositivo
-        real: Supabase como siguiente paso.
+        {online
+          ? "Conectado a Supabase · Tus datos se sincronizan en la nube entre todos tus dispositivos."
+          : "Prototipo local · Los datos se guardan en este dispositivo (localStorage)."}
       </p>
     </div>
   );

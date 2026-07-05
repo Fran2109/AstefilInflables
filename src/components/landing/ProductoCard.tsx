@@ -1,15 +1,20 @@
 import { Search } from "lucide-react";
 import type { Producto } from "@/types/catalogo";
-import { FOTOS } from "@/data/fotos";
 import { Button } from "@/components/ui/button";
 import { useLanding } from "@/context/LandingContext";
+import { useCatalogo } from "@/context/CatalogoContext";
 import { ILUSTRACIONES } from "@/components/landing/ilustraciones";
 
 export function ProductoCard({ producto }: { producto: Producto }) {
   const { precargar, abrirVisor } = useLanding();
+  const { fotos: FOTOS, modelos } = useCatalogo();
   const fotos = producto.fotos.filter((f) => FOTOS[f]);
   const tieneFotos = fotos.length > 0;
   const primera = tieneFotos ? FOTOS[fotos[0]] : null;
+
+  // Modelos reales de esta categoría (según el mapeo `cats` de la card).
+  const cats = producto.cats ?? [];
+  const modelosCat = modelos.filter((m) => cats.includes(m.cat));
 
   const abrir = () =>
     abrirVisor({
@@ -18,6 +23,7 @@ export function ProductoCard({ producto }: { producto: Producto }) {
       desc: producto.descLarga,
       fotos: producto.fotos,
       inflableId: producto.id,
+      modelos: modelosCat,
     });
 
   return (

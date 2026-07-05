@@ -38,6 +38,12 @@ export function InventarioView({ onAbrirInflable }: { onAbrirInflable: (i: Infla
                 {inf.cat}
                 {inf.activo ? "" : " · fuera de servicio"}
               </div>
+              {inf.ancho && inf.largo ? (
+                <div className="mt-1 font-alt text-[.78rem] font-bold text-[#5a4a41]">
+                  📏 {inf.ancho} × {inf.largo}
+                  {inf.alto ? " × " + inf.alto : ""} m
+                </div>
+              ) : null}
               {inf.precio > 0 ? (
                 <div className="my-2.5 font-display text-[1.4rem]">{plata(inf.precio)}</div>
               ) : (
