@@ -1,0 +1,11 @@
+# Vinilo Inflado — una filosofía de diseño
+
+**El movimiento.** Vinilo Inflado toma su material de los objetos que celebra: superficies tensas de aire, costuras negras que contienen presión, colores primarios que gritan bajo el sol de un sábado. Es neo-brutalismo doméstico: contornos de tinta gruesos como soga de coser lona, sombras duras que caen todas hacia el mismo mediodía, y formas redondeadas que parecen a punto de rebotar. Nada aquí flota sin peso; todo está inflado, apoyado, anclado.
+
+**Espacio y forma.** La composición respira como un patio: un cielo celeste amplio arriba, la acción concentrada al centro, la tierra firme de la información abajo. Cada elemento es una isla con borde propio — nada se toca, nada se pisa. Los márgenes son sagrados: el aire alrededor de cada pieza es lo que le da volumen, igual que el aire dentro de un castillo le da forma. Las rotaciones son leves y deliberadas, de dos a cuatro grados, como calcomanías pegadas por una mano cuidadosa pero entusiasta.
+
+**Color y material.** Cuatro tintas y un cielo: rojo de lona, amarillo de bandera, azul de tobogán, tinta casi negra, sobre celeste de día despejado con nubes de papel. El blanco cremoso funciona como etiqueta adhesiva. Ningún degradado, ningún brillo falso: el color es plano y honesto como el vinilo mismo, y la profundidad se construye únicamente con el desplazamiento exacto de las sombras duras.
+
+**Escala y jerarquía.** Una sola voz grande — letras gordas, infladas, que se leen desde la vereda de enfrente. Todo lo demás susurra en píldoras y etiquetas. El ojo recorre un tobogán: entra por el emblema, cae por el titular, rebota en la fotografía real y aterriza en el único dato que importa. El texto es mínimo, funcional, integrado como objeto físico dentro de la escena; jamás un párrafo.
+
+**El oficio.** Cada borde, cada radio, cada desplazamiento de sombra está calibrado como quien tensa una costura: el resultado debe verse trabajado durante incontables horas por alguien en la cima de su oficio. Alineaciones verificadas al píxel, contornos de grosor constante, rotaciones que comparten un mismo pulso. La obra terminada tiene la precisión de un plano técnico y la alegría de un cumpleaños — meticulosamente artesanal, imposible de confundir con una plantilla.

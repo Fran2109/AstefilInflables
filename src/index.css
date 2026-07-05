@@ -1,0 +1,134 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* ===== Tokens de marca "neo-brutalismo caramelo" ===== */
+    --rojo: #e8352b;
+    --rojo-osc: #b7211a;
+    --amarillo: #ffc61b;
+    --azul: #1f6fd0;
+    --azul-osc: #144e96;
+    --verde: #23b15d;
+    --verde-osc: #158245;
+    --rosa: #ff7aa2;
+    --cielo: #c9e9ff;
+    --cielo-osc: #a5d6f7;
+    --papel: #fffdf6;
+    --tinta: #1b1310;
+    --radio: 18px;
+
+    /* ===== Tokens semánticos shadcn/ui (para tablas/formularios del admin) ===== */
+    --background: 48 40% 98%; /* papel */
+    --foreground: 20 22% 9%; /* tinta */
+    --card: 48 40% 98%;
+    --card-foreground: 20 22% 9%;
+    --popover: 48 40% 98%;
+    --popover-foreground: 20 22% 9%;
+    --primary: 3 81% 54%; /* rojo */
+    --primary-foreground: 0 0% 100%;
+    --secondary: 212 74% 47%; /* azul */
+    --secondary-foreground: 0 0% 100%;
+    --muted: 205 100% 90%;
+    --muted-foreground: 20 15% 35%;
+    --accent: 45 100% 55%; /* amarillo */
+    --accent-foreground: 20 22% 9%;
+    --destructive: 3 81% 54%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 20 22% 9%; /* tinta: bordes fuertes */
+    --input: 20 22% 9%;
+    --ring: 212 74% 47%; /* azul: focus */
+  }
+
+  * {
+    @apply border-tinta;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  /* Compensa el header sticky al saltar a una sección */
+  [id] {
+    scroll-margin-top: 88px;
+  }
+
+  body {
+    font-family: "Fredoka", sans-serif;
+    color: var(--tinta);
+    background: var(--cielo);
+    background-image: radial-gradient(
+        circle at 12% 8%,
+        rgba(255, 255, 255, 0.55) 0 90px,
+        transparent 91px
+      ),
+      radial-gradient(circle at 78% 14%, rgba(255, 255, 255, 0.45) 0 120px, transparent 121px),
+      radial-gradient(circle at 40% 90%, rgba(255, 255, 255, 0.35) 0 140px, transparent 141px);
+    overflow-x: hidden;
+  }
+
+  img {
+    display: block;
+    max-width: 100%;
+  }
+
+  ::selection {
+    background: var(--amarillo);
+  }
+
+  h1,
+  h2,
+  .display {
+    font-family: "Bagel Fat One", cursive;
+    font-weight: 400;
+    line-height: 1.02;
+  }
+
+  h3,
+  h4,
+  .h-alt {
+    font-family: "Baloo 2", sans-serif;
+  }
+
+  :focus-visible {
+    outline: 4px solid var(--azul);
+    outline-offset: 2px;
+  }
+}
+
+@layer components {
+  /* Sticker / chip reutilizable */
+  .sticker {
+    @apply inline-block rounded-full border-3 border-tinta bg-papel px-3.5 py-1.5 font-alt font-extrabold shadow-hard-sm;
+    font-size: 0.86rem;
+  }
+
+  .chip {
+    @apply inline-block rounded-full border-3 border-tinta bg-papel px-4 py-[7px] font-alt font-bold text-tinta;
+    font-size: 0.9rem;
+    box-shadow: 3px 3px 0 var(--tinta);
+  }
+
+  /* Banda de título rotada */
+  .banda-titulo {
+    @apply inline-block rounded-2xl border-3 border-tinta bg-amarillo px-6 py-2 shadow-hard;
+    transform: rotate(-1.2deg);
+  }
+}
+
+/* Respetar reduced-motion (regla global) */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+  html {
+    scroll-behavior: auto;
+  }
+}

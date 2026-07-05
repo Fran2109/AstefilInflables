@@ -1,0 +1,954 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Astefil · Panel de administración</title>
+<meta name="robots" content="noindex" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bagel+Fat+One&family=Baloo+2:wght@500;600;700;800&family=Fredoka:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --rojo:#E8352B; --rojo-osc:#B7211A; --amarillo:#FFC61B; --azul:#1F6FD0;
+    --verde:#23B15D; --rosa:#FF7AA2; --cielo:#C9E9FF; --papel:#FFFDF6;
+    --tinta:#1B1310; --gris:#8D7F76;
+    --sombra:5px 5px 0 var(--tinta); --sombra-s:3px 3px 0 var(--tinta);
+    --borde:3px solid var(--tinta); --radio:16px;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:'Fredoka',sans-serif;color:var(--tinta);background:var(--papel);
+    background-image:radial-gradient(circle at 90% -10%, var(--cielo) 0 260px, transparent 261px);}
+  h1,h2,.display{font-family:'Bagel Fat One',cursive;font-weight:400;}
+  h3,h4,button,.h-alt{font-family:'Baloo 2',sans-serif;}
+  button{cursor:pointer;}
+  ::selection{background:var(--amarillo);}
+
+  .btn{display:inline-flex;align-items:center;gap:8px;justify-content:center;
+    font-family:'Baloo 2',sans-serif;font-weight:800;font-size:.95rem;
+    padding:10px 18px;border:var(--borde);border-radius:999px;background:var(--amarillo);
+    color:var(--tinta);box-shadow:var(--sombra-s);transition:transform .08s,box-shadow .08s;}
+  .btn:hover{transform:translate(-1px,-1px);box-shadow:4px 4px 0 var(--tinta);}
+  .btn:active{transform:translate(3px,3px);box-shadow:0 0 0 var(--tinta);}
+  .btn:focus-visible{outline:4px solid var(--azul);outline-offset:2px;}
+  .btn--rojo{background:var(--rojo);color:#fff;} .btn--verde{background:var(--verde);color:#fff;}
+  .btn--azul{background:var(--azul);color:#fff;} .btn--blanco{background:#fff;}
+  .btn--mini{padding:6px 12px;font-size:.82rem;box-shadow:2px 2px 0 var(--tinta);}
+  .btn--peligro{background:#fff;color:var(--rojo);}
+
+  /* ===== GATE (PIN) ===== */
+  #gate{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;
+    background:var(--cielo);}
+  .gate-caja{background:var(--papel);border:var(--borde);border-radius:22px;box-shadow:8px 8px 0 var(--tinta);
+    padding:36px 32px;max-width:400px;width:100%;text-align:center;}
+  .gate-caja h1{font-size:1.9rem;margin:14px 0 4px;}
+  .gate-caja p{color:#5a4a41;font-size:.95rem;margin-bottom:20px;}
+  .gate-caja input{width:100%;text-align:center;font-size:1.6rem;letter-spacing:.5em;
+    font-family:'Baloo 2',sans-serif;font-weight:800;padding:12px;border:var(--borde);
+    border-radius:14px;margin-bottom:16px;}
+  .gate-caja input:focus{outline:4px solid var(--azul);}
+  .gate-nota{font-size:.78rem;color:var(--gris);margin-top:14px;line-height:1.4;}
+
+  /* ===== APP LAYOUT ===== */
+  #app{display:none;min-height:100vh;}
+  #app.activa{display:grid;grid-template-columns:230px 1fr;}
+  .rail{border-right:var(--borde);background:var(--papel);padding:18px 14px;
+    display:flex;flex-direction:column;gap:8px;position:sticky;top:0;height:100vh;}
+  .rail .marca{display:flex;align-items:center;gap:10px;padding:4px 6px 16px;}
+  .rail .marca svg{height:44px;width:auto;}
+  .rail .marca .admin-tag{font-family:'Baloo 2',sans-serif;font-weight:800;font-size:.7rem;
+    background:var(--tinta);color:var(--amarillo);border-radius:6px;padding:2px 8px;letter-spacing:1px;}
+  .tab{display:flex;align-items:center;gap:10px;font-family:'Baloo 2',sans-serif;font-weight:800;
+    font-size:1rem;padding:11px 14px;border:3px solid transparent;border-radius:14px;
+    background:transparent;text-align:left;width:100%;}
+  .tab:hover{border-color:var(--tinta);background:#fff;}
+  .tab.activa{background:var(--amarillo);border-color:var(--tinta);box-shadow:var(--sombra-s);}
+  .tab .ico{font-size:1.15rem;}
+  .rail .resto{flex:1;}
+  .chip-guardado{font-size:.75rem;font-family:'Baloo 2',sans-serif;font-weight:700;
+    padding:6px 10px;border:2px solid var(--tinta);border-radius:999px;background:#fff;
+    display:inline-flex;gap:6px;align-items:center;}
+  .chip-guardado .punto{width:9px;height:9px;border-radius:50%;background:var(--verde);
+    border:2px solid var(--tinta);}
+
+  main{padding:26px 30px 110px;max-width:1100px;}
+  .vista{display:none;} .vista.activa{display:block;}
+  .vista-cab{display:flex;align-items:center;justify-content:space-between;gap:14px;
+    flex-wrap:wrap;margin-bottom:22px;}
+  .vista-cab h2{font-size:1.9rem;}
+  .sub-gris{color:#5a4a41;font-size:.95rem;margin-top:2px;}
+
+  /* ===== CARDS / KPI ===== */
+  .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:26px;}
+  .kpi{background:#fff;border:var(--borde);border-radius:var(--radio);box-shadow:var(--sombra-s);
+    padding:16px 18px;}
+  .kpi .valor{font-family:'Bagel Fat One',cursive;font-size:2rem;line-height:1;}
+  .kpi .etq{font-family:'Baloo 2',sans-serif;font-weight:700;font-size:.82rem;color:#5a4a41;margin-top:6px;}
+  .kpi.v1 .valor{color:var(--rojo);} .kpi.v2 .valor{color:var(--azul);}
+  .kpi.v3 .valor{color:var(--verde);} .kpi.v4 .valor{color:var(--rosa);}
+
+  .panel{background:#fff;border:var(--borde);border-radius:var(--radio);box-shadow:var(--sombra);
+    padding:20px;margin-bottom:22px;}
+  .panel h3{font-size:1.15rem;font-weight:800;margin-bottom:12px;display:flex;align-items:center;gap:8px;}
+
+  .lista-simple{display:flex;flex-direction:column;gap:10px;}
+  .item-res{display:flex;align-items:center;gap:12px;border:2px solid var(--tinta);border-radius:12px;
+    padding:10px 12px;background:var(--papel);flex-wrap:wrap;}
+  .item-res .cuando{font-family:'Baloo 2',sans-serif;font-weight:800;min-width:86px;}
+  .item-res .quien{flex:1;min-width:140px;}
+  .item-res .quien small{display:block;color:#5a4a41;}
+  .vacio{color:var(--gris);text-align:center;padding:26px 10px;font-size:.95rem;
+    border:2px dashed var(--gris);border-radius:12px;}
+
+  .estado{font-family:'Baloo 2',sans-serif;font-weight:800;font-size:.72rem;letter-spacing:.4px;
+    padding:4px 10px;border:2px solid var(--tinta);border-radius:999px;white-space:nowrap;}
+  .e-consulta{background:var(--amarillo);} .e-reservado{background:var(--azul);color:#fff;}
+  .e-senado{background:var(--verde);color:#fff;} .e-entregado{background:var(--rosa);}
+  .e-finalizado{background:#ddd;} .e-cancelado{background:#fff;color:var(--gris);text-decoration:line-through;}
+
+  /* barras mini ingresos */
+  .barras{display:flex;align-items:flex-end;gap:10px;height:120px;padding-top:8px;}
+  .barra{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;}
+  .barra .palo{width:100%;max-width:46px;background:var(--azul);border:var(--borde);
+    border-radius:8px 8px 0 0;box-shadow:var(--sombra-s);min-height:4px;}
+  .barra:last-child .palo{background:var(--rojo);}
+  .barra .mes{font-size:.72rem;font-family:'Baloo 2',sans-serif;font-weight:700;color:#5a4a41;}
+
+  /* ===== CALENDARIO ===== */
+  .cal-nav{display:flex;align-items:center;gap:12px;}
+  .cal-nav .mes-titulo{font-family:'Bagel Fat One',cursive;font-size:1.5rem;min-width:210px;text-align:center;}
+  .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;}
+  .cal-dow{font-family:'Baloo 2',sans-serif;font-weight:800;font-size:.78rem;text-align:center;color:#5a4a41;padding:4px 0;}
+  .cal-dia{border:2px solid var(--tinta);border-radius:12px;background:#fff;min-height:84px;
+    padding:6px;display:flex;flex-direction:column;gap:4px;text-align:left;transition:transform .08s;}
+  .cal-dia:hover{transform:translate(-1px,-2px);box-shadow:var(--sombra-s);}
+  .cal-dia .num{font-family:'Baloo 2',sans-serif;font-weight:800;font-size:.85rem;}
+  .cal-dia.otro-mes{opacity:.35;} .cal-dia.hoy{background:var(--cielo);}
+  .cal-dia.hoy .num{color:var(--rojo);}
+  .cal-dia.finde{background:#FFF7E0;} .cal-dia.finde.hoy{background:var(--cielo);}
+  .cal-pins{display:flex;flex-wrap:wrap;gap:3px;}
+  .pin{width:14px;height:14px;border-radius:50%;border:2px solid var(--tinta);}
+  .p-consulta{background:var(--amarillo);} .p-reservado{background:var(--azul);}
+  .p-senado{background:var(--verde);} .p-entregado{background:var(--rosa);}
+  .p-finalizado{background:#ddd;} .p-cancelado{background:#fff;}
+  .cal-leyenda{display:flex;gap:14px;flex-wrap:wrap;margin-top:14px;font-size:.8rem;
+    font-family:'Baloo 2',sans-serif;font-weight:700;}
+  .cal-leyenda span{display:inline-flex;align-items:center;gap:6px;}
+
+  /* ===== RESERVAS ===== */
+  .filtros{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;}
+  .filtros input,.filtros select{font-family:'Fredoka',sans-serif;font-size:.92rem;padding:9px 12px;
+    border:var(--borde);border-radius:12px;background:#fff;}
+  .filtros input:focus,.filtros select:focus{outline:4px solid var(--azul);}
+  .tabla-res{display:flex;flex-direction:column;gap:12px;}
+  .res-card{background:#fff;border:var(--borde);border-radius:var(--radio);box-shadow:var(--sombra-s);
+    padding:14px 16px;display:grid;grid-template-columns:100px 1.4fr 1fr auto;gap:12px;align-items:center;}
+  .res-card .fecha-big{text-align:center;}
+  .res-card .fecha-big .dia{font-family:'Bagel Fat One',cursive;font-size:1.6rem;line-height:1;}
+  .res-card .fecha-big .mes{font-family:'Baloo 2',sans-serif;font-weight:800;font-size:.72rem;
+    text-transform:uppercase;color:#5a4a41;}
+  .res-card .fecha-big .dow{font-size:.72rem;color:var(--gris);}
+  .res-card h4{font-size:1.05rem;}
+  .res-card .linea{font-size:.86rem;color:#5a4a41;}
+  .res-card .plata{font-family:'Baloo 2',sans-serif;font-weight:800;font-size:.95rem;}
+  .res-card .plata small{display:block;font-weight:600;color:#5a4a41;}
+  .res-acciones{display:flex;flex-direction:column;gap:6px;align-items:stretch;}
+  .conflicto{border-color:var(--rojo);box-shadow:4px 4px 0 var(--rojo);}
+  .aviso-conf{font-size:.78rem;color:var(--rojo);font-weight:600;font-family:'Baloo 2',sans-serif;}
+
+  /* ===== INVENTARIO ===== */
+  .inv-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:16px;}
+  .inv-card{background:#fff;border:var(--borde);border-radius:var(--radio);box-shadow:var(--sombra-s);padding:16px;}
+  .inv-card h4{font-size:1.05rem;display:flex;justify-content:space-between;align-items:center;gap:8px;}
+  .inv-card .cat{font-size:.78rem;font-family:'Baloo 2',sans-serif;font-weight:700;color:#5a4a41;}
+  .inv-card .precio{font-family:'Bagel Fat One',cursive;font-size:1.4rem;margin:10px 0;}
+  .inv-card .precio.sin{color:var(--gris);font-size:.95rem;font-family:'Fredoka',sans-serif;}
+  .puntito{width:14px;height:14px;border-radius:50%;border:2px solid var(--tinta);flex:none;}
+
+  /* ===== AJUSTES ===== */
+  .aj-fila{display:flex;justify-content:space-between;align-items:center;gap:14px;padding:12px 0;
+    border-bottom:2px dashed #e5d9cd;flex-wrap:wrap;}
+  .aj-fila:last-child{border-bottom:none;}
+  .aj-fila p{font-size:.88rem;color:#5a4a41;max-width:420px;}
+  .aj-fila h4{font-size:1rem;}
+
+  /* ===== DIALOGS ===== */
+  dialog{border:var(--borde);border-radius:20px;box-shadow:10px 10px 0 var(--tinta);
+    padding:0;max-width:560px;width:calc(100% - 40px);background:var(--papel);}
+  dialog::backdrop{background:rgba(27,19,16,.45);}
+  .dlg-cab{display:flex;justify-content:space-between;align-items:center;gap:10px;
+    padding:18px 22px;border-bottom:var(--borde);background:var(--amarillo);
+    border-radius:17px 17px 0 0;}
+  .dlg-cab h3{font-size:1.2rem;font-weight:800;}
+  .dlg-x{background:#fff;border:var(--borde);border-radius:10px;width:36px;height:36px;
+    font-weight:800;font-size:1rem;box-shadow:var(--sombra-s);}
+  .dlg-cuerpo{padding:20px 22px;max-height:70vh;overflow:auto;}
+  .campos{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+  .campo{display:flex;flex-direction:column;gap:5px;}
+  .campo.ancho{grid-column:1/-1;}
+  .campo label{font-family:'Baloo 2',sans-serif;font-weight:800;font-size:.82rem;}
+  .campo input,.campo select,.campo textarea{font-family:'Fredoka',sans-serif;font-size:.95rem;
+    padding:10px 12px;border:var(--borde);border-radius:12px;background:#fff;width:100%;}
+  .campo textarea{min-height:64px;resize:vertical;}
+  .campo input:focus,.campo select:focus,.campo textarea:focus{outline:4px solid var(--azul);}
+  .dlg-pie{display:flex;justify-content:space-between;gap:10px;padding:16px 22px;border-top:var(--borde);flex-wrap:wrap;}
+  .check-inf{display:flex;flex-wrap:wrap;gap:8px;}
+  .check-inf label{display:inline-flex;align-items:center;gap:6px;border:2px solid var(--tinta);
+    border-radius:999px;padding:6px 12px;background:#fff;font-size:.85rem;font-family:'Baloo 2',sans-serif;
+    font-weight:700;cursor:pointer;}
+  .check-inf input{accent-color:var(--rojo);width:16px;height:16px;}
+  .check-inf label:has(input:checked){background:var(--amarillo);box-shadow:2px 2px 0 var(--tinta);}
+
+  /* ===== TOAST ===== */
+  #toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(120%);
+    background:var(--tinta);color:var(--papel);font-family:'Baloo 2',sans-serif;font-weight:700;
+    padding:12px 22px;border-radius:999px;border:3px solid var(--papel);box-shadow:0 6px 0 rgba(0,0,0,.25);
+    transition:transform .25s ease;z-index:99;max-width:calc(100% - 40px);text-align:center;}
+  #toast.ver{transform:translateX(-50%) translateY(0);}
+
+  /* ===== MOBILE ===== */
+  @media(max-width:860px){
+    #app.activa{grid-template-columns:1fr;}
+    .rail{position:fixed;bottom:0;left:0;right:0;top:auto;height:auto;z-index:50;
+      flex-direction:row;border-right:none;border-top:var(--borde);padding:8px 10px;
+      justify-content:space-around;background:var(--papel);}
+    .rail .marca,.rail .resto,.rail .chip-guardado{display:none;}
+    .tab{flex-direction:column;gap:2px;font-size:.62rem;padding:7px 8px;flex:1;text-align:center;align-items:center;}
+    .tab .ico{font-size:1.25rem;}
+    main{padding:18px 16px 130px;}
+    .kpis{grid-template-columns:repeat(2,1fr);}
+    .res-card{grid-template-columns:74px 1fr;grid-template-areas:"f q" "f p" "a a";}
+    .res-card .fecha-big{grid-area:f;} .res-card .res-q{grid-area:q;}
+    .res-card .res-p{grid-area:p;} .res-card .res-acciones{grid-area:a;flex-direction:row;flex-wrap:wrap;}
+    .cal-dia{min-height:58px;padding:4px;} .pin{width:10px;height:10px;}
+    .campos{grid-template-columns:1fr;}
+    .barras{height:90px;}
+    .top-movil{display:flex;align-items:center;gap:10px;margin-bottom:16px;}
+    .top-movil svg{height:40px;width:auto;}
+  }
+  @media(min-width:861px){ .top-movil{display:none;} }
+  @media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important;}}
+</style>
+</head>
+<body>
+
+<!-- ============ GATE ============ -->
+<div id="gate">
+  <div class="gate-caja">
+    <svg viewBox="0 0 84 84" width="90" aria-hidden="true" style="margin:0 auto;display:block;">
+      <line x1="15.5" y1="30" x2="15.5" y2="14" stroke="#1B1310" stroke-width="2.5"/>
+      <path d="M15.5 15 L29 19 L15.5 23 Z" fill="#E8352B" stroke="#1B1310" stroke-width="2"/>
+      <line x1="68.5" y1="30" x2="68.5" y2="14" stroke="#1B1310" stroke-width="2.5"/>
+      <path d="M68.5 15 L55 19 L68.5 23 Z" fill="#FFC61B" stroke="#1B1310" stroke-width="2"/>
+      <path d="M23 50 A19 17 0 0 1 61 50" fill="none" stroke="#1B1310" stroke-width="13" stroke-linecap="round"/>
+      <path d="M23 50 A19 17 0 0 1 61 50" fill="none" stroke="#FFC61B" stroke-width="7" stroke-linecap="round"/>
+      <rect x="8" y="30" width="15" height="34" rx="7" fill="#1F6FD0" stroke="#1B1310" stroke-width="4"/>
+      <rect x="61" y="30" width="15" height="34" rx="7" fill="#1F6FD0" stroke="#1B1310" stroke-width="4"/>
+      <rect x="4" y="58" width="76" height="24" rx="9" fill="#E8352B" stroke="#1B1310" stroke-width="4"/>
+      <path d="M34 82 v-8 a8 7 0 0 1 16 0 v8 z" fill="#1B1310"/>
+    </svg>
+    <h1 id="gate-titulo">Panel Astefil</h1>
+    <p id="gate-sub">Ingresá tu PIN para entrar.</p>
+    <input id="gate-pin" type="password" inputmode="numeric" maxlength="6" placeholder="••••" autocomplete="off" />
+    <button class="btn btn--rojo" id="gate-btn" style="width:100%;">Entrar</button>
+    <p class="gate-nota">Protección básica del prototipo (no es seguridad real). Los datos viven únicamente en este dispositivo/navegador.</p>
+  </div>
+</div>
+
+<!-- ============ APP ============ -->
+<div id="app">
+  <nav class="rail">
+    <div class="marca">
+      <svg viewBox="0 0 84 84" width="44" aria-hidden="true">
+        <path d="M23 50 A19 17 0 0 1 61 50" fill="none" stroke="#1B1310" stroke-width="13" stroke-linecap="round"/>
+        <path d="M23 50 A19 17 0 0 1 61 50" fill="none" stroke="#FFC61B" stroke-width="7" stroke-linecap="round"/>
+        <rect x="8" y="30" width="15" height="34" rx="7" fill="#1F6FD0" stroke="#1B1310" stroke-width="4"/>
+        <rect x="61" y="30" width="15" height="34" rx="7" fill="#1F6FD0" stroke="#1B1310" stroke-width="4"/>
+        <rect x="4" y="58" width="76" height="24" rx="9" fill="#E8352B" stroke="#1B1310" stroke-width="4"/>
+        <path d="M34 82 v-8 a8 7 0 0 1 16 0 v8 z" fill="#1B1310"/>
+      </svg>
+      <div>
+        <div style="font-family:'Bagel Fat One',cursive;font-size:1.15rem;color:var(--rojo);">Astefil</div>
+        <span class="admin-tag">ADMIN</span>
+      </div>
+    </div>
+    <button class="tab activa" data-vista="inicio"><span class="ico">🏠</span> Inicio</button>
+    <button class="tab" data-vista="calendario"><span class="ico">📅</span> Calendario</button>
+    <button class="tab" data-vista="reservas"><span class="ico">🎈</span> Reservas</button>
+    <button class="tab" data-vista="inventario"><span class="ico">🏰</span> Inventario</button>
+    <button class="tab" data-vista="ajustes"><span class="ico">⚙️</span> Ajustes</button>
+    <div class="resto"></div>
+    <span class="chip-guardado"><span class="punto" id="punto-storage"></span><span id="txt-storage">…</span></span>
+  </nav>
+
+  <main>
+    <div class="top-movil">
+      <svg viewBox="0 0 84 84" aria-hidden="true">
+        <rect x="8" y="30" width="15" height="34" rx="7" fill="#1F6FD0" stroke="#1B1310" stroke-width="4"/>
+        <rect x="61" y="30" width="15" height="34" rx="7" fill="#1F6FD0" stroke="#1B1310" stroke-width="4"/>
+        <rect x="4" y="58" width="76" height="24" rx="9" fill="#E8352B" stroke="#1B1310" stroke-width="4"/>
+      </svg>
+      <strong style="font-family:'Bagel Fat One',cursive;font-size:1.2rem;color:var(--rojo);">Astefil <span style="color:var(--tinta);font-size:.8rem;">ADMIN</span></strong>
+    </div>
+
+    <!-- INICIO -->
+    <section class="vista activa" id="vista-inicio">
+      <div class="vista-cab">
+        <div><h2 id="saludo">Hola 👋</h2><div class="sub-gris" id="hoy-txt"></div></div>
+        <button class="btn btn--rojo" data-accion="nueva-reserva">+ Nueva reserva</button>
+      </div>
+      <div class="kpis">
+        <div class="kpi v1"><div class="valor" id="kpi-mes">0</div><div class="etq">Reservas este mes</div></div>
+        <div class="kpi v2"><div class="valor" id="kpi-prox">0</div><div class="etq">Próximos 7 días</div></div>
+        <div class="kpi v3"><div class="valor" id="kpi-ingresos">$0</div><div class="etq">Ingresos del mes</div></div>
+        <div class="kpi v4"><div class="valor" id="kpi-pend">0</div><div class="etq">Consultas sin cerrar</div></div>
+      </div>
+      <div class="panel">
+        <h3>🚚 Próximas entregas</h3>
+        <div class="lista-simple" id="lista-proximas"></div>
+        <div style="margin-top:12px;text-align:right;">
+          <button class="btn btn--mini btn--blanco" data-accion="copiar-maniana">📋 Copiar resumen de mañana</button>
+        </div>
+      </div>
+      <div class="panel">
+        <h3>📈 Ingresos últimos 6 meses</h3>
+        <div class="barras" id="barras-ingresos"></div>
+      </div>
+    </section>
+
+    <!-- CALENDARIO -->
+    <section class="vista" id="vista-calendario">
+      <div class="vista-cab">
+        <h2>Calendario</h2>
+        <div class="cal-nav">
+          <button class="btn btn--mini btn--blanco" id="cal-prev">◀</button>
+          <span class="mes-titulo" id="cal-titulo"></span>
+          <button class="btn btn--mini btn--blanco" id="cal-next">▶</button>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="cal-grid" id="cal-dow"></div>
+        <div class="cal-grid" id="cal-grid" style="margin-top:6px;"></div>
+        <div class="cal-leyenda">
+          <span><span class="pin p-consulta"></span> Consulta</span>
+          <span><span class="pin p-reservado"></span> Reservado</span>
+          <span><span class="pin p-senado"></span> Señado</span>
+          <span><span class="pin p-entregado"></span> Entregado</span>
+          <span><span class="pin p-finalizado"></span> Finalizado</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- RESERVAS -->
+    <section class="vista" id="vista-reservas">
+      <div class="vista-cab">
+        <h2>Reservas</h2>
+        <button class="btn btn--rojo" data-accion="nueva-reserva">+ Nueva reserva</button>
+      </div>
+      <div class="filtros">
+        <input type="search" id="f-busca" placeholder="Buscar cliente o zona…" />
+        <select id="f-estado">
+          <option value="">Todos los estados</option>
+        </select>
+        <select id="f-mes"></select>
+      </div>
+      <div class="tabla-res" id="tabla-res"></div>
+    </section>
+
+    <!-- INVENTARIO -->
+    <section class="vista" id="vista-inventario">
+      <div class="vista-cab">
+        <div><h2>Inventario</h2><div class="sub-gris">Tus inflables y juegos, con su precio base por evento.</div></div>
+        <button class="btn btn--rojo" data-accion="nuevo-inflable">+ Agregar</button>
+      </div>
+      <div class="inv-grid" id="inv-grid"></div>
+    </section>
+
+    <!-- AJUSTES -->
+    <section class="vista" id="vista-ajustes">
+      <div class="vista-cab"><h2>Ajustes</h2></div>
+      <div class="panel">
+        <div class="aj-fila">
+          <div><h4>Tu nombre</h4><p>Para el saludo del panel.</p></div>
+          <input id="aj-nombre" style="font-family:'Fredoka';padding:9px 12px;border:var(--borde);border-radius:12px;" placeholder="Fran" />
+        </div>
+        <div class="aj-fila">
+          <div><h4>PIN de acceso</h4><p>Cambiá el PIN de entrada. Dejalo vacío para entrar sin PIN.</p></div>
+          <button class="btn btn--mini btn--blanco" data-accion="cambiar-pin">Cambiar PIN</button>
+        </div>
+        <div class="aj-fila">
+          <div><h4>Copia de seguridad</h4><p>Los datos viven en este navegador. Exportá un JSON cada tanto y guardalo donde quieras.</p></div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <button class="btn btn--mini btn--azul" data-accion="exportar-json">⬇ Exportar JSON</button>
+            <button class="btn btn--mini btn--blanco" data-accion="importar-json">⬆ Importar</button>
+            <button class="btn btn--mini btn--verde" data-accion="exportar-csv">⬇ Reservas CSV</button>
+          </div>
+        </div>
+        <div class="aj-fila">
+          <div><h4>Datos de ejemplo</h4><p>Cargá reservas de muestra (marcadas como "Ejemplo") para probar el panel.</p></div>
+          <button class="btn btn--mini btn--blanco" data-accion="cargar-ejemplos">Cargar ejemplos</button>
+        </div>
+        <div class="aj-fila">
+          <div><h4>Borrar todo</h4><p>Elimina reservas, inventario y ajustes de este dispositivo. No hay vuelta atrás.</p></div>
+          <button class="btn btn--mini btn--peligro" data-accion="borrar-todo">🗑 Borrar todo</button>
+        </div>
+      </div>
+      <p class="sub-gris" style="font-size:.82rem;">Prototipo v1 · Los datos se guardan en este dispositivo (artifact storage en Claude, localStorage al deployar). Para multi-dispositivo real: backend o Google Sheets como siguiente paso.</p>
+    </section>
+
+    <input type="file" id="file-import" accept="application/json" hidden />
+  </main>
+</div>
+
+<!-- ============ DIALOG RESERVA ============ -->
+<dialog id="dlg-reserva">
+  <div class="dlg-cab"><h3 id="dlg-res-titulo">Nueva reserva</h3><button class="dlg-x" data-cerrar>✕</button></div>
+  <div class="dlg-cuerpo">
+    <div class="campos">
+      <div class="campo"><label for="r-fecha">Fecha *</label><input type="date" id="r-fecha" required /></div>
+      <div class="campo"><label for="r-estado">Estado</label><select id="r-estado"></select></div>
+      <div class="campo"><label for="r-cliente">Cliente *</label><input id="r-cliente" placeholder="Nombre" /></div>
+      <div class="campo"><label for="r-tel">Teléfono</label><input id="r-tel" inputmode="tel" placeholder="11 1234-5678" /></div>
+      <div class="campo"><label for="r-hent">Hora entrega</label><input type="time" id="r-hent" /></div>
+      <div class="campo"><label for="r-hret">Hora retiro</label><input type="time" id="r-hret" /></div>
+      <div class="campo ancho"><label>Inflables / juegos *</label><div class="check-inf" id="r-inflables"></div><div class="aviso-conf" id="r-conflicto" hidden></div></div>
+      <div class="campo"><label for="r-zona">Zona / localidad</label><input id="r-zona" list="zonas-list" placeholder="Grand Bourg" /><datalist id="zonas-list"></datalist></div>
+      <div class="campo"><label for="r-dir">Dirección</label><input id="r-dir" placeholder="Calle 123" /></div>
+      <div class="campo"><label for="r-precio">Precio total ($)</label><input type="number" id="r-precio" min="0" step="500" /></div>
+      <div class="campo"><label for="r-sena">Seña ($)</label><input type="number" id="r-sena" min="0" step="500" /></div>
+      <div class="campo ancho"><label for="r-notas">Notas</label><textarea id="r-notas" placeholder="Salón techado, hay enchufe cerca…"></textarea></div>
+    </div>
+  </div>
+  <div class="dlg-pie">
+    <button class="btn btn--peligro btn--mini" id="dlg-res-borrar" hidden>🗑 Eliminar</button>
+    <div style="display:flex;gap:10px;margin-left:auto;">
+      <button class="btn btn--blanco" data-cerrar>Cancelar</button>
+      <button class="btn btn--verde" id="dlg-res-guardar">Guardar</button>
+    </div>
+  </div>
+</dialog>
+
+<!-- ============ DIALOG INFLABLE ============ -->
+<dialog id="dlg-inflable">
+  <div class="dlg-cab"><h3 id="dlg-inf-titulo">Agregar al inventario</h3><button class="dlg-x" data-cerrar>✕</button></div>
+  <div class="dlg-cuerpo">
+    <div class="campos">
+      <div class="campo ancho"><label for="i-nombre">Nombre *</label><input id="i-nombre" placeholder="Castillo arcoíris" /></div>
+      <div class="campo"><label for="i-cat">Categoría</label><select id="i-cat">
+        <option>Castillo</option><option>Castillo con rampa</option><option>Carrera de obstáculos</option>
+        <option>Acuático</option><option>Deportivo</option><option>Juego de salón</option><option>Living</option><option>Otro</option>
+      </select></div>
+      <div class="campo"><label for="i-precio">Precio base ($)</label><input type="number" id="i-precio" min="0" step="500" placeholder="0 = sin definir" /></div>
+      <div class="campo ancho"><label style="display:flex;align-items:center;gap:8px;"><input type="checkbox" id="i-activo" checked style="width:18px;height:18px;accent-color:var(--verde);" /> Disponible para alquilar</label></div>
+    </div>
+  </div>
+  <div class="dlg-pie">
+    <button class="btn btn--peligro btn--mini" id="dlg-inf-borrar" hidden>🗑 Eliminar</button>
+    <div style="display:flex;gap:10px;margin-left:auto;">
+      <button class="btn btn--blanco" data-cerrar>Cancelar</button>
+      <button class="btn btn--verde" id="dlg-inf-guardar">Guardar</button>
+    </div>
+  </div>
+</dialog>
+
+<!-- ============ DIALOG DÍA ============ -->
+<dialog id="dlg-dia">
+  <div class="dlg-cab"><h3 id="dlg-dia-titulo">Día</h3><button class="dlg-x" data-cerrar>✕</button></div>
+  <div class="dlg-cuerpo"><div class="lista-simple" id="dlg-dia-lista"></div></div>
+  <div class="dlg-pie">
+    <div style="margin-left:auto;display:flex;gap:10px;">
+      <button class="btn btn--blanco" data-cerrar>Cerrar</button>
+      <button class="btn btn--rojo" id="dlg-dia-nueva">+ Reserva este día</button>
+    </div>
+  </div>
+</dialog>
+
+<div id="toast" role="status"></div>
+
+<script>
+"use strict";
+/* ================= STORAGE ADAPTER ================= */
+const mem = {};
+let modoStorage = "memoria";
+const store = {
+  async get(k){
+    if (window.storage) { try { const r = await window.storage.get(k); modoStorage="claude"; return r ? JSON.parse(r.value) : null; } catch(e){ modoStorage="claude"; return null; } }
+    try { const v = localStorage.getItem(k); modoStorage="navegador"; return v ? JSON.parse(v) : null; } catch(e){ modoStorage="memoria"; return mem[k] ?? null; }
+  },
+  async set(k,v){
+    const s = JSON.stringify(v);
+    if (window.storage) { try { await window.storage.set(k,s); modoStorage="claude"; return; } catch(e){} }
+    try { localStorage.setItem(k,s); modoStorage="navegador"; return; } catch(e){ mem[k]=v; modoStorage="memoria"; }
+  },
+  async del(k){
+    if (window.storage) { try { await window.storage.delete(k); return; } catch(e){} }
+    try { localStorage.removeItem(k); } catch(e){ delete mem[k]; }
+  }
+};
+const K = { inf:"astefil:inflables", res:"astefil:reservas", cfg:"astefil:config" };
+
+/* ================= ESTADO ================= */
+const ESTADOS = ["Consulta","Reservado","Señado","Entregado","Finalizado","Cancelado"];
+const ZONAS = ["Tortuguitas","Grand Bourg","Los Polvorines","Malvinas Argentinas","José C. Paz","Del Viso","Pilar","Escobar"];
+const COLORES = ["#E8352B","#1F6FD0","#23B15D","#FF7AA2","#FFC61B","#8D7F76"];
+let inflables = [], reservas = [], config = { nombre:"", pin:null };
+let mesCal = hoyStr().slice(0,7);
+let editandoRes = null, editandoInf = null;
+
+function seedInflables(){
+  const base = [
+    ["Castillo clásico","Castillo"],["Castillo con rampa","Castillo con rampa"],
+    ["Carrera de obstáculos","Carrera de obstáculos"],["Inflable acuático","Acuático"],
+    ["Metegol","Juego de salón"],["Tejo de aire","Juego de salón"],["Pool","Juego de salón"],
+    ["Ping pong","Juego de salón"],["Sapo","Juego de salón"],["Living para chicos","Living"]
+  ];
+  return base.map((b,i)=>({ id:uid(), nombre:b[0], cat:b[1], precio:0, activo:true, color:COLORES[i%COLORES.length] }));
+}
+
+/* ================= UTILS ================= */
+function uid(){ return (crypto.randomUUID ? crypto.randomUUID() : Date.now()+"-"+Math.random().toString(36).slice(2)); }
+function hoyStr(){ const d=new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); }
+function addDias(iso,n){ const [y,m,d]=iso.split("-").map(Number); const dt=new Date(y,m-1,d+n); return dt.getFullYear()+"-"+String(dt.getMonth()+1).padStart(2,"0")+"-"+String(dt.getDate()).padStart(2,"0"); }
+const MESES = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
+const DOWS = ["Dom","Lun","Mar","Mié","Jue","Vie","Sáb"];
+function fmtFechaLarga(iso){ const [y,m,d]=iso.split("-").map(Number); const dt=new Date(y,m-1,d); return DOWS[dt.getDay()]+" "+d+" de "+MESES[m-1].toLowerCase()+" "+y; }
+function dowDe(iso){ const [y,m,d]=iso.split("-").map(Number); return new Date(y,m-1,d).getDay(); }
+function plata(n){ return "$"+(Number(n)||0).toLocaleString("es-AR"); }
+function slugEstado(e){ return "e-"+e.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,""); }
+function slugPin(e){ return "p-"+e.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,""); }
+function esc(s){ return String(s??"").replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+function nombresInf(ids){ return (ids||[]).map(id=>inflables.find(i=>i.id===id)?.nombre).filter(Boolean); }
+function telWa(t){
+  let d = String(t||"").replace(/\D/g,"");
+  if(!d) return null;
+  if(d.startsWith("549")) return d;
+  if(d.startsWith("54")) return "549"+d.slice(2);
+  if(d.length===10) return "549"+d;
+  if(d.length===8) return "54911"+d;
+  return "549"+d;
+}
+let toastTimer;
+function toast(msg){ const t=document.getElementById("toast"); t.textContent=msg; t.classList.add("ver"); clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.classList.remove("ver"),2600); }
+function $(s){ return document.querySelector(s); }
+function $$(s){ return [...document.querySelectorAll(s)]; }
+
+async function guardarRes(){ await store.set(K.res, reservas); pintaStorage(); }
+async function guardarInf(){ await store.set(K.inf, inflables); pintaStorage(); }
+async function guardarCfg(){ await store.set(K.cfg, config); pintaStorage(); }
+function pintaStorage(){
+  const map = { claude:["Guardado en Claude","#23B15D"], navegador:["Guardado en este navegador","#23B15D"], memoria:["Solo memoria: se pierde al recargar","#FFC61B"] };
+  const [txt,color] = map[modoStorage];
+  $("#txt-storage").textContent = txt;
+  $("#punto-storage").style.background = color;
+}
+
+/* ================= CONFLICTOS ================= */
+function conflictosDe(res){
+  if(["Consulta","Cancelado"].includes(res.estado)) return [];
+  const out=[];
+  for(const o of reservas){
+    if(o.id===res.id || o.fecha!==res.fecha) continue;
+    if(["Consulta","Cancelado"].includes(o.estado)) continue;
+    const comunes = (res.inflableIds||[]).filter(id=>(o.inflableIds||[]).includes(id));
+    if(comunes.length) out.push({res:o, inflables:nombresInf(comunes)});
+  }
+  return out;
+}
+
+/* ================= GATE ================= */
+async function initGate(){
+  const primeraVez = config.pin === null && config._nuevo;
+  if(config.pin === "" || (window.__gateOk)){ abrirApp(); return; }
+  if(primeraVez){
+    $("#gate-titulo").textContent = "Creá tu PIN";
+    $("#gate-sub").textContent = "Elegí un PIN de 4 a 6 dígitos (o dejalo vacío para entrar directo).";
+    $("#gate-btn").textContent = "Crear y entrar";
+  }
+  $("#gate-btn").onclick = async ()=>{
+    const v = $("#gate-pin").value.trim();
+    if(primeraVez){
+      config.pin = v; delete config._nuevo; await guardarCfg();
+      abrirApp(); return;
+    }
+    if(v === config.pin){ abrirApp(); }
+    else { toast("PIN incorrecto"); $("#gate-pin").value=""; $("#gate-pin").focus(); }
+  };
+  $("#gate-pin").addEventListener("keydown", e=>{ if(e.key==="Enter") $("#gate-btn").click(); });
+}
+function abrirApp(){
+  window.__gateOk = true;
+  $("#gate").style.display="none";
+  $("#app").classList.add("activa");
+  renderTodo();
+}
+
+/* ================= NAV ================= */
+$$(".tab").forEach(b=>b.addEventListener("click", ()=>{
+  $$(".tab").forEach(t=>t.classList.toggle("activa", t===b));
+  $$(".vista").forEach(v=>v.classList.toggle("activa", v.id==="vista-"+b.dataset.vista));
+  renderVista(b.dataset.vista);
+}));
+function renderVista(v){
+  if(v==="inicio") renderInicio();
+  if(v==="calendario") renderCal();
+  if(v==="reservas") renderReservas();
+  if(v==="inventario") renderInventario();
+  if(v==="ajustes") renderAjustes();
+}
+function renderTodo(){ pintaStorage(); renderVista($$(".tab").find(t=>t.classList.contains("activa")).dataset.vista); }
+
+/* ================= INICIO ================= */
+function renderInicio(){
+  const hoy = hoyStr(), mes = hoy.slice(0,7);
+  $("#saludo").textContent = "Hola" + (config.nombre ? " "+config.nombre : "") + " 👋";
+  $("#hoy-txt").textContent = fmtFechaLarga(hoy);
+  const activas = reservas.filter(r=>r.estado!=="Cancelado");
+  $("#kpi-mes").textContent = activas.filter(r=>r.fecha.startsWith(mes) && r.estado!=="Consulta").length;
+  const en7 = activas.filter(r=>r.fecha>=hoy && r.fecha<=addDias(hoy,7) && r.estado!=="Consulta");
+  $("#kpi-prox").textContent = en7.length;
+  const ingresos = activas.filter(r=>r.fecha.startsWith(mes) && ["Señado","Entregado","Finalizado"].includes(r.estado))
+                          .reduce((a,r)=>a+(Number(r.precio)||0),0);
+  $("#kpi-ingresos").textContent = plata(ingresos);
+  $("#kpi-pend").textContent = reservas.filter(r=>r.estado==="Consulta").length;
+
+  const prox = activas.filter(r=>r.fecha>=hoy && r.estado!=="Consulta").sort((a,b)=>a.fecha.localeCompare(b.fecha)||String(a.horaEntrega).localeCompare(String(b.horaEntrega))).slice(0,6);
+  const cont = $("#lista-proximas");
+  cont.innerHTML = prox.length ? "" : '<div class="vacio">Sin entregas próximas. Cuando cargues reservas van a aparecer acá. 🎈</div>';
+  for(const r of prox){
+    const el = document.createElement("div"); el.className="item-res";
+    const conf = conflictosDe(r).length ? ' <span class="aviso-conf">⚠ conflicto</span>' : "";
+    el.innerHTML = '<span class="cuando">'+esc(r.fecha.slice(8,10))+"/"+esc(r.fecha.slice(5,7))+(r.horaEntrega?" · "+esc(r.horaEntrega):"")+'</span>'
+      + '<span class="quien"><strong>'+esc(r.cliente||"Sin nombre")+'</strong>'+conf+'<small>'+esc(nombresInf(r.inflableIds).join(", "))+(r.zona?" · "+esc(r.zona):"")+'</small></span>'
+      + '<span class="estado '+slugEstado(r.estado)+'">'+esc(r.estado)+'</span>'
+      + '<button class="btn btn--mini btn--blanco">Abrir</button>';
+    el.querySelector("button").onclick = ()=>abrirDlgReserva(r.id);
+    cont.appendChild(el);
+  }
+
+  const cb = $("#barras-ingresos"); cb.innerHTML="";
+  const meses=[]; const [Y,M]=mes.split("-").map(Number);
+  for(let i=5;i>=0;i--){ const dt=new Date(Y,M-1-i,1); meses.push(dt.getFullYear()+"-"+String(dt.getMonth()+1).padStart(2,"0")); }
+  const vals = meses.map(m=>reservas.filter(r=>r.fecha.startsWith(m)&&["Señado","Entregado","Finalizado"].includes(r.estado)).reduce((a,r)=>a+(Number(r.precio)||0),0));
+  const max = Math.max(...vals,1);
+  meses.forEach((m,i)=>{
+    const b=document.createElement("div"); b.className="barra";
+    b.innerHTML='<div class="palo" style="height:'+Math.max(4,Math.round(vals[i]/max*100))+'%" title="'+plata(vals[i])+'"></div><span class="mes">'+MESES[Number(m.slice(5))-1].slice(0,3)+'</span>';
+    cb.appendChild(b);
+  });
+}
+
+/* ================= CALENDARIO ================= */
+$("#cal-prev").onclick=()=>{ mesCal = mueveMes(mesCal,-1); renderCal(); };
+$("#cal-next").onclick=()=>{ mesCal = mueveMes(mesCal, 1); renderCal(); };
+function mueveMes(m,n){ const [y,mm]=m.split("-").map(Number); const d=new Date(y,mm-1+n,1); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0"); }
+function renderCal(){
+  const [y,m] = mesCal.split("-").map(Number);
+  $("#cal-titulo").textContent = MESES[m-1]+" "+y;
+  const dow = $("#cal-dow"); dow.innerHTML = DOWS.map(d=>'<div class="cal-dow">'+d+'</div>').join("");
+  const grid = $("#cal-grid"); grid.innerHTML="";
+  const prim = new Date(y,m-1,1).getDay();
+  const dias = new Date(y,m,0).getDate();
+  const hoy = hoyStr();
+  for(let i=0;i<prim;i++){ grid.appendChild(Object.assign(document.createElement("div"),{className:"cal-dia otro-mes"})); }
+  for(let d=1;d<=dias;d++){
+    const iso = mesCal+"-"+String(d).padStart(2,"0");
+    const dw = dowDe(iso);
+    const cel = document.createElement("button");
+    cel.className = "cal-dia" + (iso===hoy?" hoy":"") + ((dw===0||dw===6)?" finde":"");
+    const del = reservas.filter(r=>r.fecha===iso && r.estado!=="Cancelado");
+    cel.innerHTML = '<span class="num">'+d+'</span><span class="cal-pins">'+
+      del.slice(0,6).map(r=>'<span class="pin '+slugPin(r.estado)+'" title="'+esc(r.cliente||"")+'"></span>').join("")+
+      (del.length>6?"+":"")+'</span>';
+    cel.onclick = ()=>abrirDlgDia(iso);
+    grid.appendChild(cel);
+  }
+}
+function abrirDlgDia(iso){
+  $("#dlg-dia-titulo").textContent = fmtFechaLarga(iso);
+  const cont = $("#dlg-dia-lista");
+  const del = reservas.filter(r=>r.fecha===iso).sort((a,b)=>String(a.horaEntrega).localeCompare(String(b.horaEntrega)));
+  cont.innerHTML = del.length ? "" : '<div class="vacio">Día libre por ahora 🌤</div>';
+  for(const r of del){
+    const el=document.createElement("div"); el.className="item-res";
+    el.innerHTML='<span class="quien"><strong>'+esc(r.cliente||"Sin nombre")+'</strong><small>'+esc(nombresInf(r.inflableIds).join(", "))+(r.horaEntrega?" · "+esc(r.horaEntrega):"")+'</small></span>'
+      +'<span class="estado '+slugEstado(r.estado)+'">'+esc(r.estado)+'</span>'
+      +'<button class="btn btn--mini btn--blanco">Abrir</button>';
+    el.querySelector("button").onclick=()=>{ $("#dlg-dia").close(); abrirDlgReserva(r.id); };
+    cont.appendChild(el);
+  }
+  $("#dlg-dia-nueva").onclick=()=>{ $("#dlg-dia").close(); abrirDlgReserva(null, iso); };
+  $("#dlg-dia").showModal();
+}
+
+/* ================= RESERVAS (lista) ================= */
+$("#f-busca").addEventListener("input", renderReservas);
+$("#f-estado").addEventListener("change", renderReservas);
+$("#f-mes").addEventListener("change", renderReservas);
+function llenaFiltros(){
+  const fe = $("#f-estado");
+  if(fe.options.length<=1) ESTADOS.forEach(e=>fe.appendChild(new Option(e,e)));
+  const fm = $("#f-mes"); const sel = fm.value;
+  const meses = [...new Set(reservas.map(r=>r.fecha.slice(0,7)))]; 
+  const hoyM = hoyStr().slice(0,7); if(!meses.includes(hoyM)) meses.push(hoyM);
+  meses.sort().reverse();
+  fm.innerHTML = '<option value="">Todos los meses</option>' + meses.map(m=>'<option value="'+m+'">'+MESES[Number(m.slice(5))-1]+" "+m.slice(0,4)+'</option>').join("");
+  fm.value = sel && meses.includes(sel) ? sel : "";
+}
+function renderReservas(){
+  llenaFiltros();
+  const q = $("#f-busca").value.toLowerCase().trim();
+  const fe = $("#f-estado").value, fm = $("#f-mes").value;
+  let lista = [...reservas];
+  if(q) lista = lista.filter(r=>(r.cliente||"").toLowerCase().includes(q)||(r.zona||"").toLowerCase().includes(q));
+  if(fe) lista = lista.filter(r=>r.estado===fe);
+  if(fm) lista = lista.filter(r=>r.fecha.startsWith(fm));
+  lista.sort((a,b)=>b.fecha.localeCompare(a.fecha));
+  const cont = $("#tabla-res");
+  cont.innerHTML = lista.length ? "" : '<div class="vacio">No hay reservas con esos filtros. Creá la primera con "+ Nueva reserva". 🎪</div>';
+  for(const r of lista){
+    const confs = conflictosDe(r);
+    const el = document.createElement("div");
+    el.className = "res-card" + (confs.length?" conflicto":"");
+    const resto = (Number(r.precio)||0)-(Number(r.sena)||0);
+    const idx = ESTADOS.indexOf(r.estado);
+    const sig = (idx>=0 && idx<4) ? ESTADOS[idx+1] : null;
+    el.innerHTML =
+      '<div class="fecha-big"><div class="dia">'+Number(r.fecha.slice(8,10))+'</div><div class="mes">'+MESES[Number(r.fecha.slice(5,7))-1].slice(0,3)+'</div><div class="dow">'+DOWS[dowDe(r.fecha)]+'</div></div>'
+      +'<div class="res-q"><h4>'+esc(r.cliente||"Sin nombre")+' <span class="estado '+slugEstado(r.estado)+'">'+esc(r.estado)+'</span></h4>'
+      +'<div class="linea">'+esc(nombresInf(r.inflableIds).join(", ")||"—")+'</div>'
+      +'<div class="linea">'+esc([r.zona,r.direccion].filter(Boolean).join(" · "))+((r.horaEntrega||r.horaRetiro)?' · '+esc(r.horaEntrega||"?")+"–"+esc(r.horaRetiro||"?"):"")+'</div>'
+      +(confs.length?'<div class="aviso-conf">⚠ Mismo inflable ya reservado ese día ('+esc(confs.map(c=>c.res.cliente||"otra reserva").join(", "))+')</div>':"")
+      +'</div>'
+      +'<div class="res-p plata">'+plata(r.precio)+'<small>Seña '+plata(r.sena)+' · Resta '+plata(resto)+'</small></div>'
+      +'<div class="res-acciones">'
+      +(telWa(r.telefono)?'<button class="btn btn--mini btn--verde" data-wa>WhatsApp</button>':"")
+      +(sig?'<button class="btn btn--mini btn--azul" data-sig>→ '+sig+'</button>':"")
+      +'<button class="btn btn--mini btn--blanco" data-edit>Editar</button>'
+      +'</div>';
+    el.querySelector("[data-edit]").onclick = ()=>abrirDlgReserva(r.id);
+    const wb = el.querySelector("[data-wa]");
+    if(wb) wb.onclick = ()=>abrirWa(r);
+    const sb = el.querySelector("[data-sig]");
+    if(sb) sb.onclick = async ()=>{ r.estado = sig; await guardarRes(); renderReservas(); toast("→ "+sig); };
+    cont.appendChild(el);
+  }
+}
+function abrirWa(r){
+  const tel = telWa(r.telefono); if(!tel) return;
+  const infs = nombresInf(r.inflableIds).join(", ");
+  let msg;
+  if(r.estado==="Consulta"){
+    msg = "¡Hola "+(r.cliente||"")+"! Te escribo de Astefil Inflables por tu consulta para el "+fmtFechaLarga(r.fecha)+" ("+infs+"). ¿Seguimos coordinando? 🎈";
+  } else {
+    const resto=(Number(r.precio)||0)-(Number(r.sena)||0);
+    msg = "¡Hola "+(r.cliente||"")+"! Te confirmo tu reserva de Astefil Inflables 🎈\n\n• "+infs+"\n• "+fmtFechaLarga(r.fecha)+(r.horaEntrega?"\n• Entrega: "+r.horaEntrega:"")+(r.direccion||r.zona?"\n• Lugar: "+[r.direccion,r.zona].filter(Boolean).join(", "):"")+(r.precio?"\n• Total: "+plata(r.precio)+(r.sena?" (seña "+plata(r.sena)+", resta "+plata(resto)+")":""):"")+"\n\n¡Gracias!";
+  }
+  window.open("https://api.whatsapp.com/send?phone="+tel+"&text="+encodeURIComponent(msg), "_blank");
+}
+
+/* ================= DIALOG RESERVA ================= */
+function abrirDlgReserva(id, fechaSugerida){
+  editandoRes = id ? reservas.find(r=>r.id===id) : null;
+  $("#dlg-res-titulo").textContent = editandoRes ? "Editar reserva" : "Nueva reserva";
+  $("#dlg-res-borrar").hidden = !editandoRes;
+  const se = $("#r-estado");
+  if(!se.options.length) ESTADOS.forEach(e=>se.appendChild(new Option(e,e)));
+  const dz = $("#zonas-list");
+  if(!dz.options.length) ZONAS.forEach(z=>dz.appendChild(new Option(z)));
+  const ci = $("#r-inflables"); ci.innerHTML="";
+  for(const inf of inflables.filter(i=>i.activo || (editandoRes?.inflableIds||[]).includes(i.id))){
+    const lb=document.createElement("label");
+    lb.innerHTML='<input type="checkbox" value="'+inf.id+'"> '+esc(inf.nombre);
+    lb.querySelector("input").checked = (editandoRes?.inflableIds||[]).includes(inf.id);
+    lb.querySelector("input").addEventListener("change", avisaConflicto);
+    ci.appendChild(lb);
+  }
+  const r = editandoRes || {};
+  $("#r-fecha").value = r.fecha || fechaSugerida || hoyStr();
+  $("#r-estado").value = r.estado || "Consulta";
+  $("#r-cliente").value = r.cliente||""; $("#r-tel").value = r.telefono||"";
+  $("#r-hent").value = r.horaEntrega||""; $("#r-hret").value = r.horaRetiro||"";
+  $("#r-zona").value = r.zona||""; $("#r-dir").value = r.direccion||"";
+  $("#r-precio").value = r.precio??""; $("#r-sena").value = r.sena??"";
+  $("#r-notas").value = r.notas||"";
+  avisaConflicto();
+  $("#dlg-reserva").showModal();
+}
+$("#r-fecha").addEventListener("change", avisaConflicto);
+$("#r-estado").addEventListener("change", avisaConflicto);
+function datosDelForm(){
+  return {
+    id: editandoRes?.id || uid(),
+    fecha: $("#r-fecha").value,
+    estado: $("#r-estado").value,
+    cliente: $("#r-cliente").value.trim(),
+    telefono: $("#r-tel").value.trim(),
+    horaEntrega: $("#r-hent").value, horaRetiro: $("#r-hret").value,
+    inflableIds: $$("#r-inflables input:checked").map(i=>i.value),
+    zona: $("#r-zona").value.trim(), direccion: $("#r-dir").value.trim(),
+    precio: Number($("#r-precio").value)||0, sena: Number($("#r-sena").value)||0,
+    notas: $("#r-notas").value.trim(),
+    creado: editandoRes?.creado || new Date().toISOString()
+  };
+}
+function avisaConflicto(){
+  const d = datosDelForm();
+  const confs = conflictosDe(d);
+  const av = $("#r-conflicto");
+  av.hidden = !confs.length;
+  if(confs.length) av.textContent = "⚠ Ese día ya está reservado: "+confs.map(c=>c.inflables.join("/")+" ("+(c.res.cliente||"otra reserva")+")").join(" · ");
+}
+$("#dlg-res-guardar").onclick = async ()=>{
+  const d = datosDelForm();
+  if(!d.fecha){ toast("Falta la fecha"); return; }
+  if(!d.cliente){ toast("Poné el nombre del cliente"); return; }
+  if(!d.inflableIds.length){ toast("Elegí al menos un inflable"); return; }
+  const confs = conflictosDe(d);
+  if(confs.length && !confirm("⚠ Conflicto: ese inflable ya está reservado ese día ("+confs.map(c=>c.res.cliente).join(", ")+").\n¿Guardar igual?")) return;
+  if(editandoRes) Object.assign(editandoRes, d); else reservas.push(d);
+  await guardarRes();
+  $("#dlg-reserva").close();
+  renderTodo(); toast("Reserva guardada ✓");
+};
+$("#dlg-res-borrar").onclick = async ()=>{
+  if(!editandoRes) return;
+  if(!confirm("¿Eliminar la reserva de "+(editandoRes.cliente||"este cliente")+"?")) return;
+  reservas = reservas.filter(r=>r.id!==editandoRes.id);
+  await guardarRes(); $("#dlg-reserva").close(); renderTodo(); toast("Reserva eliminada");
+};
+
+/* ================= INVENTARIO ================= */
+function renderInventario(){
+  const g = $("#inv-grid"); g.innerHTML="";
+  for(const inf of inflables){
+    const c = document.createElement("div"); c.className="inv-card";
+    c.style.opacity = inf.activo ? 1 : .55;
+    const usos = reservas.filter(r=>r.estado!=="Cancelado" && (r.inflableIds||[]).includes(inf.id)).length;
+    c.innerHTML = '<h4>'+esc(inf.nombre)+'<span class="puntito" style="background:'+inf.color+'"></span></h4>'
+      +'<div class="cat">'+esc(inf.cat)+(inf.activo?"":" · fuera de servicio")+'</div>'
+      +(inf.precio>0 ? '<div class="precio">'+plata(inf.precio)+'</div>' : '<div class="precio sin">precio sin definir</div>')
+      +'<div class="cat" style="margin-bottom:10px;">'+usos+' reserva'+(usos===1?"":"s")+'</div>'
+      +'<button class="btn btn--mini btn--blanco">Editar</button>';
+    c.querySelector("button").onclick = ()=>abrirDlgInflable(inf.id);
+    g.appendChild(c);
+  }
+}
+function abrirDlgInflable(id){
+  editandoInf = id ? inflables.find(i=>i.id===id) : null;
+  $("#dlg-inf-titulo").textContent = editandoInf ? "Editar inflable" : "Agregar al inventario";
+  $("#dlg-inf-borrar").hidden = !editandoInf;
+  $("#i-nombre").value = editandoInf?.nombre||"";
+  $("#i-cat").value = editandoInf?.cat||"Castillo";
+  $("#i-precio").value = editandoInf?.precio||"";
+  $("#i-activo").checked = editandoInf ? !!editandoInf.activo : true;
+  $("#dlg-inflable").showModal();
+}
+$("#dlg-inf-guardar").onclick = async ()=>{
+  const nombre = $("#i-nombre").value.trim();
+  if(!nombre){ toast("Poné un nombre"); return; }
+  const d = { nombre, cat:$("#i-cat").value, precio:Number($("#i-precio").value)||0, activo:$("#i-activo").checked };
+  if(editandoInf) Object.assign(editandoInf, d);
+  else inflables.push({ id:uid(), color:COLORES[inflables.length%COLORES.length], ...d });
+  await guardarInf(); $("#dlg-inflable").close(); renderInventario(); toast("Inventario guardado ✓");
+};
+$("#dlg-inf-borrar").onclick = async ()=>{
+  if(!editandoInf) return;
+  const usos = reservas.filter(r=>(r.inflableIds||[]).includes(editandoInf.id)).length;
+  if(!confirm("¿Eliminar \""+editandoInf.nombre+"\"?"+(usos?" Está en "+usos+" reserva(s); quedarán sin ese ítem.":""))) return;
+  inflables = inflables.filter(i=>i.id!==editandoInf.id);
+  await guardarInf(); $("#dlg-inflable").close(); renderInventario(); toast("Eliminado");
+};
+
+/* ================= AJUSTES ================= */
+function renderAjustes(){ $("#aj-nombre").value = config.nombre||""; }
+$("#aj-nombre").addEventListener("change", async e=>{ config.nombre = e.target.value.trim(); await guardarCfg(); toast("Nombre guardado ✓"); });
+
+document.addEventListener("click", async e=>{
+  const acc = e.target.closest("[data-accion]")?.dataset.accion;
+  if(!acc) return;
+  if(acc==="nueva-reserva") abrirDlgReserva(null);
+  if(acc==="nuevo-inflable") abrirDlgInflable(null);
+  if(acc==="cambiar-pin"){
+    const v = prompt("Nuevo PIN (vacío = sin PIN):", "");
+    if(v===null) return;
+    config.pin = v.trim(); await guardarCfg(); toast(v.trim()? "PIN actualizado ✓" : "Acceso sin PIN");
+  }
+  if(acc==="exportar-json"){
+    const data = { app:"astefil-admin", version:1, exportado:new Date().toISOString(), config:{nombre:config.nombre}, inflables, reservas };
+    descarga("astefil-backup-"+hoyStr()+".json", JSON.stringify(data,null,2), "application/json");
+  }
+  if(acc==="importar-json") $("#file-import").click();
+  if(acc==="exportar-csv"){
+    const cab = ["fecha","cliente","telefono","zona","direccion","inflables","estado","precio","sena","resta","hora_entrega","hora_retiro","notas"];
+    const filas = reservas.map(r=>[r.fecha,r.cliente,r.telefono,r.zona,r.direccion,nombresInf(r.inflableIds).join(" + "),r.estado,r.precio,r.sena,(Number(r.precio)||0)-(Number(r.sena)||0),r.horaEntrega,r.horaRetiro,r.notas]
+      .map(v=>'"'+String(v??"").replace(/"/g,'""')+'"').join(","));
+    descarga("astefil-reservas-"+hoyStr()+".csv", "\uFEFF"+cab.join(",")+"\n"+filas.join("\n"), "text/csv");
+  }
+  if(acc==="cargar-ejemplos"){ cargarEjemplos(); }
+  if(acc==="borrar-todo"){
+    if(!confirm("Vas a borrar TODAS las reservas, el inventario y los ajustes de este dispositivo. ¿Seguro?")) return;
+    if(!confirm("Última confirmación: no hay vuelta atrás. ¿Borrar todo?")) return;
+    await store.del(K.res); await store.del(K.inf); await store.del(K.cfg);
+    reservas=[]; inflables=seedInflables(); config={nombre:"",pin:""};
+    await guardarInf(); await guardarCfg(); await guardarRes();
+    renderTodo(); toast("Todo borrado. Inventario reiniciado.");
+  }
+  if(acc==="copiar-maniana"){
+    const man = addDias(hoyStr(),1);
+    const del = reservas.filter(r=>r.fecha===man && !["Consulta","Cancelado"].includes(r.estado));
+    if(!del.length){ toast("Mañana no hay entregas 🎉"); return; }
+    const txt = "🎈 ASTEFIL — Entregas de mañana "+fmtFechaLarga(man)+"\n\n"+del.map(r=>
+      "• "+(r.horaEntrega||"s/hora")+" — "+(r.cliente||"?")+" ("+nombresInf(r.inflableIds).join(", ")+")\n  "+[r.direccion,r.zona].filter(Boolean).join(", ")+(r.telefono?" · 📱 "+r.telefono:"")+(r.precio? " · Resta "+plata((Number(r.precio)||0)-(Number(r.sena)||0)):"")
+    ).join("\n\n");
+    try{ await navigator.clipboard.writeText(txt); toast("Resumen copiado ✓ pegalo en WhatsApp"); }
+    catch(e){ prompt("Copiá el resumen:", txt); }
+  }
+});
+$("#file-import").addEventListener("change", async e=>{
+  const f = e.target.files[0]; if(!f) return;
+  try{
+    const data = JSON.parse(await f.text());
+    if(!Array.isArray(data.reservas) || !Array.isArray(data.inflables)) throw 0;
+    reservas = data.reservas; inflables = data.inflables;
+    if(data.config?.nombre !== undefined) config.nombre = data.config.nombre;
+    await guardarRes(); await guardarInf(); await guardarCfg();
+    renderTodo(); toast("Backup importado ✓ ("+reservas.length+" reservas)");
+  }catch(err){ toast("Archivo inválido"); }
+  e.target.value="";
+});
+function descarga(nombre, contenido, tipo){
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([contenido],{type:tipo}));
+  a.download = nombre; a.click(); URL.revokeObjectURL(a.href);
+}
+async function cargarEjemplos(){
+  const ids = inflables.map(i=>i.id);
+  const hoy = hoyStr();
+  const ej = [
+    { fecha:addDias(hoy,2),  estado:"Señado",    cliente:"Ejemplo — Caro",   telefono:"11 5555-0001", zona:"Grand Bourg", direccion:"Av. Siempreviva 742", horaEntrega:"10:00", horaRetiro:"19:00", inflableIds:[ids[0]], precio:45000, sena:15000, notas:"Dato de ejemplo" },
+    { fecha:addDias(hoy,2),  estado:"Reservado", cliente:"Ejemplo — Damián", telefono:"11 5555-0002", zona:"Tortuguitas", direccion:"Los Ceibos 120", horaEntrega:"11:00", horaRetiro:"18:00", inflableIds:[ids[1],ids[4]], precio:78000, sena:20000, notas:"Dato de ejemplo · salón techado" },
+    { fecha:addDias(hoy,5),  estado:"Consulta",  cliente:"Ejemplo — Vane",   telefono:"11 5555-0003", zona:"Del Viso", inflableIds:[ids[3]], precio:0, sena:0, notas:"Dato de ejemplo · pregunta por acuático" },
+    { fecha:addDias(hoy,9),  estado:"Reservado", cliente:"Ejemplo — Marcos", telefono:"11 5555-0004", zona:"Pilar", direccion:"B° Los Álamos", horaEntrega:"12:00", horaRetiro:"20:00", inflableIds:[ids[0]], precio:52000, sena:0, notas:"Dato de ejemplo" },
+    { fecha:addDias(hoy,-6), estado:"Finalizado",cliente:"Ejemplo — Sole",   telefono:"11 5555-0005", zona:"Escobar", inflableIds:[ids[2]], precio:60000, sena:60000, horaEntrega:"10:30", horaRetiro:"19:30", notas:"Dato de ejemplo" }
+  ].map(r=>({ id:uid(), creado:new Date().toISOString(), horaEntrega:"", horaRetiro:"", direccion:"", ...r }));
+  reservas.push(...ej);
+  await guardarRes(); renderTodo();
+  toast("5 reservas de ejemplo cargadas (fijate el conflicto del día +2 😉)");
+}
+
+/* ================= DIALOG CERRAR GENÉRICO ================= */
+$$("dialog [data-cerrar]").forEach(b=>b.onclick=()=>b.closest("dialog").close());
+
+/* ================= INIT ================= */
+(async function init(){
+  const [inf, res, cfg] = await Promise.all([store.get(K.inf), store.get(K.res), store.get(K.cfg)]);
+  if(inf) inflables = inf; else { inflables = seedInflables(); await guardarInf(); }
+  if(res) reservas = res;
+  if(cfg) config = cfg; else { config = { nombre:"", pin:null, _nuevo:true }; }
+  pintaStorage();
+  initGate();
+})();
+
+</script>
+</body>
+</html>
