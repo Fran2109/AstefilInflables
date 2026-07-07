@@ -9,6 +9,14 @@ interface CatalogoValue {
   fotos: Record<string, Foto>;
   galeria: string[];
   modelos: ModeloPublico[];
+  /** Categorías en orden, para el filtro del catálogo. */
+  categorias: string[];
+}
+
+/** Deriva las categorías: usa la tabla si vino; si no, las deduce de los modelos. */
+function derivarCategorias(dbCats: string[], modelos: ModeloPublico[]): string[] {
+  if (dbCats.length) return dbCats;
+  return [...new Set(modelos.map((m) => m.cat))];
 }
 
 /**
@@ -22,6 +30,7 @@ const CatalogoContext = createContext<CatalogoValue>({
   fotos: FOTOS,
   galeria: GALERIA_TODAS,
   modelos: [],
+  categorias: [],
 });
 
 export function CatalogoProvider({ children }: { children: ReactNode }) {
@@ -30,13 +39,21 @@ export function CatalogoProvider({ children }: { children: ReactNode }) {
     fotos: FOTOS,
     galeria: GALERIA_TODAS,
     modelos: [],
+    categorias: [],
   });
 
   useEffect(() => {
     let vivo = true;
     cargarCatalogo()
       .then((db) => {
-        if (vivo && db) setData(db);
+        if (vivo && db)
+          setData({
+            productos: db.productos,
+            fotos: db.fotos,
+            galeria: db.galeria,
+            modelos: db.modelos,
+            categorias: derivarCategorias(db.categorias, db.modelos),
+          });
       })
       .catch(() => {
         /* Se mantiene el fallback estático. */

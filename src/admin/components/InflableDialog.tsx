@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import type { Inflable } from "@/admin/types";
-import { CATEGORIAS } from "@/admin/lib/seed";
 import { useAdmin } from "@/admin/store/AdminContext";
 import { Modal } from "@/admin/components/Modal";
 import { Campo, campoInputCls } from "@/admin/components/Campo";
@@ -13,9 +12,9 @@ interface Props {
 }
 
 export function InflableDialog({ open, onClose, inflable }: Props) {
-  const { reservas, guardarInflable, eliminarInflable, mostrarToast } = useAdmin();
+  const { reservas, categorias, guardarInflable, eliminarInflable, mostrarToast } = useAdmin();
   const [nombre, setNombre] = useState("");
-  const [cat, setCat] = useState(CATEGORIAS[0]);
+  const [cat, setCat] = useState(categorias[0]);
   const [precio, setPrecio] = useState("");
   const [activo, setActivo] = useState(true);
   const [descripcion, setDescripcion] = useState("");
@@ -26,7 +25,7 @@ export function InflableDialog({ open, onClose, inflable }: Props) {
   useEffect(() => {
     if (!open) return;
     setNombre(inflable?.nombre || "");
-    setCat(inflable?.cat || CATEGORIAS[0]);
+    setCat(inflable?.cat || categorias[0]);
     setPrecio(inflable?.precio ? String(inflable.precio) : "");
     setActivo(inflable ? inflable.activo : true);
     setDescripcion(inflable?.descripcion || "");
@@ -104,7 +103,7 @@ export function InflableDialog({ open, onClose, inflable }: Props) {
         </Campo>
         <Campo label="Categoría" htmlFor="i-cat">
           <select id="i-cat" className={campoInputCls} value={cat} onChange={(e) => setCat(e.target.value)}>
-            {CATEGORIAS.map((c) => (
+            {categorias.map((c) => (
               <option key={c} value={c}>{c}</option>
             ))}
           </select>

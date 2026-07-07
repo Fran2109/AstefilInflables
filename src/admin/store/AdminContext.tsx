@@ -11,7 +11,7 @@ import {
 import type { Config, Inflable, Reserva } from "@/admin/types";
 import { ESTADOS } from "@/admin/types";
 import { store, K, modoStorage } from "@/admin/lib/store";
-import { seedInflables, reservasEjemplo, COLORES } from "@/admin/lib/seed";
+import { seedInflables, reservasEjemplo, COLORES, CATEGORIAS } from "@/admin/lib/seed";
 import { uid } from "@/admin/lib/formato";
 import { haySupabase, supabase } from "@/lib/supabase";
 import * as db from "@/admin/lib/db";
@@ -33,6 +33,8 @@ interface AdminContextValue {
   inflables: Inflable[];
   reservas: Reserva[];
   config: Config;
+  /** Categorías del catálogo (de la DB si hay Supabase; si no, las locales). */
+  categorias: string[];
   modo: string;
   toast: Toast | null;
   mostrarToast: (msg: string) => void;
@@ -63,6 +65,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
   const [inflables, setInflables] = useState<Inflable[]>([]);
   const [reservas, setReservas] = useState<Reserva[]>([]);
   const [config, setConfig] = useState<Config>({ nombre: "", pin: null });
+  const [categorias, setCategorias] = useState<string[]>(CATEGORIAS);
   const [modo, setModo] = useState<string>(online ? "supabase" : "navegador");
   const [toast, setToast] = useState<Toast | null>(null);
 
@@ -80,6 +83,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
       setInflables(d.inflables);
       setReservas(d.reservas);
       setConfig(d.config);
+      if (d.categorias.length) setCategorias(d.categorias);
     } catch {
       mostrarToast("No pudimos cargar los datos");
     } finally {
@@ -303,7 +307,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
   const value = useMemo<AdminContextValue>(
     () => ({
       cargando, online, sesion, emailUsuario, cerrarSesion,
-      inflables, reservas, config, modo, toast, mostrarToast,
+      inflables, reservas, config, categorias, modo, toast, mostrarToast,
       guardarReserva, eliminarReserva, avanzarEstado,
       guardarInflable, eliminarInflable,
       setNombre, setPin: guardarPin, definirPin: guardarPin,
@@ -311,7 +315,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     }),
     [
       cargando, online, sesion, emailUsuario, cerrarSesion,
-      inflables, reservas, config, modo, toast, mostrarToast,
+      inflables, reservas, config, categorias, modo, toast, mostrarToast,
       guardarReserva, eliminarReserva, avanzarEstado,
       guardarInflable, eliminarInflable,
       setNombre, guardarPin, cargarEjemplos, borrarTodo, importarBackup,

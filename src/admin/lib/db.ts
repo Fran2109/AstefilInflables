@@ -120,11 +120,14 @@ export async function cargarTodo(): Promise<{
   inflables: Inflable[];
   reservas: Reserva[];
   config: Config;
+  categorias: string[];
 }> {
-  const [inf, res, cfg] = await Promise.all([
+  const [inf, res, cfg, cats] = await Promise.all([
     sb().from("inflables").select("*").order("nombre"),
     sb().from("reservas").select("*").order("fecha"),
     sb().from("config").select("*").eq("id", 1).maybeSingle(),
+    // Puede no existir todavía (base sin la tabla `categorias`) → se ignora el error.
+    sb().from("categorias").select("nombre").eq("activo", true).order("orden"),
   ]);
   if (inf.error) throw inf.error;
   if (res.error) throw res.error;
@@ -135,6 +138,7 @@ export async function cargarTodo(): Promise<{
     config: cfg.data
       ? { nombre: (cfg.data as { nombre: string }).nombre ?? "", pin: null }
       : { nombre: "", pin: null },
+    categorias: cats.error ? [] : (cats.data as { nombre: string }[]).map((c) => c.nombre),
   };
 }
 

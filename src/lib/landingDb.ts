@@ -45,12 +45,14 @@ export interface CatalogoData {
   galeria: string[];
   /** Modelos reales del inventario (vista pública), para el detalle de cada card. */
   modelos: ModeloPublico[];
+  /** Nombres de categorías, en orden (tabla `categorias`). Vacío si no existe aún. */
+  categorias: string[];
 }
 
 export async function cargarCatalogo(): Promise<CatalogoData | null> {
   if (!supabase) return null;
 
-  const [prod, fot, mod] = await Promise.all([
+  const [prod, fot, mod, cats] = await Promise.all([
     supabase
       .from("productos")
       .select("*")
@@ -59,6 +61,8 @@ export async function cargarCatalogo(): Promise<CatalogoData | null> {
     supabase.from("fotos").select("*").order("orden"),
     // Vista pública del inventario (puede no existir todavía → se ignora el error).
     supabase.from("catalogo_inflables").select("*").order("nombre"),
+    // Categorías (puede no existir todavía → se ignora el error).
+    supabase.from("categorias").select("nombre").eq("activo", true).order("orden"),
   ]);
   if (prod.error) throw prod.error;
   if (fot.error) throw fot.error;
@@ -93,5 +97,9 @@ export async function cargarCatalogo(): Promise<CatalogoData | null> {
         alto: m.alto ?? undefined,
       }));
 
-  return { productos, fotos, galeria, modelos };
+  const categorias: string[] = cats.error
+    ? []
+    : (cats.data as { nombre: string }[]).map((c) => c.nombre);
+
+  return { productos, fotos, galeria, modelos, categorias };
 }

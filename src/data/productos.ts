@@ -15,6 +15,7 @@ export const PRODUCTOS: Producto[] = [
     descLarga:
       "El infaltable de todo cumple: paredes altas, base para saltar sin parar y colores que se ven desde la otra cuadra. Anda igual de bien en el patio, el parque o el salón.",
     fotos: ["castillo", "arco", "castillo-parque", "castillo-pasto", "castillo-salon", "noche"],
+    cats: ["Castillos"],
   },
   {
     id: "Castillo con rampa",
@@ -35,6 +36,7 @@ export const PRODUCTOS: Producto[] = [
     descLarga:
       "Túneles, barreras y pura adrenalina de punta a punta. Es el más grande de la familia: ideal para patios amplios, clubes y jardines.",
     fotos: ["obstaculo"],
+    cats: ["Gigantes"],
   },
   {
     id: "Inflable acuático",
@@ -45,6 +47,7 @@ export const PRODUCTOS: Producto[] = [
     descLarga:
       "Agua + tobogán = el mejor plan para los días de calor. La fiesta se convierte en parque acuático en tu propio patio.",
     fotos: ["acuatico"],
+    cats: ["Acuáticos"],
   },
   {
     id: "Inflable deportivo",
