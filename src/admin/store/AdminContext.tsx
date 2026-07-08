@@ -156,6 +156,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
         setInflables([]);
         setReservas([]);
         setConfig({ nombre: "", pin: null });
+        setToast(null); // evita que un toast previo reaparezca en el login
         setCargando(false);
       }
     });

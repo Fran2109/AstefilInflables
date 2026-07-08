@@ -1,12 +1,14 @@
 import { useEffect, useState } from "react";
 import type { Perfil, Rol } from "@/admin/types";
 import * as db from "@/admin/lib/db";
+import { cn } from "@/lib/utils";
 import { useAdmin } from "@/admin/store/AdminContext";
+import { useConfirmar } from "@/admin/components/Confirm";
 import { CabeceraVista, Panel, Vacio } from "@/admin/views/comunes";
-import { campoInputCls } from "@/admin/components/Campo";
 
 export function EquipoView() {
   const { emailUsuario, mostrarToast } = useAdmin();
+  const confirmar = useConfirmar();
   const [perfiles, setPerfiles] = useState<Perfil[]>([]);
   const [cargando, setCargando] = useState(true);
 
@@ -18,6 +20,21 @@ export function EquipoView() {
   }, [mostrarToast]);
 
   const cambiar = async (p: Perfil, rol: Rol) => {
+    const aAdmin = rol === "admin";
+    const ok = await confirmar({
+      titulo: "Cambiar rol",
+      mensaje: (
+        <>
+          ¿Cambiar a <strong>{p.email}</strong> a <strong>{aAdmin ? "Admin" : "Empleado"}</strong>?{" "}
+          {aAdmin
+            ? "Va a tener acceso total al panel (catálogo, equipo y ajustes)."
+            : "Solo va a poder gestionar reservas."}
+        </>
+      ),
+      textoConfirmar: "Cambiar rol",
+      peligro: aAdmin,
+    });
+    if (!ok) return;
     try {
       await db.cambiarRol(p.id, rol);
       setPerfiles((prev) => prev.map((x) => (x.id === p.id ? { ...x, rol } : x)));
@@ -55,16 +72,33 @@ export function EquipoView() {
                       {p.rol === "admin" ? "Acceso total" : "Solo reservas"}
                     </div>
                   </div>
-                  <select
-                    className={campoInputCls + " w-auto"}
-                    value={p.rol}
-                    disabled={esVos}
+                  <div
+                    role="group"
+                    aria-label={"Rol de " + p.email}
                     title={esVos ? "No podés cambiar tu propio rol" : undefined}
-                    onChange={(e) => cambiar(p, e.target.value as Rol)}
+                    className={cn(
+                      "inline-flex overflow-hidden rounded-xl border-3 border-tinta shadow-hard-sm",
+                      esVos && "opacity-60"
+                    )}
                   >
-                    <option value="admin">Admin</option>
-                    <option value="empleado">Empleado</option>
-                  </select>
+                    {(["admin", "empleado"] as Rol[]).map((r, i) => (
+                      <button
+                        key={r}
+                        type="button"
+                        disabled={esVos || p.rol === r}
+                        onClick={() => cambiar(p, r)}
+                        className={cn(
+                          "px-4 py-2 font-alt text-[.85rem] font-extrabold transition-colors",
+                          i === 1 && "border-l-3 border-tinta",
+                          p.rol === r ? "bg-amarillo" : "bg-white",
+                          !esVos && p.rol !== r && "cursor-pointer hover:bg-papel",
+                          esVos && "cursor-not-allowed"
+                        )}
+                      >
+                        {r === "admin" ? "Admin" : "Empleado"}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               );
             })}

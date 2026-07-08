@@ -1,4 +1,5 @@
 import { useAdmin } from "@/admin/store/AdminContext";
+import { useConfirmar } from "@/admin/components/Confirm";
 import { cn } from "@/lib/utils";
 
 export type Vista =
@@ -34,8 +35,19 @@ interface RailProps {
 /** Barra de navegación: lateral en desktop, inferior en mobile. */
 export function Rail({ activa, onCambiar }: RailProps) {
   const { modo, esAdmin, online, cerrarSesion } = useAdmin();
+  const confirmar = useConfirmar();
   const [txt, punto] = MODO_TXT[modo] ?? MODO_TXT.navegador;
   const tabs = TABS.filter((t) => esAdmin || !t.adminOnly);
+
+  const salir = async () => {
+    const ok = await confirmar({
+      titulo: "Cerrar sesión",
+      mensaje: "¿Querés cerrar tu sesión? Vas a tener que volver a ingresar con tu email y contraseña.",
+      textoConfirmar: "Cerrar sesión",
+      peligro: true,
+    });
+    if (ok) cerrarSesion();
+  };
 
   return (
     <nav className="sticky top-0 flex h-screen flex-col gap-2 border-r-3 border-tinta bg-papel px-3.5 py-[18px] max-md:fixed max-md:inset-x-0 max-md:bottom-0 max-md:top-auto max-md:z-50 max-md:h-auto max-md:flex-row max-md:justify-around max-md:border-r-0 max-md:border-t-3 max-md:px-2.5 max-md:py-2">
@@ -66,10 +78,10 @@ export function Rail({ activa, onCambiar }: RailProps) {
       <div className="flex-1 max-md:hidden" />
       {online && (
         <button
-          onClick={cerrarSesion}
+          onClick={salir}
           className="rounded-[12px] border-3 border-tinta bg-white px-3 py-2 text-left font-alt text-[.85rem] font-extrabold hover:bg-amarillo max-md:hidden"
         >
-          🚪 Salir
+          🚪 Cerrar sesión
         </button>
       )}
       <span className="inline-flex items-center gap-1.5 rounded-full border-2 border-tinta bg-white px-2.5 py-1.5 font-alt text-[.75rem] font-bold max-md:hidden">

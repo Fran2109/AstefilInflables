@@ -76,7 +76,25 @@ export function CategoriasView({
                     type="checkbox"
                     className="h-[18px] w-[18px] accent-verde"
                     checked={c.activo}
-                    onChange={() => toggleCategoria(c.id)}
+                    onChange={async () => {
+                      const ok = await confirmar({
+                        titulo: c.activo ? "Desactivar categoría" : "Activar categoría",
+                        mensaje: c.activo ? (
+                          <>
+                            ¿Desactivar <strong>{c.nombre}</strong>? Deja de aparecer en los filtros
+                            del catálogo de la web.
+                          </>
+                        ) : (
+                          <>
+                            ¿Activar <strong>{c.nombre}</strong>? Vuelve a aparecer en los filtros del
+                            catálogo.
+                          </>
+                        ),
+                        textoConfirmar: c.activo ? "Desactivar" : "Activar",
+                        peligro: c.activo,
+                      });
+                      if (ok) toggleCategoria(c.id);
+                    }}
                   />
                   Activa
                 </label>

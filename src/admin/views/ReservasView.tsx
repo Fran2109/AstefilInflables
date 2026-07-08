@@ -6,6 +6,7 @@ import { plata } from "@/admin/lib/formato";
 import { conflictosDe, nombresInf } from "@/admin/lib/conflictos";
 import { linkWaCliente } from "@/admin/lib/whatsapp";
 import { useAdmin } from "@/admin/store/AdminContext";
+import { useConfirmar } from "@/admin/components/Confirm";
 import { CabeceraVista, Vacio } from "@/admin/views/comunes";
 import { EstadoBadge } from "@/admin/components/EstadoBadge";
 import { campoInputCls } from "@/admin/components/Campo";
@@ -14,6 +15,7 @@ import { cn } from "@/lib/utils";
 
 export function ReservasView({ onAbrirReserva }: { onAbrirReserva: (r: Reserva | null) => void }) {
   const { reservas, inflables, avanzarEstado, mostrarToast } = useAdmin();
+  const confirmar = useConfirmar();
   const [busca, setBusca] = useState("");
   const [fEstado, setFEstado] = useState("");
   const [fMes, setFMes] = useState("");
@@ -37,6 +39,17 @@ export function ReservasView({ onAbrirReserva }: { onAbrirReserva: (r: Reserva |
     const idx = ESTADOS.indexOf(r.estado);
     const sig = idx >= 0 && idx < 4 ? ESTADOS[idx + 1] : null;
     if (!sig) return;
+    const ok = await confirmar({
+      titulo: "Avanzar estado",
+      mensaje: (
+        <>
+          ¿Pasar la reserva de <strong>{r.cliente || "este cliente"}</strong> de{" "}
+          <strong>{r.estado}</strong> a <strong>{sig}</strong>?
+        </>
+      ),
+      textoConfirmar: "Avanzar a " + sig,
+    });
+    if (!ok) return;
     await avanzarEstado(r);
     mostrarToast("→ " + sig);
   };
