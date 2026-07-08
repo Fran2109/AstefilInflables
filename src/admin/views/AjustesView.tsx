@@ -3,6 +3,7 @@ import type { Inflable, Reserva } from "@/admin/types";
 import { hoyStr } from "@/admin/lib/fechas";
 import { nombresInf } from "@/admin/lib/conflictos";
 import { useAdmin } from "@/admin/store/AdminContext";
+import { useConfirmar } from "@/admin/components/Confirm";
 import { Panel } from "@/admin/views/comunes";
 import { Button } from "@/components/ui/button";
 
@@ -18,6 +19,7 @@ function descargar(nombre: string, contenido: string, tipo: string) {
 export function AjustesView() {
   const { config, reservas, inflables, online, emailUsuario, cerrarSesion, setNombre, setPin, cargarEjemplos, borrarTodo, importarBackup, mostrarToast } =
     useAdmin();
+  const confirmar = useConfirmar();
   const [nombre, setNombreLocal] = useState(config.nombre || "");
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -69,8 +71,18 @@ export function AjustesView() {
   };
 
   const confirmarBorrar = async () => {
-    if (!window.confirm("Vas a borrar TODAS las reservas, el inventario y los ajustes de este dispositivo. ¿Seguro?")) return;
-    if (!window.confirm("Última confirmación: no hay vuelta atrás. ¿Borrar todo?")) return;
+    const ok = await confirmar({
+      titulo: "Borrar todo",
+      mensaje: (
+        <>
+          Vas a borrar <strong>TODAS las reservas</strong>, el inventario y los ajustes. Esta acción
+          no se puede deshacer. ¿Seguro?
+        </>
+      ),
+      textoConfirmar: "Sí, borrar todo",
+      peligro: true,
+    });
+    if (!ok) return;
     await borrarTodo();
     setNombreLocal("");
   };

@@ -5,7 +5,7 @@ import { CabeceraVista } from "@/admin/views/comunes";
 import { Button } from "@/components/ui/button";
 
 export function InventarioView({ onAbrirInflable }: { onAbrirInflable: (i: Inflable | null) => void }) {
-  const { inflables, reservas } = useAdmin();
+  const { inflables, reservas, esAdmin } = useAdmin();
 
   return (
     <div>
@@ -13,9 +13,11 @@ export function InventarioView({ onAbrirInflable }: { onAbrirInflable: (i: Infla
         titulo="Inventario"
         sub="Tus inflables y juegos, con su precio base por evento."
         accion={
-          <Button variant="rojo" size="chico" onClick={() => onAbrirInflable(null)}>
-            + Agregar
-          </Button>
+          esAdmin ? (
+            <Button variant="rojo" size="chico" onClick={() => onAbrirInflable(null)}>
+              + Agregar
+            </Button>
+          ) : undefined
         }
       />
 
@@ -52,9 +54,11 @@ export function InventarioView({ onAbrirInflable }: { onAbrirInflable: (i: Infla
               <div className="mb-2.5 font-alt text-[.78rem] font-bold text-[#5a4a41]">
                 {usos} reserva{usos === 1 ? "" : "s"}
               </div>
-              <Button variant="blanco" size="mini" onClick={() => onAbrirInflable(inf)}>
-                Editar
-              </Button>
+              {esAdmin && (
+                <Button variant="blanco" size="mini" onClick={() => onAbrirInflable(inf)}>
+                  Editar
+                </Button>
+              )}
             </div>
           );
         })}

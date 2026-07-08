@@ -1,14 +1,23 @@
 import { useAdmin } from "@/admin/store/AdminContext";
 import { cn } from "@/lib/utils";
 
-export type Vista = "inicio" | "calendario" | "reservas" | "inventario" | "ajustes";
+export type Vista =
+  | "inicio"
+  | "calendario"
+  | "reservas"
+  | "inventario"
+  | "categorias"
+  | "equipo"
+  | "ajustes";
 
-const TABS: { id: Vista; ico: string; label: string }[] = [
+const TABS: { id: Vista; ico: string; label: string; adminOnly?: boolean }[] = [
   { id: "inicio", ico: "🏠", label: "Inicio" },
   { id: "calendario", ico: "📅", label: "Calendario" },
   { id: "reservas", ico: "🎈", label: "Reservas" },
   { id: "inventario", ico: "🏰", label: "Inventario" },
-  { id: "ajustes", ico: "⚙️", label: "Ajustes" },
+  { id: "categorias", ico: "🏷️", label: "Categorías", adminOnly: true },
+  { id: "equipo", ico: "👥", label: "Equipo", adminOnly: true },
+  { id: "ajustes", ico: "⚙️", label: "Ajustes", adminOnly: true },
 ];
 
 const MODO_TXT: Record<string, [string, string]> = {
@@ -24,8 +33,9 @@ interface RailProps {
 
 /** Barra de navegación: lateral en desktop, inferior en mobile. */
 export function Rail({ activa, onCambiar }: RailProps) {
-  const { modo } = useAdmin();
+  const { modo, esAdmin, online, cerrarSesion } = useAdmin();
   const [txt, punto] = MODO_TXT[modo] ?? MODO_TXT.navegador;
+  const tabs = TABS.filter((t) => esAdmin || !t.adminOnly);
 
   return (
     <nav className="sticky top-0 flex h-screen flex-col gap-2 border-r-3 border-tinta bg-papel px-3.5 py-[18px] max-md:fixed max-md:inset-x-0 max-md:bottom-0 max-md:top-auto max-md:z-50 max-md:h-auto max-md:flex-row max-md:justify-around max-md:border-r-0 max-md:border-t-3 max-md:px-2.5 max-md:py-2">
@@ -39,7 +49,7 @@ export function Rail({ activa, onCambiar }: RailProps) {
         </div>
       </div>
 
-      {TABS.map((t) => (
+      {tabs.map((t) => (
         <button
           key={t.id}
           onClick={() => onCambiar(t.id)}
@@ -54,6 +64,14 @@ export function Rail({ activa, onCambiar }: RailProps) {
       ))}
 
       <div className="flex-1 max-md:hidden" />
+      {online && (
+        <button
+          onClick={cerrarSesion}
+          className="rounded-[12px] border-3 border-tinta bg-white px-3 py-2 text-left font-alt text-[.85rem] font-extrabold hover:bg-amarillo max-md:hidden"
+        >
+          🚪 Salir
+        </button>
+      )}
       <span className="inline-flex items-center gap-1.5 rounded-full border-2 border-tinta bg-white px-2.5 py-1.5 font-alt text-[.75rem] font-bold max-md:hidden">
         <span className={cn("h-[9px] w-[9px] rounded-full border-2 border-tinta", punto)} />
         {txt}

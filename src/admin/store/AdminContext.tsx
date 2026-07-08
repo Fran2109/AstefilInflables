@@ -8,10 +8,28 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import type { Config, Inflable, Reserva } from "@/admin/types";
+import type { Categoria, Config, Inflable, Reserva, Rol } from "@/admin/types";
 import { ESTADOS } from "@/admin/types";
 import { store, K, modoStorage } from "@/admin/lib/store";
 import { seedInflables, reservasEjemplo, COLORES, CATEGORIAS } from "@/admin/lib/seed";
+
+/** Slug para el id de una categoría: "Juegos de salón" → "juegos-de-salon". */
+function slugCat(s: string): string {
+  return s
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(new RegExp("[\\u0300-\\u036f]", "g"), "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+/** Categorías iniciales (fallback local) a partir de la lista de nombres. */
+const CATEGORIAS_INICIALES: Categoria[] = CATEGORIAS.map((nombre, i) => ({
+  id: slugCat(nombre),
+  nombre,
+  orden: i + 1,
+  activo: true,
+}));
 import { uid } from "@/admin/lib/formato";
 import { haySupabase, supabase } from "@/lib/supabase";
 import * as db from "@/admin/lib/db";
@@ -28,13 +46,16 @@ interface AdminContextValue {
   /** Estado de sesión (solo relevante online): null = averiguando. */
   sesion: boolean | null;
   emailUsuario: string;
+  /** Rol del usuario logueado (online). En modo local es "admin". */
+  rol: Rol;
+  esAdmin: boolean;
   cerrarSesion: () => void;
 
   inflables: Inflable[];
   reservas: Reserva[];
   config: Config;
-  /** Categorías del catálogo (de la DB si hay Supabase; si no, las locales). */
-  categorias: string[];
+  /** Categorías del catálogo (de la DB si hay Supabase; si no, las locales), por `orden`. */
+  categorias: Categoria[];
   modo: string;
   toast: Toast | null;
   mostrarToast: (msg: string) => void;
@@ -45,6 +66,12 @@ interface AdminContextValue {
 
   guardarInflable: (data: Omit<Inflable, "id" | "color">, id?: string) => void;
   eliminarInflable: (id: string) => void;
+
+  /** ABM de categorías. */
+  guardarCategoria: (nombre: string, id?: string) => void;
+  toggleCategoria: (id: string) => void;
+  eliminarCategoria: (id: string) => void;
+  moverCategoria: (id: string, dir: -1 | 1) => void;
 
   setNombre: (nombre: string) => void;
   setPin: (pin: string) => void;
@@ -62,18 +89,23 @@ export function AdminProvider({ children }: { children: ReactNode }) {
   const [cargando, setCargando] = useState(true);
   const [sesion, setSesion] = useState<boolean | null>(online ? null : true);
   const [emailUsuario, setEmailUsuario] = useState("");
+  // Online arranca en "empleado" (mínimo privilegio) hasta confirmar el rol.
+  const [rol, setRol] = useState<Rol>(online ? "empleado" : "admin");
+  const esAdmin = rol === "admin";
   const [inflables, setInflables] = useState<Inflable[]>([]);
   const [reservas, setReservas] = useState<Reserva[]>([]);
   const [config, setConfig] = useState<Config>({ nombre: "", pin: null });
-  const [categorias, setCategorias] = useState<string[]>(CATEGORIAS);
+  const [categorias, setCategorias] = useState<Categoria[]>(CATEGORIAS_INICIALES);
   const [modo, setModo] = useState<string>(online ? "supabase" : "navegador");
   const [toast, setToast] = useState<Toast | null>(null);
 
   const mostrarToast = useCallback((msg: string) => setToast({ id: Date.now(), msg }), []);
 
-  // Ref para leer el inventario más reciente sin recrear callbacks.
+  // Refs para leer inventario/categorías más recientes sin recrear callbacks.
   const inflablesRef = useRef(inflables);
   inflablesRef.current = inflables;
+  const categoriasRef = useRef(categorias);
+  categoriasRef.current = categorias;
 
   // Trae los datos desde Supabase (requiere sesión activa).
   const cargarDesdeSupabase = useCallback(async () => {
@@ -117,8 +149,10 @@ export function AdminProvider({ children }: { children: ReactNode }) {
       setSesion(activa);
       setEmailUsuario(ses?.user?.email ?? "");
       if (activa) {
+        db.cargarRol().then(setRol);
         cargarDesdeSupabase();
       } else {
+        setRol("empleado");
         setInflables([]);
         setReservas([]);
         setConfig({ nombre: "", pin: null });
@@ -231,6 +265,114 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     [online, mostrarToast]
   );
 
+  // ---- Categorías (ABM) ----
+  const guardarCategoria = useCallback(
+    async (nombre: string, id?: string) => {
+      const n = nombre.trim();
+      if (!n) return mostrarToast("Poné un nombre");
+      const lista = categoriasRef.current;
+      if (lista.some((c) => c.nombre.toLowerCase() === n.toLowerCase() && c.id !== id))
+        return mostrarToast("Ya existe una categoría con ese nombre");
+
+      if (id) {
+        const anterior = lista.find((c) => c.id === id);
+        if (online) {
+          try {
+            await db.actualizarCategoria(id, { nombre: n });
+          } catch {
+            return mostrarToast("Error al guardar la categoría");
+          }
+        }
+        setCategorias((prev) => prev.map((c) => (c.id === id ? { ...c, nombre: n } : c)));
+        // La FK ON UPDATE CASCADE reetiqueta los inflables en la DB; reflejarlo local.
+        if (anterior && anterior.nombre !== n)
+          setInflables((prev) => prev.map((x) => (x.cat === anterior.nombre ? { ...x, cat: n } : x)));
+        mostrarToast("Categoría guardada ✓");
+      } else {
+        const orden = lista.reduce((m, c) => Math.max(m, c.orden), 0) + 1;
+        const base = slugCat(n) || "categoria";
+        let nuevoId = base;
+        let k = 2;
+        while (lista.some((c) => c.id === nuevoId)) nuevoId = base + "-" + k++;
+        const nueva: Categoria = { id: nuevoId, nombre: n, orden, activo: true };
+        if (online) {
+          try {
+            await db.crearCategoria(nueva);
+          } catch {
+            return mostrarToast("Error al crear la categoría");
+          }
+        }
+        setCategorias((prev) => [...prev, nueva]);
+        mostrarToast("Categoría creada ✓");
+      }
+    },
+    [online, mostrarToast]
+  );
+
+  const toggleCategoria = useCallback(
+    async (id: string) => {
+      const c = categoriasRef.current.find((x) => x.id === id);
+      if (!c) return;
+      const activo = !c.activo;
+      if (online) {
+        try {
+          await db.actualizarCategoria(id, { activo });
+        } catch {
+          return mostrarToast("Error al actualizar");
+        }
+      }
+      setCategorias((prev) => prev.map((x) => (x.id === id ? { ...x, activo } : x)));
+    },
+    [online, mostrarToast]
+  );
+
+  const eliminarCategoria = useCallback(
+    async (id: string) => {
+      const c = categoriasRef.current.find((x) => x.id === id);
+      if (!c) return;
+      const usos = inflablesRef.current.filter((inf) => inf.cat === c.nombre).length;
+      if (usos > 0)
+        return mostrarToast(
+          `No se puede: ${usos} inflable(s) usan "${c.nombre}". Reasignalos primero.`
+        );
+      if (online) {
+        try {
+          await db.borrarCategoria(id);
+        } catch {
+          return mostrarToast("Error al eliminar");
+        }
+      }
+      setCategorias((prev) => prev.filter((x) => x.id !== id));
+      mostrarToast("Categoría eliminada");
+    },
+    [online, mostrarToast]
+  );
+
+  const moverCategoria = useCallback(
+    async (id: string, dir: -1 | 1) => {
+      const orden = [...categoriasRef.current].sort((a, b) => a.orden - b.orden);
+      const idx = orden.findIndex((c) => c.id === id);
+      const j = idx + dir;
+      if (idx < 0 || j < 0 || j >= orden.length) return;
+      const a = orden[idx];
+      const b = orden[j];
+      if (online) {
+        try {
+          await db.actualizarCategoria(a.id, { orden: b.orden });
+          await db.actualizarCategoria(b.id, { orden: a.orden });
+        } catch {
+          return mostrarToast("Error al reordenar");
+        }
+      }
+      setCategorias((prev) =>
+        prev.map((c) =>
+          c.id === a.id ? { ...c, orden: b.orden } : c.id === b.id ? { ...c, orden: a.orden } : c
+        )
+      );
+    },
+    [online, mostrarToast]
+  );
+
   // ---- Config ----
   const setNombre = useCallback(
     async (nombre: string) => {
@@ -306,18 +448,20 @@ export function AdminProvider({ children }: { children: ReactNode }) {
 
   const value = useMemo<AdminContextValue>(
     () => ({
-      cargando, online, sesion, emailUsuario, cerrarSesion,
+      cargando, online, sesion, emailUsuario, rol, esAdmin, cerrarSesion,
       inflables, reservas, config, categorias, modo, toast, mostrarToast,
       guardarReserva, eliminarReserva, avanzarEstado,
       guardarInflable, eliminarInflable,
+      guardarCategoria, toggleCategoria, eliminarCategoria, moverCategoria,
       setNombre, setPin: guardarPin, definirPin: guardarPin,
       cargarEjemplos, borrarTodo, importarBackup,
     }),
     [
-      cargando, online, sesion, emailUsuario, cerrarSesion,
+      cargando, online, sesion, emailUsuario, rol, esAdmin, cerrarSesion,
       inflables, reservas, config, categorias, modo, toast, mostrarToast,
       guardarReserva, eliminarReserva, avanzarEstado,
       guardarInflable, eliminarInflable,
+      guardarCategoria, toggleCategoria, eliminarCategoria, moverCategoria,
       setNombre, guardarPin, cargarEjemplos, borrarTodo, importarBackup,
     ]
   );

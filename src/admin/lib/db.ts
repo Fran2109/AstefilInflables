@@ -1,5 +1,5 @@
 import { supabase } from "@/lib/supabase";
-import type { Config, Inflable, Reserva } from "@/admin/types";
+import type { Categoria, Config, Inflable, Perfil, Reserva, Rol } from "@/admin/types";
 
 /**
  * Capa de acceso a datos del panel contra Supabase (Postgres relacional).
@@ -120,14 +120,14 @@ export async function cargarTodo(): Promise<{
   inflables: Inflable[];
   reservas: Reserva[];
   config: Config;
-  categorias: string[];
+  categorias: Categoria[];
 }> {
   const [inf, res, cfg, cats] = await Promise.all([
     sb().from("inflables").select("*").order("nombre"),
     sb().from("reservas").select("*").order("fecha"),
     sb().from("config").select("*").eq("id", 1).maybeSingle(),
     // Puede no existir todavía (base sin la tabla `categorias`) → se ignora el error.
-    sb().from("categorias").select("nombre").eq("activo", true).order("orden"),
+    sb().from("categorias").select("*").order("orden"),
   ]);
   if (inf.error) throw inf.error;
   if (res.error) throw res.error;
@@ -138,8 +138,63 @@ export async function cargarTodo(): Promise<{
     config: cfg.data
       ? { nombre: (cfg.data as { nombre: string }).nombre ?? "", pin: null }
       : { nombre: "", pin: null },
-    categorias: cats.error ? [] : (cats.data as { nombre: string }[]).map((c) => c.nombre),
+    categorias: cats.error ? [] : (cats.data as Categoria[]),
   };
+}
+
+// ---- Roles / perfiles ----
+/**
+ * Rol del usuario logueado. Reglas:
+ *  - Si la tabla `perfiles` todavía no existe (base sin migrar) ⇒ "admin"
+ *    (estado pre-roles: no bloquear al dueño; la RLS sigue siendo la protección).
+ *  - Si existe pero no hay fila para el usuario ⇒ "empleado" (mínimo privilegio).
+ */
+export async function cargarRol(): Promise<Rol> {
+  const { data: userData } = await sb().auth.getUser();
+  const uid = userData.user?.id;
+  if (!uid) return "empleado";
+  const { data, error } = await sb()
+    .from("perfiles")
+    .select("rol")
+    .eq("id", uid)
+    .maybeSingle();
+  if (error) {
+    // Tabla inexistente (aún no se corrió roles.sql) → tratar como admin.
+    if (error.code === "PGRST205" || error.code === "42P01") return "admin";
+    return "empleado";
+  }
+  return data ? (data as { rol: Rol }).rol : "empleado";
+}
+
+/** Lista de perfiles (solo la ve un admin, por RLS). */
+export async function cargarPerfiles(): Promise<Perfil[]> {
+  const { data, error } = await sb().from("perfiles").select("*").order("email");
+  if (error) throw error;
+  return data as Perfil[];
+}
+
+export async function cambiarRol(id: string, rol: Rol): Promise<void> {
+  const { error } = await sb().from("perfiles").update({ rol }).eq("id", id);
+  if (error) throw error;
+}
+
+// ---- Categorías ----
+export async function crearCategoria(c: Categoria): Promise<void> {
+  const { error } = await sb().from("categorias").insert(c);
+  if (error) throw error;
+}
+
+export async function actualizarCategoria(
+  id: string,
+  cambios: Partial<Pick<Categoria, "nombre" | "orden" | "activo">>
+): Promise<void> {
+  const { error } = await sb().from("categorias").update(cambios).eq("id", id);
+  if (error) throw error;
+}
+
+export async function borrarCategoria(id: string): Promise<void> {
+  const { error } = await sb().from("categorias").delete().eq("id", id);
+  if (error) throw error;
 }
 
 // ---- Reservas ----

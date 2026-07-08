@@ -1,31 +1,40 @@
 import { useState } from "react";
-import type { Inflable, Reserva } from "@/admin/types";
+import type { Categoria, Inflable, Reserva } from "@/admin/types";
 import { AdminProvider, useAdmin } from "@/admin/store/AdminContext";
 import { Rail, type Vista } from "@/admin/components/Rail";
 import { Gate } from "@/admin/components/Gate";
 import { Login } from "@/admin/components/Login";
+import { ConfirmProvider } from "@/admin/components/Confirm";
 import { Toast } from "@/admin/components/Toast";
 import { ReservaDialog } from "@/admin/components/ReservaDialog";
 import { InflableDialog } from "@/admin/components/InflableDialog";
+import { CategoriaDialog } from "@/admin/components/CategoriaDialog";
 import { DiaDialog } from "@/admin/components/DiaDialog";
 import { InicioView } from "@/admin/views/InicioView";
 import { CalendarioView } from "@/admin/views/CalendarioView";
 import { ReservasView } from "@/admin/views/ReservasView";
 import { InventarioView } from "@/admin/views/InventarioView";
+import { CategoriasView } from "@/admin/views/CategoriasView";
+import { EquipoView } from "@/admin/views/EquipoView";
 import { AjustesView } from "@/admin/views/AjustesView";
 
 export function AdminPage() {
   return (
     <AdminProvider>
-      <AdminInner />
+      <ConfirmProvider>
+        <AdminInner />
+      </ConfirmProvider>
     </AdminProvider>
   );
 }
 
 function AdminInner() {
-  const { cargando, config, online, sesion } = useAdmin();
+  const { cargando, config, online, sesion, esAdmin } = useAdmin();
   const [gateOk, setGateOk] = useState(false);
   const [vista, setVista] = useState<Vista>("inicio");
+  // Vistas solo para admin: si un empleado cae en una, se muestra Inicio.
+  const adminOnly = vista === "categorias" || vista === "equipo" || vista === "ajustes";
+  const vistaActual: Vista = adminOnly && !esAdmin ? "inicio" : vista;
 
   // Diálogos
   const [dlgReserva, setDlgReserva] = useState<{ open: boolean; reserva: Reserva | null; fecha?: string }>({
@@ -36,10 +45,15 @@ function AdminInner() {
     open: false,
     inflable: null,
   });
+  const [dlgCategoria, setDlgCategoria] = useState<{ open: boolean; categoria: Categoria | null }>({
+    open: false,
+    categoria: null,
+  });
   const [dlgDia, setDlgDia] = useState<{ open: boolean; iso: string | null }>({ open: false, iso: null });
 
   const abrirReserva = (r: Reserva | null) => setDlgReserva({ open: true, reserva: r });
   const abrirInflable = (i: Inflable | null) => setDlgInflable({ open: true, inflable: i });
+  const abrirCategoria = (c: Categoria | null) => setDlgCategoria({ open: true, categoria: c });
   const abrirDia = (iso: string) => setDlgDia({ open: true, iso });
 
   // Modo Supabase: login real. Sin sesión → pantalla de login.
@@ -78,13 +92,15 @@ function AdminInner() {
       }}
     >
       <div className="grid md:grid-cols-[230px_1fr]">
-        <Rail activa={vista} onCambiar={setVista} />
+        <Rail activa={vistaActual} onCambiar={setVista} />
         <main className="mx-auto w-full max-w-[1100px] px-4 pb-[130px] pt-[18px] md:px-[30px] md:pb-[110px] md:pt-[26px]">
-          {vista === "inicio" && <InicioView onAbrirReserva={abrirReserva} />}
-          {vista === "calendario" && <CalendarioView onAbrirDia={abrirDia} />}
-          {vista === "reservas" && <ReservasView onAbrirReserva={abrirReserva} />}
-          {vista === "inventario" && <InventarioView onAbrirInflable={abrirInflable} />}
-          {vista === "ajustes" && <AjustesView />}
+          {vistaActual === "inicio" && <InicioView onAbrirReserva={abrirReserva} />}
+          {vistaActual === "calendario" && <CalendarioView onAbrirDia={abrirDia} />}
+          {vistaActual === "reservas" && <ReservasView onAbrirReserva={abrirReserva} />}
+          {vistaActual === "inventario" && <InventarioView onAbrirInflable={abrirInflable} />}
+          {vistaActual === "categorias" && <CategoriasView onAbrirCategoria={abrirCategoria} />}
+          {vistaActual === "equipo" && <EquipoView />}
+          {vistaActual === "ajustes" && <AjustesView />}
         </main>
       </div>
 
@@ -98,6 +114,11 @@ function AdminInner() {
         open={dlgInflable.open}
         inflable={dlgInflable.inflable}
         onClose={() => setDlgInflable((d) => ({ ...d, open: false }))}
+      />
+      <CategoriaDialog
+        open={dlgCategoria.open}
+        categoria={dlgCategoria.categoria}
+        onClose={() => setDlgCategoria((d) => ({ ...d, open: false }))}
       />
       <DiaDialog
         open={dlgDia.open}

@@ -32,6 +32,9 @@ drop table if exists public.productos   cascade;
 drop table if exists public.fotos       cascade;
 drop table if exists public.categorias  cascade;
 drop table if exists public.config      cascade;
+drop table if exists public.perfiles    cascade;
+-- (auth.users NO se toca; el trigger y la función se recrean abajo)
+drop function if exists public.es_admin() cascade;
 
 -- ----------------------------------------------------------------------------
 -- 1. TABLAS
@@ -119,8 +122,43 @@ create table public.config (
   pin    text
 );
 
+-- Perfiles: 1 fila por usuario de Supabase, con su rol (admin/empleado).
+create table public.perfiles (
+  id     uuid primary key references auth.users(id) on delete cascade,
+  email  text,
+  rol    text not null default 'empleado' check (rol in ('admin', 'empleado')),
+  creado timestamptz not null default now()
+);
+
+-- Función de rol (SECURITY DEFINER: no recursa contra la RLS de perfiles).
+create or replace function public.es_admin()
+returns boolean
+language sql security definer stable
+set search_path = public
+as $$
+  select exists (select 1 from public.perfiles where id = auth.uid() and rol = 'admin');
+$$;
+grant execute on function public.es_admin() to anon, authenticated;
+
+-- Trigger: cada usuario nuevo arranca como 'empleado'.
+create or replace function public.crear_perfil()
+returns trigger language plpgsql security definer
+set search_path = public
+as $$
+begin
+  insert into public.perfiles (id, email, rol)
+  values (new.id, new.email, 'empleado')
+  on conflict (id) do nothing;
+  return new;
+end;
+$$;
+drop trigger if exists on_auth_user_created on auth.users;
+create trigger on_auth_user_created
+  after insert on auth.users
+  for each row execute function public.crear_perfil();
+
 -- ----------------------------------------------------------------------------
--- 2. ROW LEVEL SECURITY
+-- 2. ROW LEVEL SECURITY (por rol)
 -- ----------------------------------------------------------------------------
 alter table public.categorias  enable row level security;
 alter table public.fotos       enable row level security;
@@ -129,27 +167,39 @@ alter table public.testimonios enable row level security;
 alter table public.inflables   enable row level security;
 alter table public.reservas    enable row level security;
 alter table public.config      enable row level security;
+alter table public.perfiles    enable row level security;
 
--- Público: lectura para todos, escritura solo con sesión.
+-- Catálogo público: lectura para todos, escritura SOLO admin.
 do $$
 declare t text;
 begin
   foreach t in array array['categorias','fotos','productos','testimonios']
   loop
     execute format('create policy "lectura publica" on public.%I for select using (true)', t);
-    execute format('create policy "escritura autenticada" on public.%I for all to authenticated using (true) with check (true)', t);
+    execute format('create policy "escritura admin" on public.%I for all to authenticated using (public.es_admin()) with check (public.es_admin())', t);
   end loop;
 end $$;
 
--- Privado: todo requiere sesión.
+-- Inventario y config: lectura de cualquier logueado, escritura SOLO admin.
 do $$
 declare t text;
 begin
-  foreach t in array array['inflables','reservas','config']
+  foreach t in array array['inflables','config']
   loop
-    execute format('create policy "solo autenticados" on public.%I for all to authenticated using (true) with check (true)', t);
+    execute format('create policy "lectura autenticada" on public.%I for select to authenticated using (true)', t);
+    execute format('create policy "escritura admin" on public.%I for all to authenticated using (public.es_admin()) with check (public.es_admin())', t);
   end loop;
 end $$;
+
+-- Reservas: cualquier usuario logueado (admin o empleado) las gestiona.
+create policy "solo autenticados" on public.reservas
+  for all to authenticated using (true) with check (true);
+
+-- Perfiles: cada uno ve el suyo; el admin ve y edita todos.
+create policy "perfil propio o admin lee" on public.perfiles
+  for select to authenticated using (id = auth.uid() or public.es_admin());
+create policy "admin gestiona perfiles" on public.perfiles
+  for update to authenticated using (public.es_admin()) with check (public.es_admin());
 
 -- ----------------------------------------------------------------------------
 -- 3. SEED — datos de fábrica
@@ -257,6 +307,12 @@ insert into public.inflables (nombre, cat, precio, activo, color, ancho, largo, 
 
 -- Config inicial (fila única).
 insert into public.config (id, nombre, pin) values (1, 'Astefil Inflables', null);
+
+-- Perfiles: los usuarios que YA existen en Auth quedan como admin (los fundadores);
+-- los que se creen después arrancan como 'empleado' vía el trigger.
+insert into public.perfiles (id, email, rol)
+select id, email, 'admin' from auth.users
+on conflict (id) do nothing;
 
 -- ----------------------------------------------------------------------------
 -- 4. VISTA PÚBLICA del inventario (solo columnas seguras, sin precio)

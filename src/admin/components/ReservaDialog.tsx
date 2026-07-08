@@ -6,6 +6,7 @@ import { conflictosDe } from "@/admin/lib/conflictos";
 import { uid } from "@/admin/lib/formato";
 import { hoyStr } from "@/admin/lib/fechas";
 import { useAdmin } from "@/admin/store/AdminContext";
+import { useConfirmar } from "@/admin/components/Confirm";
 import { Modal } from "@/admin/components/Modal";
 import { Campo, campoInputCls } from "@/admin/components/Campo";
 import { Button } from "@/components/ui/button";
@@ -53,6 +54,7 @@ function estadoInicial(r: Reserva | null, fechaSugerida?: string): FormState {
 
 export function ReservaDialog({ open, onClose, reserva, fechaSugerida }: Props) {
   const { inflables, reservas, guardarReserva, eliminarReserva, mostrarToast } = useAdmin();
+  const confirmar = useConfirmar();
   const [f, setF] = useState<FormState>(() => estadoInicial(reserva, fechaSugerida));
 
   useEffect(() => {
@@ -90,15 +92,20 @@ export function ReservaDialog({ open, onClose, reserva, fechaSugerida }: Props) 
     if (!f.fecha) return mostrarToast("Falta la fecha");
     if (!f.cliente.trim()) return mostrarToast("Poné el nombre del cliente");
     if (!f.inflableIds.length) return mostrarToast("Elegí al menos un inflable");
-    if (
-      confs.length &&
-      !window.confirm(
-        "⚠ Conflicto: ese inflable ya está reservado ese día (" +
-          confs.map((c) => c.res.cliente).join(", ") +
-          ").\n¿Guardar igual?"
-      )
-    )
-      return;
+    if (confs.length) {
+      const ok = await confirmar({
+        titulo: "Conflicto de reserva",
+        mensaje: (
+          <>
+            ⚠ Ese inflable ya está reservado ese día ({confs.map((c) => c.res.cliente).join(", ")}).
+            ¿Guardar igual?
+          </>
+        ),
+        textoConfirmar: "Guardar igual",
+        peligro: true,
+      });
+      if (!ok) return;
+    }
 
     const nueva: Reserva = {
       id: reserva?.id || uid(),
@@ -123,7 +130,17 @@ export function ReservaDialog({ open, onClose, reserva, fechaSugerida }: Props) 
 
   const eliminar = async () => {
     if (!reserva) return;
-    if (!window.confirm("¿Eliminar la reserva de " + (reserva.cliente || "este cliente") + "?")) return;
+    const ok = await confirmar({
+      titulo: "Eliminar reserva",
+      mensaje: (
+        <>
+          ¿Eliminar la reserva de <strong>{reserva.cliente || "este cliente"}</strong>?
+        </>
+      ),
+      textoConfirmar: "Eliminar",
+      peligro: true,
+    });
+    if (!ok) return;
     await eliminarReserva(reserva.id);
     onClose();
     mostrarToast("Reserva eliminada");

@@ -44,6 +44,24 @@ export interface Inflable {
   alto?: number;
 }
 
+/** Rol de un usuario del panel. `admin` = todo; `empleado` = solo operativo (reservas). */
+export type Rol = "admin" | "empleado";
+
+/** Perfil de un usuario de Supabase (para la vista Equipo). */
+export interface Perfil {
+  id: string;
+  email: string;
+  rol: Rol;
+}
+
+/** Una categoría del catálogo. `id` es un slug; `orden` define el orden en las listas. */
+export interface Categoria {
+  id: string;
+  nombre: string;
+  orden: number;
+  activo: boolean;
+}
+
 /** Config del panel. PIN es disuasión casual, NO seguridad real (todo client-side). */
 export interface Config {
   nombre: string;

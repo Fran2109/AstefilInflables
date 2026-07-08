@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import type { Inflable } from "@/admin/types";
 import { useAdmin } from "@/admin/store/AdminContext";
+import { useConfirmar } from "@/admin/components/Confirm";
 import { Modal } from "@/admin/components/Modal";
 import { Campo, campoInputCls } from "@/admin/components/Campo";
 import { Button } from "@/components/ui/button";
@@ -13,8 +14,14 @@ interface Props {
 
 export function InflableDialog({ open, onClose, inflable }: Props) {
   const { reservas, categorias, guardarInflable, eliminarInflable, mostrarToast } = useAdmin();
+  const confirmar = useConfirmar();
+  // Nombres de categorías activas, ordenadas (para el desplegable).
+  const nombresCat = [...categorias]
+    .filter((c) => c.activo)
+    .sort((a, b) => a.orden - b.orden)
+    .map((c) => c.nombre);
   const [nombre, setNombre] = useState("");
-  const [cat, setCat] = useState(categorias[0]);
+  const [cat, setCat] = useState(nombresCat[0] ?? "");
   const [precio, setPrecio] = useState("");
   const [activo, setActivo] = useState(true);
   const [descripcion, setDescripcion] = useState("");
@@ -25,7 +32,7 @@ export function InflableDialog({ open, onClose, inflable }: Props) {
   useEffect(() => {
     if (!open) return;
     setNombre(inflable?.nombre || "");
-    setCat(inflable?.cat || categorias[0]);
+    setCat(inflable?.cat || nombresCat[0] || "");
     setPrecio(inflable?.precio ? String(inflable.precio) : "");
     setActivo(inflable ? inflable.activo : true);
     setDescripcion(inflable?.descripcion || "");
@@ -62,13 +69,18 @@ export function InflableDialog({ open, onClose, inflable }: Props) {
   const eliminar = async () => {
     if (!inflable) return;
     const usos = reservas.filter((r) => (r.inflableIds || []).includes(inflable.id)).length;
-    if (
-      !window.confirm(
-        '¿Eliminar "' + inflable.nombre + '"?' +
-          (usos ? " Está en " + usos + " reserva(s); quedarán sin ese ítem." : "")
-      )
-    )
-      return;
+    const ok = await confirmar({
+      titulo: "Eliminar inflable",
+      mensaje: (
+        <>
+          ¿Eliminar <strong>{inflable.nombre}</strong>?
+          {usos ? ` Está en ${usos} reserva(s); quedarán sin ese ítem.` : ""}
+        </>
+      ),
+      textoConfirmar: "Eliminar",
+      peligro: true,
+    });
+    if (!ok) return;
     await eliminarInflable(inflable.id);
     onClose();
     mostrarToast("Eliminado");
@@ -103,7 +115,7 @@ export function InflableDialog({ open, onClose, inflable }: Props) {
         </Campo>
         <Campo label="Categoría" htmlFor="i-cat">
           <select id="i-cat" className={campoInputCls} value={cat} onChange={(e) => setCat(e.target.value)}>
-            {categorias.map((c) => (
+            {(nombresCat.includes(cat) || !cat ? nombresCat : [cat, ...nombresCat]).map((c) => (
               <option key={c} value={c}>{c}</option>
             ))}
           </select>
