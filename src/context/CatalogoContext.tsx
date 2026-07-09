@@ -1,13 +1,10 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
-import type { Foto, ModeloPublico, Producto } from "@/types/catalogo";
+import type { ModeloPublico, Producto } from "@/types/catalogo";
 import { PRODUCTOS } from "@/data/productos";
-import { FOTOS, GALERIA_TODAS } from "@/data/fotos";
 import { cargarCatalogo } from "@/lib/landingDb";
 
 interface CatalogoValue {
   productos: Producto[];
-  fotos: Record<string, Foto>;
-  galeria: string[];
   modelos: ModeloPublico[];
   /** Categorías en orden, para el filtro del catálogo. */
   categorias: string[];
@@ -23,12 +20,11 @@ function derivarCategorias(dbCats: string[], modelos: ModeloPublico[]): string[]
  * Provee el catálogo de la landing. Arranca con los datos estáticos de
  * `src/data/` (render instantáneo, sin parpadeo) y, si hay Supabase, los
  * reemplaza con los de la base al terminar de cargar. Ante cualquier error de
- * red se queda con el fallback estático.
+ * red se queda con el fallback estático. Las fotos son siempre placeholders
+ * on-brand (ver `lib/placeholder.ts`) hasta que se carguen fotos reales.
  */
 const CatalogoContext = createContext<CatalogoValue>({
   productos: PRODUCTOS,
-  fotos: FOTOS,
-  galeria: GALERIA_TODAS,
   modelos: [],
   categorias: [],
 });
@@ -36,8 +32,6 @@ const CatalogoContext = createContext<CatalogoValue>({
 export function CatalogoProvider({ children }: { children: ReactNode }) {
   const [data, setData] = useState<CatalogoValue>({
     productos: PRODUCTOS,
-    fotos: FOTOS,
-    galeria: GALERIA_TODAS,
     modelos: [],
     categorias: [],
   });
@@ -49,8 +43,6 @@ export function CatalogoProvider({ children }: { children: ReactNode }) {
         if (vivo && db)
           setData({
             productos: db.productos,
-            fotos: db.fotos,
-            galeria: db.galeria,
             modelos: db.modelos,
             categorias: derivarCategorias(db.categorias, db.modelos),
           });

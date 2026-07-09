@@ -83,6 +83,10 @@ type InflableRow = {
   ancho: number | null;
   largo: number | null;
   alto: number | null;
+  ancho_turbina: number | null;
+  largo_turbina: number | null;
+  alto_turbina: number | null;
+  fotos: string[] | null;
 };
 
 function inflableDesde(i: InflableRow): Inflable {
@@ -97,6 +101,10 @@ function inflableDesde(i: InflableRow): Inflable {
     ancho: i.ancho ?? undefined,
     largo: i.largo ?? undefined,
     alto: i.alto ?? undefined,
+    anchoTurbina: i.ancho_turbina ?? undefined,
+    largoTurbina: i.largo_turbina ?? undefined,
+    altoTurbina: i.alto_turbina ?? undefined,
+    fotos: i.fotos ?? [],
   };
 }
 
@@ -112,7 +120,57 @@ function inflableHacia(i: Inflable): InflableRow {
     ancho: i.ancho ?? null,
     largo: i.largo ?? null,
     alto: i.alto ?? null,
+    ancho_turbina: i.anchoTurbina ?? null,
+    largo_turbina: i.largoTurbina ?? null,
+    alto_turbina: i.altoTurbina ?? null,
+    fotos: i.fotos ?? [],
   };
+}
+
+// ---- Fotos de inflables (Supabase Storage, bucket público `inflables`) ----
+const BUCKET = "inflables";
+
+/** URL pública de una foto a partir de su path en el bucket. */
+export function urlFoto(path: string): string {
+  if (!supabase) return path;
+  return supabase.storage.from(BUCKET).getPublicUrl(path).data.publicUrl;
+}
+
+/**
+ * Comprime una imagen a JPEG (~1280px lado mayor) antes de subirla, para que
+ * las fotos del cel no pesen de más. Devuelve un Blob JPEG.
+ */
+async function comprimir(file: File, maxLado = 1280, calidad = 0.75): Promise<Blob> {
+  const bitmap = await createImageBitmap(file);
+  const escala = Math.min(1, maxLado / Math.max(bitmap.width, bitmap.height));
+  const w = Math.round(bitmap.width * escala);
+  const h = Math.round(bitmap.height * escala);
+  const canvas = document.createElement("canvas");
+  canvas.width = w;
+  canvas.height = h;
+  canvas.getContext("2d")!.drawImage(bitmap, 0, 0, w, h);
+  bitmap.close();
+  return new Promise((resolve, reject) =>
+    canvas.toBlob((b) => (b ? resolve(b) : reject(new Error("no blob"))), "image/jpeg", calidad)
+  );
+}
+
+/** Sube una foto al bucket y devuelve su path. Comprime antes de subir. */
+export async function subirFoto(file: File): Promise<string> {
+  const blob = await comprimir(file);
+  const path = `${crypto.randomUUID()}.jpg`;
+  const { error } = await sb().storage.from(BUCKET).upload(path, blob, {
+    contentType: "image/jpeg",
+    upsert: false,
+  });
+  if (error) throw error;
+  return path;
+}
+
+/** Borra una foto del bucket por su path. */
+export async function borrarFoto(path: string): Promise<void> {
+  const { error } = await sb().storage.from(BUCKET).remove([path]);
+  if (error) throw error;
 }
 
 // ---- Carga inicial ----

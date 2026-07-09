@@ -51,16 +51,22 @@ No hay tests. Validar con `npm run build` y en el navegador con las herramientas
 - **La app funciona con y sin Supabase**: si falta el `.env`, `haySupabase` es `false` y el
   admin cae a `localStorage` (adaptador `src/admin/lib/store.ts`) y la landing usa los datos
   estáticos de `src/data/`. Mantener ese fallback al tocar la capa de datos.
-- **Esquema de la base**: `supabase/init.sql` reconstruye TODO desde cero (drop + create +
-  RLS + seed + vista pública). Es el "molde" — para resetear una base sucia, correrlo (⚠ borra
-  reservas; NO toca `auth.users`). `supabase/roles.sql` es la migración de roles (aditiva).
-  Estos `.sql` se corren a mano en Supabase → SQL Editor. Al cambiar el esquema, actualizar
-  `init.sql` para que la reconstrucción siga siendo fiel.
+- **Esquema de la base**: `supabase/init.sql` reconstruye TODO desde cero (drop + create + RLS
+  + Storage + seed mínimo) y es el "molde" canónico — para resetear una base sucia, correrlo
+  (⚠ borra reservas; NO toca `auth.users`). El resto de los `.sql` en `supabase/` son
+  migraciones puntuales/aditivas ya fusionadas en `init.sql` (roles, storage de fotos, medidas
+  con turbina) para aplicar a una base ya viva sin perder datos, más `reset.sql` (borra todo,
+  sin reconstruir — usar antes de un `init.sql` limpio). Se corren a mano en Supabase → SQL
+  Editor. Al cambiar el esquema, actualizar `init.sql` para que la reconstrucción siga fiel.
 - **Nombres**: la DB usa **snake_case**; la app usa **camelCase**. El mapeo vive en
   `src/admin/lib/db.ts` (admin) y `src/lib/landingDb.ts` (landing). Mantenerlos en sync.
 - **Tablas**: `reservas`, `inflables`, `config`, `categorias`, `perfiles` (privadas/mixtas);
-  `productos`, `fotos`, `testimonios` (catálogo público); vista `catalogo_inflables` (columnas
-  seguras de `inflables` activos — **NO expone precio** — para que la landing liste modelos).
+  `productos`, `testimonios` (catálogo público, **vacías por defecto** — sin ABM propio
+  todavía, se cargan a mano vía SQL o `db.ts`); vista `catalogo_inflables` (columnas seguras
+  de `inflables` activos — **NO expone precio** — para que la landing liste modelos).
+- **Storage**: bucket público `inflables` (fotos por modelo, subidas desde `InflableDialog` vía
+  `admin/lib/db.ts` → `subirFoto`/`borrarFoto`, comprimidas a JPEG en el cliente antes de subir).
+  Lectura pública por URL; escritura solo admin (RLS de `storage.objects`).
 - **RLS por rol** (ver "Roles"): catálogo → lectura pública, escritura solo admin; inventario
   y config → lectura de cualquier logueado, escritura solo admin; reservas → cualquier
   logueado; perfiles → cada uno el suyo, admin todos.
@@ -82,8 +88,12 @@ No hay tests. Validar con `npm run build` y en el navegador con las herramientas
 - **Modelo** (`types.ts`):
   - `Reserva`: `{id, fecha:'YYYY-MM-DD', estado, cliente, telefono, horaEntrega, horaRetiro,
     inflableIds[], zona, direccion, precio, sena, notas, creado}`
-  - `Inflable`: `{id, nombre, cat, precio, activo, color, descripcion?, ancho?, largo?, alto?}`
-    (seed real = 19 inflables con dimensiones en metros; precio 0 = sin definir; `cat` → FK a `categorias.nombre`)
+  - `Inflable`: `{id, nombre, cat, precio, activo, color, descripcion?, ancho?, largo?, alto?,
+    anchoTurbina?, largoTurbina?, altoTurbina?, fotos?}` (precio 0 = sin definir; `cat` → FK a
+    `categorias.nombre`; medidas "sin turbina" opcionales, "con turbina" también opcionales
+    pero si están cargadas deben ser ≥ que sin turbina y no las tres iguales — se validan en
+    `InflableDialog`, que además autocompleta con-turbina al tipear sin-turbina hasta que el
+    usuario las edite a mano; `fotos` = paths en el bucket `inflables` de Storage)
   - `Categoria`: `{id (slug), nombre (único), orden, activo}` — 5 seed: Castillos, Gigantes,
     Acuáticos, Juegos, Eventos.
   - `Perfil`: `{id (=auth uid), email, rol}` · `Config`: `{nombre, pin}`
@@ -113,12 +123,20 @@ No hay tests. Validar con `npm run build` y en el navegador con las herramientas
   estático ante error. Se consume con `useCatalogo()`.
 - **`LandingContext`**: `precargar(valor)` (setea el inflable del cotizador, scrollea y enfoca
   la fecha) + `abrirVisor(cfg)`; renderiza el `<Visor>` una sola vez.
-- **Catálogo con filtro** (`Catalogo.tsx`): chips (Todos + categorías). "Todos" muestra las 6
-  cards-categoría con foto (`ProductoCard`); al elegir una categoría se listan sus **modelos
-  reales** del inventario (`ModeloCard`, sin foto propia todavía) leídos de `catalogo_inflables`.
-- **Cotizador**: formulario controlado; `lib/whatsapp.ts` arma el link en vivo. No hay backend
-  de envío: **WhatsApp ES el funnel**.
+- **Catálogo con filtro** (`Catalogo.tsx`): chips (Todos + categorías). "Todos" muestra las
+  cards-categoría (`ProductoCard`, vacío por defecto — ver "Verdad vs. placeholder"); al elegir
+  una categoría se listan sus **modelos reales** del inventario (`ModeloCard`) leídos de
+  `catalogo_inflables`, con foto real si el admin la subió o un placeholder on-brand si no.
+- **Cotizador**: formulario controlado (`DatosCotizacion` en `lib/whatsapp.ts` → `linkCotizacion`
+  arma el mensaje/link en vivo); incluye horario tentativo como rango (`horarioDesde`/
+  `horarioHasta`, opcionales) y dirección. No hay backend de envío: **WhatsApp ES el funnel**.
+- **Galería "Astefil en acción"** (`Galeria.tsx`): hasta 10 inflables al azar (mezcla
+  Fisher–Yates recalculada solo cuando cambian los modelos) que ya tengan foto real subida;
+  si ninguno tiene foto todavía, muestra un estado vacío honesto en vez de la tira.
 - **Visor**: lightbox con flechas/teclado/swipe/miniaturas + lista de modelos por categoría.
+- **Placeholders de foto** (`lib/placeholder.ts` → `fotoPlaceholder`): SVG on-brand generado en
+  el cliente (sin red), determinístico por clave, para cualquier card sin foto real todavía.
+  El `Visor` distingue URLs/paths reales (`http`, `blob:`, `/`) de claves de placeholder.
 
 ## Sistema de diseño — "neo-brutalismo caramelo"
 
@@ -153,6 +171,17 @@ Patrones no negociables:
 - TypeScript en todo. Path alias `@/` → `src/`. Precios en ARS con `plata` (`toLocaleString`).
 - Combinar clases con `cn()` (`lib/utils.ts`). Estilos con Tailwind + tokens; evitar CSS suelto.
 - Reusar el `Button` de `components/ui/` (variantes de marca) en vez de botones ad-hoc.
+- **Selectores custom, nunca nativos**: no usar `<select>`, `<input type="date">` ni
+  `<input type="time">` — sus popups nativos usan el estilo del sistema operativo y no se
+  pueden restylear. Usar `Select`, `DatePicker` y `TimePicker` de `components/ui/` (se usan
+  tanto en el admin como en la landing). Mismo patrón los tres: portal a `document.body`,
+  panel `position: fixed` calculado desde el trigger (`getBoundingClientRect`), cierre con
+  Escape / click afuera / al scrollear la página. Reciben `triggerClassName` para adoptar el
+  estilo del formulario que los usa (`campoInputCls` en el admin, `inputCls` en la landing).
+  **Ojo al tocarlos**: el listener de "cerrar al scrollear" debe ignorar los scrolls que
+  ocurren *dentro* del propio panel (`panelRef.current?.contains(e.target)` antes de cerrar) —
+  si no, scrollear una lista larga de opciones (p. ej. las horas del `TimePicker`) cierra el
+  panel antes de poder elegir algo.
 - **Confirmación de acciones que modifican datos**: toda acción del admin que escribe en la
   base (crear, editar, borrar, cambiar estado o rol, activar/desactivar, importar, borrar todo)
   **debe pedir confirmación** con `useConfirmar()` (`const ok = await confirmar({...})`).
@@ -173,17 +202,29 @@ Patrones no negociables:
 
 ## Verdad vs. placeholder — MUY IMPORTANTE
 
-- **Testimonios** (`data/site.ts` y tabla `testimonios`): **PLACEHOLDERS** (en la DB con
-  `activo=false`, no se muestran). Reemplazar por reseñas reales de IG/Facebook. No inventar.
+Filosofía: **nunca fingir contenido real que no existe todavía**. Donde falta un dato real, la
+UI lo dice explícitamente (texto honesto + CTA a WhatsApp) o usa un placeholder *visualmente*
+obvio (`fotoPlaceholder`) — nunca texto o fotos inventadas presentadas como reales.
+
+- **Productos** (`data/productos.ts` `PRODUCTOS` y tabla `productos`) y **testimonios**
+  (`data/site.ts` `TESTIMONIOS` y tabla `testimonios`): **vacíos por defecto**, a propósito —
+  no hay ABM para cargarlos desde el admin todavía (solo Categorías e Inventario lo tienen).
+  `Catalogo.tsx` muestra un estado vacío con CTA cuando no hay productos; `Testimonios.tsx`
+  directamente no renderiza nada si `TESTIMONIOS` está vacío (no hay link de nav a `#testimonios`,
+  así que ocultar la sección entera es seguro). Cargar contenido real a mano (SQL o `db.ts`), no
+  inventarlo.
 - **Precios**: no hay precios publicados a propósito (funnel a "consultá"). En el admin, los
   inflables arrancan con precio 0 = sin definir. No inventar cifras.
 - **Claims de servicio** ("llegamos, armamos, retiramos", pasos de "Cómo funciona", bullets del
   visor): plausibles pero **pendientes de confirmación de Francisco**.
-- **Fotos por modelo**: los 19 inflables aún no tienen foto propia en este repo (las
-  `ModeloCard` usan color de categoría). El repo viejo (`Fran2109/Astefil_Inflables`,
-  `Frontend/src/assets/inflables/*`) tiene fotos reales de cada uno, listas para portar.
+- **Fotos por modelo**: el admin ya permite subirlas de verdad (`InflableDialog` → Storage). Un
+  inflable sin fotos cargadas muestra un `fotoPlaceholder` (banda de color + "FOTO de muestra"),
+  nunca una imagen real inventada. El repo viejo (`Fran2109/Astefil_Inflables`,
+  `Frontend/src/assets/inflables/*`) tiene fotos reales de los 19 modelos, listas para portar.
 
 ## Pendientes
 
-Ver `docs/BACKLOG.md`. Destacados actuales: fotos por modelo (portar del repo viejo),
-testimonios reales, precios/fichas, y afinar los claims de servicio con Francisco.
+Ver `docs/BACKLOG.md`. Destacados actuales: ABM de Productos y Testimonios en el admin (hoy
+solo Categorías e Inventario lo tienen), cargar fotos reales por modelo (la feature de subida
+ya existe, faltan las fotos), testimonios reales, precios/fichas, y afinar los claims de
+servicio con Francisco.

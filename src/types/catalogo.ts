@@ -1,4 +1,4 @@
-/** Una foto real del catálogo/galería. La clave la referencian los productos. */
+/** Una foto (real o placeholder) del catálogo/galería. */
 export interface Foto {
   clave: string;
   src: string;
@@ -13,7 +13,7 @@ export interface Producto {
   tag: string;
   descCorta: string;
   descLarga: string;
-  /** Claves de FOTOS. Vacío = card ilustrada (SVG) sin fotos todavía. */
+  /** Claves para generar placeholders. Vacío = card ilustrada (SVG) sin fotos todavía. */
   fotos: string[];
   /** Categorías sin foto todavía (Deportivos, Livings): id de la ilustración SVG. */
   ilustracionId?: "deportivo" | "living";
@@ -30,4 +30,6 @@ export interface ModeloPublico {
   ancho?: number;
   largo?: number;
   alto?: number;
+  /** URLs públicas de las fotos del modelo (vacío = sin foto todavía). */
+  fotos?: string[];
 }

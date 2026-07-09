@@ -1,8 +1,15 @@
 -- ============================================================================
--- Astefil Inflables — Inicialización COMPLETA de la base (Supabase / Postgres)
+-- Astefil Inflables — Inicialización de la base (Supabase / Postgres)
 -- ============================================================================
--- Este archivo reconstruye la base desde cero. Úsalo cuando quieras "resetear"
--- todo a estado de fábrica.
+-- Este archivo reconstruye TODO el esquema desde cero (tablas, RLS, vista,
+-- Storage), pero solo carga datos de fábrica en **categorías** y **roles**
+-- (perfiles). El resto de las tablas (productos, testimonios, inflables,
+-- config) quedan creadas pero VACÍAS — se cargan a mano desde el admin
+-- (Inventario, Categorías, Ajustes) o con un script de carga aparte.
+--
+-- No hay tabla de fotos: la landing muestra placeholders on-brand generados
+-- en el cliente (`src/lib/placeholder.ts`) hasta que se carguen fotos reales
+-- por inflable (columna `inflables.fotos`, vía Supabase Storage).
 --
 -- Cómo usarlo:
 --   Supabase → tu proyecto → SQL Editor → New query → pegá TODO → Run.
@@ -12,7 +19,7 @@
 --     NO se toca: seguís entrando con el mismo email y contraseña.
 --
 -- Modelo de seguridad (RLS):
---   • Público (lectura): categorias, productos, fotos, testimonios + vista
+--   • Público (lectura): categorias, productos, testimonios + vista
 --     catalogo_inflables. Escritura solo con sesión iniciada.
 --   • Privado (solo con sesión): inflables, reservas, config.
 --
@@ -29,7 +36,7 @@ drop table if exists public.reservas    cascade;
 drop table if exists public.inflables   cascade;
 drop table if exists public.testimonios cascade;
 drop table if exists public.productos   cascade;
-drop table if exists public.fotos       cascade;
+drop table if exists public.fotos       cascade;  -- por si quedó de una versión vieja
 drop table if exists public.categorias  cascade;
 drop table if exists public.config      cascade;
 drop table if exists public.perfiles    cascade;
@@ -46,15 +53,6 @@ create table public.categorias (
   nombre text not null unique,
   orden  integer not null default 0,
   activo boolean not null default true
-);
-
--- Fotos reales del catálogo y la galería (archivos en /public/img).
-create table public.fotos (
-  clave       text primary key,
-  src         text not null,
-  alt         text not null default '',
-  en_galeria  boolean not null default true,
-  orden       integer not null default 0
 );
 
 -- Productos/categorías-card del catálogo público (landing). El id coincide con
@@ -94,7 +92,11 @@ create table public.inflables (
   descripcion text not null default '',
   ancho       numeric,
   largo       numeric,
-  alto        numeric
+  alto        numeric,
+  ancho_turbina numeric,  -- medidas con la turbina puesta (ocupa más); opcionales
+  largo_turbina numeric,
+  alto_turbina  numeric,
+  fotos       text[] not null default '{}'  -- paths en el bucket `inflables` de Storage
 );
 
 -- Reservas. fecha 'YYYY-MM-DD'. inflable_ids referencia inflables.id.
@@ -161,7 +163,6 @@ create trigger on_auth_user_created
 -- 2. ROW LEVEL SECURITY (por rol)
 -- ----------------------------------------------------------------------------
 alter table public.categorias  enable row level security;
-alter table public.fotos       enable row level security;
 alter table public.productos   enable row level security;
 alter table public.testimonios enable row level security;
 alter table public.inflables   enable row level security;
@@ -173,7 +174,7 @@ alter table public.perfiles    enable row level security;
 do $$
 declare t text;
 begin
-  foreach t in array array['categorias','fotos','productos','testimonios']
+  foreach t in array array['categorias','productos','testimonios']
   loop
     execute format('create policy "lectura publica" on public.%I for select using (true)', t);
     execute format('create policy "escritura admin" on public.%I for all to authenticated using (public.es_admin()) with check (public.es_admin())', t);
@@ -202,7 +203,9 @@ create policy "admin gestiona perfiles" on public.perfiles
   for update to authenticated using (public.es_admin()) with check (public.es_admin());
 
 -- ----------------------------------------------------------------------------
--- 3. SEED — datos de fábrica
+-- 3. SEED — solo categorías y roles. El resto de las tablas (fotos, productos,
+--    testimonios, inflables, config) quedan creadas pero VACÍAS: se cargan a
+--    mano desde el admin o con un script de carga aparte.
 -- ----------------------------------------------------------------------------
 
 -- Categorías (el `orden` define cómo se listan; editable).
@@ -212,101 +215,6 @@ insert into public.categorias (id, nombre, orden) values
   ('acuaticos', 'Acuáticos', 3),
   ('juegos',    'Juegos',    4),
   ('eventos',   'Eventos',   5);
-
--- Fotos (orden = tira "Astefil en acción").
-insert into public.fotos (clave, src, alt, en_galeria, orden) values
-  ('arco',            '/img/hero.jpg',   'Castillo inflable de Astefil con arco de colores armado en un jardín', true, 0),
-  ('castillo',        '/img/castillo.jpg','Castillo inflable clásico de colores armado al aire libre',            true, 1),
-  ('castillo-parque', '/img/gal4.jpg',    'Castillo inflable en un parque al aire libre',                         true, 2),
-  ('castillo-pasto',  '/img/gal5.jpg',    'Castillo inflable armado en el pasto',                                 true, 3),
-  ('rampa',           '/img/rampa.jpg',   'Castillo inflable con rampa y tobogán armado en un salón de fiestas',  true, 4),
-  ('rampa-salon',     '/img/gal1.jpg',    'Inflable con rampa armado dentro de un salón',                         true, 5),
-  ('castillo-salon',  '/img/gal2.jpg',    'Castillo inflable de colores en un salón de fiestas',                  true, 6),
-  ('obstaculo',       '/img/obstaculo.jpg','Inflable gigante de carrera de obstáculos de Astefil',                true, 7),
-  ('acuatico',        '/img/acuatico.jpg','Inflable acuático con tobogán para el verano',                         true, 8),
-  ('noche',           '/img/gal3.jpg',    'Inflable iluminado en una fiesta de noche',                            true, 9);
-
--- Productos (cards de la landing). `cats` mapea a categorías del inventario.
--- Castillo con rampa, Deportivo y Living quedan sin modelos por ahora ('{}').
-insert into public.productos (id, titulo, tag, desc_corta, desc_larga, fotos, ilustracion_id, cats, orden, activo) values
-  ('Castillo', 'Castillos', 'El clásico',
-   'El infaltable de todo cumple: paredes altas, base para saltar sin parar y colores que se ven desde la otra cuadra.',
-   'El infaltable de todo cumple: paredes altas, base para saltar sin parar y colores que se ven desde la otra cuadra. Anda igual de bien en el patio, el parque o el salón.',
-   array['castillo','arco','castillo-parque','castillo-pasto','castillo-salon','noche'], null, array['Castillos'], 0, true),
-  ('Castillo con rampa', 'Castillos con rampa', 'Con tobogán',
-   'Saltás, trepás la rampa y bajás por el tobogán. Doble diversión en un solo inflable, ideal para salones y jardines.',
-   'Saltás, trepás la rampa y bajás por el tobogán. Doble diversión en un solo inflable: acá lo ves armado en salones reales, donde más se luce.',
-   array['rampa','rampa-salon'], null, array[]::text[], 1, true),
-  ('Carrera de obstáculos', 'Carrera de obstáculos', 'Para valientes',
-   'Túneles, barreras y pura adrenalina: los chicos compiten de punta a punta y quieren volver a empezar apenas terminan.',
-   'Túneles, barreras y pura adrenalina de punta a punta. Es el más grande de la familia: ideal para patios amplios, clubes y jardines.',
-   array['obstaculo'], null, array['Gigantes'], 2, true),
-  ('Inflable acuático', 'Acuáticos', 'Verano',
-   'Agua + tobogán = el mejor plan para los días de calor. La fiesta se convierte en parque acuático en tu propio patio.',
-   'Agua + tobogán = el mejor plan para los días de calor. La fiesta se convierte en parque acuático en tu propio patio.',
-   array['acuatico'], null, array['Acuáticos'], 3, true),
-  ('Inflable deportivo', 'Deportivos', 'A la cancha',
-   'Arcos, canchas y desafíos inflables para picaditos y penales sin fin. Pedinos fotos de los modelos por WhatsApp.',
-   'Arcos, canchas y desafíos inflables para picaditos y penales sin fin. Todavía no tenemos fotos publicadas: pedinos las de los modelos por WhatsApp.',
-   array[]::text[], 'deportivo', array[]::text[], 4, true),
-  ('Living para chicos', 'Livings para chicos', 'Peques',
-   'Puffs y muebles blanditos a su medida para que los más peques tengan su rincón cómodo y seguro en la fiesta.',
-   'Puffs y muebles blanditos a su medida para que los más peques tengan su rincón cómodo y seguro en la fiesta. Todavía no tenemos fotos publicadas: consultanos por WhatsApp.',
-   array[]::text[], 'living', array[]::text[], 5, true);
-
--- Testimonios PLACEHOLDER (activo=false: no se muestran hasta cargar los reales).
-insert into public.testimonios (texto, quien, color, orden, activo) values
-  ('Los chicos no se bajaron del castillo en toda la tarde. Llegaron puntuales a armar y lo retiraron sin que nos diéramos cuenta. ¡Súper recomendables!', 'Caro · Grand Bourg', 'azul', 0, false),
-  ('Alquilamos el de la rampa para un cumple en salón y fue un éxito total. Muy buena onda para coordinar todo por WhatsApp.', 'Damián · Tortuguitas', 'rojo', 1, false),
-  ('El acuático salvó el cumple en pleno enero. Impecable el estado del inflable y la atención. Ya reservamos de nuevo para diciembre.', 'Vane · Del Viso', 'amarillo', 2, false);
-
--- Inventario real (19 inflables, precio 0 = sin definir, medidas en metros).
-insert into public.inflables (nombre, cat, precio, activo, color, ancho, largo, alto, descripcion) values
-  -- Castillos
-  ('Hombre Araña',          'Castillos', 0, true, '#E8352B', 4.0, 5.0, 2.5,
-   '¡Viví la emoción y trepá junto al Hombre Araña! Este castillo de 4x5 metros te hace sentir un auténtico superhéroe, con un diseño increíble para los fanáticos de Spidey. Ideal para fiestas llenas de aventuras.'),
-  ('Princesas',             'Castillos', 0, true, '#1F6FD0', 3.0, 4.0, 2.5,
-   'Un castillo mágico de 3x4 metros para las reinas y princesas de la casa. Dejate llevar por la fantasía y la diversión en un mundo de ensueño, lleno de colores y detalles. Perfecto para fiestas de cuentos de hadas.'),
-  ('Castillo 3x6',          'Castillos', 0, true, '#23B15D', 3.0, 6.0, 2.8,
-   'Un castillo amplio y divertido de 3x6 metros para la mejor experiencia de rebote y juegos. Perfecto para grupos grandes y eventos donde la diversión no puede faltar.'),
-  ('Castillo 4x5',          'Castillos', 0, true, '#FF7AA2', 4.0, 5.0, 2.5,
-   'Diversión compacta y segura en un castillo de 4x5 metros. Espacio suficiente para saltar, reír y disfrutar durante horas. Ideal para celebraciones en familia o con amigos.'),
-  ('Castillo 2x2',          'Castillos', 0, true, '#FFC61B', 2.0, 2.0, 2.0,
-   'El castillo más compacto de 2x2 metros para espacios reducidos, pero igual de divertido. Perfecto para fiestas chicas o interiores donde los más peques disfrutan sin parar.'),
-  -- Gigantes (incluye la carrera de obstáculos, que es la más grande)
-  ('Demoledor',             'Gigantes', 0, true, '#8D7F76', 6.0, 8.0, 3.5,
-   '¡El gigante Demoledor de 6x8 metros llega para desafiar a los más valientes! Sus dimensiones colosales hacen de tu evento una experiencia inolvidable. ¡Atrevete a saltar en esta máquina de emociones!'),
-  ('Arcoíris',              'Gigantes', 0, true, '#E8352B', 5.0, 7.0, 3.2,
-   'Sumergite en un arcoíris de alegría y diversión con este gigante inflable de 5x7 metros. Perfecto para añadir color y energía a cualquier evento, ¡los chicos lo adoran!'),
-  ('Barco Pirata',          'Gigantes', 0, true, '#1F6FD0', 4.0, 6.0, 3.0,
-   '¡A la aventura, marineros! Con este barco pirata inflable de 4x6 metros, los chicos surcan mares imaginarios y viven historias de tesoros escondidos. Perfecto para los pequeños exploradores.'),
-  ('Carrera de obstáculos', 'Gigantes', 0, true, '#23B15D', 6.0, 10.0, 3.5,
-   '¡Preparate para una competencia de 6x10 metros llena de adrenalina! Este inflable tipo carrera de obstáculos garantiza emoción y diversión en cada salto y curva. Ideal para eventos deportivos y desafíos grupales.'),
-  -- Acuáticos
-  ('Deslizador',            'Acuáticos', 0, true, '#FF7AA2', 3.0, 8.0, 2.5,
-   'Deslizate hacia la diversión con este inflable acuático de 3x8 metros que refresca cualquier día caluroso. Ideal para fiestas de verano y momentos de aventura acuática.'),
-  ('Rampa acuática arco',   'Acuáticos', 0, true, '#FFC61B', 4.0, 10.0, 3.0,
-   'La rampa acuática en forma de arco de 4x10 metros es una atracción espectacular para chicos y grandes. ¡Deslizate con velocidad y frescura en este tobogán que hace inolvidable el verano!'),
-  ('Rampa acuática',        'Acuáticos', 0, true, '#8D7F76', 3.0, 8.0, 2.5,
-   'Una clásica rampa acuática de 3x8 metros que brinda pura diversión. Perfecta para días soleados y eventos al aire libre, donde todos disfrutan de una refrescante aventura.'),
-  ('Tobogán acuático',      'Acuáticos', 0, true, '#E8352B', 4.0, 9.0, 3.2,
-   'El tobogán acuático es el rey de las atracciones veraniegas. Con sus 4x9 metros, asegura una experiencia de emoción, velocidad y frescura que todos recuerdan.'),
-  -- Juegos
-  ('Metegol',               'Juegos', 0, true, '#1F6FD0', 1.2, 2.0, 0.9,
-   'El clásico metegol llega para divertir a chicos y grandes. Con amigos o en familia, ¡armá tu mejor equipo y demostrá tus habilidades en este juego lleno de emoción y destreza!'),
-  ('Tejo',                  'Juegos', 0, true, '#23B15D', 1.5, 1.5, 0.8,
-   'Un juego clásico que nunca pasa de moda. El tejo es ideal para desafíos entre amigos y familia, con entretenimiento y competencia en cada lanzamiento.'),
-  ('Sapo',                  'Juegos', 0, true, '#FF7AA2', 1.0, 1.5, 1.0,
-   'Probá tu suerte y precisión en el legendario juego del sapo. Diversión asegurada para todas las edades mientras intentás encestar y sumar puntos.'),
-  ('Pool',                  'Juegos', 0, true, '#FFC61B', 2.0, 1.0, 0.8,
-   'La elegancia y el desafío del pool ahora en tu evento. Perfecto para compartir un momento competitivo y relajado con amigos y familia.'),
-  ('Ping pong',             'Juegos', 0, true, '#8D7F76', 2.7, 1.5, 0.8,
-   'La velocidad y la agilidad del ping pong llevan la diversión al máximo. Un deporte clásico y atrapante para jugadores de todas las edades. ¡Desafiá a tus amigos en una partida inolvidable!'),
-  ('Yenga',                 'Juegos', 0, true, '#E8352B', 0.5, 0.5, 1.5,
-   'Pura emoción y tensión en el juego de destreza más famoso. Con Yenga, la diversión crece a medida que la torre se tambalea. Perfecto para los que aman los desafíos y la estrategia.');
-
--- Config inicial (fila única).
-insert into public.config (id, nombre, pin) values (1, 'Astefil Inflables', null);
 
 -- Perfiles: los usuarios que YA existen en Auth quedan como admin (los fundadores);
 -- los que se creen después arrancan como 'empleado' vía el trigger.
@@ -318,8 +226,31 @@ on conflict (id) do nothing;
 -- 4. VISTA PÚBLICA del inventario (solo columnas seguras, sin precio)
 -- ----------------------------------------------------------------------------
 create view public.catalogo_inflables as
-  select id, nombre, cat, descripcion, ancho, largo, alto
+  select id, nombre, cat, descripcion, ancho, largo, alto, fotos
   from public.inflables
   where activo = true;
 
 grant select on public.catalogo_inflables to anon, authenticated;
+
+-- ----------------------------------------------------------------------------
+-- 5. STORAGE — fotos por modelo (bucket público `inflables`)
+-- ----------------------------------------------------------------------------
+insert into storage.buckets (id, name, public)
+values ('inflables', 'inflables', true)
+on conflict (id) do update set public = true;
+
+drop policy if exists "inflables leer publico" on storage.objects;
+create policy "inflables leer publico" on storage.objects
+  for select using (bucket_id = 'inflables');
+
+drop policy if exists "inflables subir admin" on storage.objects;
+create policy "inflables subir admin" on storage.objects
+  for insert to authenticated with check (bucket_id = 'inflables' and public.es_admin());
+
+drop policy if exists "inflables actualizar admin" on storage.objects;
+create policy "inflables actualizar admin" on storage.objects
+  for update to authenticated using (bucket_id = 'inflables' and public.es_admin());
+
+drop policy if exists "inflables borrar admin" on storage.objects;
+create policy "inflables borrar admin" on storage.objects
+  for delete to authenticated using (bucket_id = 'inflables' and public.es_admin());

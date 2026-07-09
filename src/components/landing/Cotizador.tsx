@@ -2,6 +2,9 @@ import { useState } from "react";
 import { MessageCircle } from "lucide-react";
 import { TituloSeccion } from "@/components/landing/TituloSeccion";
 import { Button } from "@/components/ui/button";
+import { Select } from "@/components/ui/select";
+import { DatePicker } from "@/components/ui/date-picker";
+import { TimePicker } from "@/components/ui/time-picker";
 import { OPCIONES_INFLABLE, OPCIONES_LUGAR, SITIO } from "@/data/site";
 import { linkCotizacion } from "@/lib/whatsapp";
 import { useLanding } from "@/context/LandingContext";
@@ -14,10 +17,22 @@ export function Cotizador() {
   const { inflableSeleccionado, setInflableSeleccionado } = useLanding();
   const [nombre, setNombre] = useState("");
   const [fecha, setFecha] = useState("");
+  const [horarioDesde, setHorarioDesde] = useState("");
+  const [horarioHasta, setHorarioHasta] = useState("");
   const [zona, setZona] = useState("");
   const [lugar, setLugar] = useState("");
+  const [direccion, setDireccion] = useState("");
 
-  const waLink = linkCotizacion({ nombre, inflable: inflableSeleccionado, fecha, zona, lugar });
+  const waLink = linkCotizacion({
+    nombre,
+    inflable: inflableSeleccionado,
+    fecha,
+    horarioDesde,
+    horarioHasta,
+    zona,
+    lugar,
+    direccion,
+  });
 
   // Si precargaron un valor que no está en la lista base, lo mostramos igual.
   const opciones = OPCIONES_INFLABLE.includes(inflableSeleccionado) || !inflableSeleccionado
@@ -54,31 +69,47 @@ export function Cotizador() {
               <label htmlFor="f-inflable" className={labelCls}>
                 ¿Qué te interesa?
               </label>
-              <select
+              <Select
                 id="f-inflable"
                 value={inflableSeleccionado}
-                onChange={(e) => setInflableSeleccionado(e.target.value)}
-                className={inputCls}
-              >
-                <option value="">Todavía no sé, quiero ver opciones</option>
-                {opciones.map((o) => (
-                  <option key={o} value={o}>
-                    {o}
-                  </option>
-                ))}
-              </select>
+                onChange={setInflableSeleccionado}
+                options={opciones}
+                placeholder="Todavía no sé, quiero ver opciones"
+                triggerClassName={inputCls}
+              />
             </div>
             <div>
               <label htmlFor="f-fecha" className={labelCls}>
                 Fecha del evento
               </label>
-              <input
+              <DatePicker
                 id="f-fecha"
-                type="date"
                 value={fecha}
-                onChange={(e) => setFecha(e.target.value)}
-                className={inputCls}
+                onChange={setFecha}
+                triggerClassName={inputCls}
               />
+            </div>
+            <div>
+              <label htmlFor="f-horario-desde" className={labelCls}>
+                Horario tentativo
+              </label>
+              <div className="flex items-center gap-2">
+                <TimePicker
+                  id="f-horario-desde"
+                  ariaLabel="Horario desde"
+                  value={horarioDesde}
+                  onChange={setHorarioDesde}
+                  triggerClassName={inputCls}
+                />
+                <span className="font-alt font-bold text-[#5a4a41]">a</span>
+                <TimePicker
+                  id="f-horario-hasta"
+                  ariaLabel="Horario hasta"
+                  value={horarioHasta}
+                  onChange={setHorarioHasta}
+                  triggerClassName={inputCls}
+                />
+              </div>
             </div>
             <div>
               <label htmlFor="f-zona" className={labelCls}>
@@ -93,23 +124,32 @@ export function Cotizador() {
                 className={inputCls}
               />
             </div>
-            <div className="md:col-span-2">
+            <div>
               <label htmlFor="f-lugar" className={labelCls}>
                 ¿Dónde es la fiesta?
               </label>
-              <select
+              <Select
                 id="f-lugar"
                 value={lugar}
-                onChange={(e) => setLugar(e.target.value)}
+                onChange={setLugar}
+                options={OPCIONES_LUGAR}
+                placeholder="Elegí una opción"
+                triggerClassName={inputCls}
+              />
+            </div>
+            <div className="md:col-span-2">
+              <label htmlFor="f-direccion" className={labelCls}>
+                Dirección
+              </label>
+              <input
+                id="f-direccion"
+                type="text"
+                placeholder="Ej: Los Ceibos 120"
+                autoComplete="street-address"
+                value={direccion}
+                onChange={(e) => setDireccion(e.target.value)}
                 className={inputCls}
-              >
-                <option value="">Elegí una opción</option>
-                {OPCIONES_LUGAR.map((o) => (
-                  <option key={o} value={o}>
-                    {o}
-                  </option>
-                ))}
-              </select>
+              />
             </div>
           </div>
 

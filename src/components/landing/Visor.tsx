@@ -2,9 +2,15 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { X, ChevronLeft, ChevronRight } from "lucide-react";
 import { BULLETS_VISOR } from "@/data/productos";
 import { linkWhatsApp } from "@/lib/whatsapp";
+import { fotoPlaceholder } from "@/lib/placeholder";
 import { Button } from "@/components/ui/button";
-import { useCatalogo } from "@/context/CatalogoContext";
 import type { VisorConfig } from "@/context/LandingContext";
+
+/** Una URL/ruta real (foto subida) se muestra tal cual; una clave se resuelve a placeholder. */
+const esUrlReal = (f: string) => /^(https?:|blob:|\/)/.test(f);
+function resolverFoto(f: string, alt?: string) {
+  return esUrlReal(f) ? { src: f, alt: alt ?? "" } : fotoPlaceholder(f, alt);
+}
 
 interface VisorProps {
   cfg: VisorConfig | null;
@@ -18,13 +24,11 @@ interface VisorProps {
  */
 export function Visor({ cfg, onCerrar, onPrecargar }: VisorProps) {
   const abierto = cfg !== null;
-  const { fotos: FOTOS } = useCatalogo();
 
-  // Solo fotos que existen realmente.
-  const fotos = useMemo(
-    () => (cfg ? cfg.fotos.filter((f) => FOTOS[f]) : []),
-    [cfg, FOTOS]
-  );
+  // Resuelve una entrada a {src, alt}: URL/path real, o placeholder para una clave.
+  const resolver = (f: string) => resolverFoto(f, cfg?.titulo);
+
+  const fotos = useMemo(() => (cfg ? cfg.fotos.filter(Boolean) : []), [cfg]);
   const [idx, setIdx] = useState(0);
   const toqueX = useRef<number | null>(null);
 
@@ -68,7 +72,7 @@ export function Visor({ cfg, onCerrar, onPrecargar }: VisorProps) {
   if (!abierto || !cfg || !fotos.length) return null;
 
   const varias = fotos.length > 1;
-  const foto = FOTOS[fotos[idx]];
+  const foto = resolver(fotos[idx]);
   const waLink = linkWhatsApp(
     `¡Hola Astefil! Vi las fotos de ${cfg.titulo.toLowerCase()} en la página y quiero consultar 🎈`
   );
@@ -146,7 +150,7 @@ export function Visor({ cfg, onCerrar, onPrecargar }: VisorProps) {
                       i === idx ? "opacity-100 outline outline-4 outline-amarillo" : "opacity-65"
                     }`}
                   >
-                    <img src={FOTOS[f].src} alt="" loading="lazy" className="h-full w-full object-cover" />
+                    <img src={resolver(f).src} alt="" loading="lazy" className="h-full w-full object-cover" />
                   </button>
                 ))}
               </div>

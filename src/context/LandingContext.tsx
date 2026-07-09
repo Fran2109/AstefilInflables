@@ -15,7 +15,7 @@ export interface VisorConfig {
   titulo: string;
   tag: string;
   desc: string;
-  /** Claves de FOTOS. */
+  /** Claves de placeholder, o URLs/paths reales (fotos subidas de un inflable). */
   fotos: string[];
   /** Si viene, el visor muestra el botón "¡Lo quiero!" que precarga el cotizador. */
   inflableId?: string;

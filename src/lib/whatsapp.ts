@@ -15,8 +15,11 @@ export interface DatosCotizacion {
   nombre: string;
   inflable: string;
   fecha: string; // 'YYYY-MM-DD' (value del input date) o ""
+  horarioDesde: string; // 'HH:MM' (value del input time) o "" — tentativo
+  horarioHasta: string; // 'HH:MM' (value del input time) o "" — tentativo
   zona: string;
   lugar: string;
+  direccion: string;
 }
 
 /** Convierte 'YYYY-MM-DD' a 'DD/MM/YYYY'; vacío → "a definir". */
@@ -26,15 +29,26 @@ export function formatearFecha(fechaISO: string): string {
   return `${d}/${m}/${y}`;
 }
 
+/** Arma el texto del rango horario tentativo, o "" si no hay ninguno cargado. */
+function textoHorario(desde: string, hasta: string): string {
+  if (desde && hasta) return desde + " a " + hasta + "hs";
+  if (desde) return "desde " + desde + "hs";
+  if (hasta) return "hasta " + hasta + "hs";
+  return "";
+}
+
 /** Construye el link de WhatsApp con el mensaje del cotizador armado. */
 export function linkCotizacion(datos: DatosCotizacion): string {
-  const { nombre, inflable, fecha, zona, lugar } = datos;
+  const { nombre, inflable, fecha, horarioDesde, horarioHasta, zona, lugar, direccion } = datos;
   let msg = "¡Hola Astefil! 🎈\n";
   msg += "Soy " + (nombre || "—") + " y quiero pedir un presupuesto.\n\n";
   msg += "• Me interesa: " + (inflable || "ver opciones") + "\n";
   msg += "• Fecha del evento: " + formatearFecha(fecha) + "\n";
+  const horario = textoHorario(horarioDesde, horarioHasta);
+  if (horario) msg += "• Horario tentativo: " + horario + "\n";
   msg += "• Zona: " + (zona || "a coordinar") + "\n";
   if (lugar) msg += "• Lugar: " + lugar + "\n";
+  if (direccion) msg += "• Dirección: " + direccion + "\n";
   msg += "\n¿Me pasan precio y disponibilidad? ¡Gracias!";
   return linkWhatsApp(msg);
 }

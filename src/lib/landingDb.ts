@@ -1,5 +1,5 @@
 import { supabase } from "@/lib/supabase";
-import type { Foto, ModeloPublico, Producto } from "@/types/catalogo";
+import type { ModeloPublico, Producto } from "@/types/catalogo";
 
 /**
  * Carga del catálogo público de la landing desde Supabase (lectura sin sesión,
@@ -29,20 +29,16 @@ type ModeloRow = {
   ancho: number | null;
   largo: number | null;
   alto: number | null;
+  fotos: string[] | null;
 };
 
-type FotoRow = {
-  clave: string;
-  src: string;
-  alt: string;
-  en_galeria: boolean;
-  orden: number;
-};
+/** Path del bucket `inflables` → URL pública (o el path si no hay Supabase). */
+function urlPublicaFoto(path: string): string {
+  return supabase ? supabase.storage.from("inflables").getPublicUrl(path).data.publicUrl : path;
+}
 
 export interface CatalogoData {
   productos: Producto[];
-  fotos: Record<string, Foto>;
-  galeria: string[];
   /** Modelos reales del inventario (vista pública), para el detalle de cada card. */
   modelos: ModeloPublico[];
   /** Nombres de categorías, en orden (tabla `categorias`). Vacío si no existe aún. */
@@ -52,20 +48,18 @@ export interface CatalogoData {
 export async function cargarCatalogo(): Promise<CatalogoData | null> {
   if (!supabase) return null;
 
-  const [prod, fot, mod, cats] = await Promise.all([
+  const [prod, mod, cats] = await Promise.all([
     supabase
       .from("productos")
       .select("*")
       .eq("activo", true)
       .order("orden"),
-    supabase.from("fotos").select("*").order("orden"),
     // Vista pública del inventario (puede no existir todavía → se ignora el error).
     supabase.from("catalogo_inflables").select("*").order("nombre"),
     // Categorías (puede no existir todavía → se ignora el error).
     supabase.from("categorias").select("nombre").eq("activo", true).order("orden"),
   ]);
   if (prod.error) throw prod.error;
-  if (fot.error) throw fot.error;
 
   const productos: Producto[] = (prod.data as ProductoRow[]).map((p) => ({
     id: p.id,
@@ -78,13 +72,6 @@ export async function cargarCatalogo(): Promise<CatalogoData | null> {
     cats: p.cats ?? [],
   }));
 
-  const fotos: Record<string, Foto> = {};
-  const galeria: string[] = [];
-  for (const f of fot.data as FotoRow[]) {
-    fotos[f.clave] = { clave: f.clave, src: f.src, alt: f.alt };
-    if (f.en_galeria) galeria.push(f.clave);
-  }
-
   const modelos: ModeloPublico[] = mod.error
     ? []
     : (mod.data as ModeloRow[]).map((m) => ({
@@ -95,11 +82,12 @@ export async function cargarCatalogo(): Promise<CatalogoData | null> {
         ancho: m.ancho ?? undefined,
         largo: m.largo ?? undefined,
         alto: m.alto ?? undefined,
+        fotos: (m.fotos ?? []).map(urlPublicaFoto),
       }));
 
   const categorias: string[] = cats.error
     ? []
     : (cats.data as { nombre: string }[]).map((c) => c.nombre);
 
-  return { productos, fotos, galeria, modelos, categorias };
+  return { productos, modelos, categorias };
 }

@@ -38,10 +38,16 @@ export interface Inflable {
   color: string;
   /** Descripción para ficha/catálogo (opcional). */
   descripcion?: string;
-  /** Dimensiones en metros (opcionales): ancho × largo × alto. */
+  /** Dimensiones sin turbina, en metros (opcionales): ancho × largo × alto. */
   ancho?: number;
   largo?: number;
   alto?: number;
+  /** Dimensiones CON turbina, en metros (opcionales): ≥ que sin turbina, no todas iguales. */
+  anchoTurbina?: number;
+  largoTurbina?: number;
+  altoTurbina?: number;
+  /** Fotos del modelo: paths dentro del bucket `inflables` de Supabase Storage. */
+  fotos?: string[];
 }
 
 /** Rol de un usuario del panel. `admin` = todo; `empleado` = solo operativo (reservas). */

@@ -1,20 +1,12 @@
 import { Button } from "@/components/ui/button";
 import { scrollAId } from "@/lib/scroll";
 import { linkWhatsApp } from "@/lib/whatsapp";
-import { HERO_STICKERS } from "@/data/site";
 
 export function Hero() {
   return (
     <section className="relative py-14 pt-9 md:pt-14">
       <div className="container grid items-center gap-9 md:grid-cols-[1.1fr_.9fr] md:gap-11">
         <div>
-          <div className="mb-5 flex flex-wrap gap-2.5">
-            {HERO_STICKERS.map((s) => (
-              <span key={s} className="sticker">
-                {s}
-              </span>
-            ))}
-          </div>
           <h1 className="text-[clamp(2.6rem,6vw,4.6rem)]">
             ¡QUE{" "}
             <span className="text-rojo [-webkit-text-stroke:2px_var(--tinta)]">SALTE</span> LA{" "}
@@ -62,9 +54,6 @@ export function Hero() {
               height={1146}
               className="w-full rounded-lg border-3 border-tinta object-cover"
             />
-            <figcaption className="absolute -bottom-[18px] -right-3.5 -rotate-6 rounded-full border-3 border-tinta bg-rojo px-4 py-2 font-alt text-[.9rem] font-extrabold text-white shadow-hard-sm">
-              📸 Foto real, es nuestro
-            </figcaption>
           </figure>
         </div>
       </div>

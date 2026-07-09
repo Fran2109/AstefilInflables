@@ -4,18 +4,14 @@ import { cn } from "@/lib/utils";
 import { TituloSeccion } from "@/components/landing/TituloSeccion";
 import { ProductoCard } from "@/components/landing/ProductoCard";
 import { ModeloCard } from "@/components/landing/ModeloCard";
-import { JUEGOS_SALON } from "@/data/site";
 import { linkWhatsApp } from "@/lib/whatsapp";
-import { useLanding } from "@/context/LandingContext";
 import { useCatalogo } from "@/context/CatalogoContext";
 
 export function Catalogo() {
-  const { precargar } = useLanding();
   const { productos, modelos, categorias } = useCatalogo();
   // null = "Todos" (overview de categorías con fotos).
   const [filtro, setFiltro] = useState<string | null>(null);
 
-  const juegos = modelos.filter((m) => m.cat === "Juegos");
   const modelosFiltrados = filtro ? modelos.filter((m) => m.cat === filtro) : [];
 
   return (
@@ -45,35 +41,29 @@ export function Catalogo() {
         </div>
 
         {filtro === null ? (
-          <>
-            {/* Overview: las categorías con foto */}
+          /* Overview: las categorías con foto */
+          productos.length ? (
             <div className="mt-7 grid grid-cols-1 gap-[26px] sm:grid-cols-2 lg:grid-cols-3">
               {productos.map((p) => (
                 <ProductoCard key={p.id} producto={p} />
               ))}
             </div>
-
-            {/* Banda juegos de salón */}
-            <div className="mt-8 flex flex-wrap items-center justify-between gap-[18px] rounded-lg border-3 border-tinta bg-azul p-[26px] text-white shadow-hard">
-              <div>
-                <h3 className="text-[1.5rem] font-extrabold">🎱 Juegos de salón</h3>
-                <p className="mt-1 max-w-[34rem] opacity-95">
-                  Sumale clásicos que enganchan a chicos y grandes por igual. Combinálos con cualquier
-                  inflable.
-                </p>
-              </div>
-              <div className="flex flex-wrap gap-2.5">
-                {(juegos.length ? juegos.map((j) => j.nombre) : JUEGOS_SALON).map((j) => (
-                  <span key={j} className="chip">
-                    {j}
-                  </span>
-                ))}
-              </div>
-              <Button size="chico" onClick={() => precargar("Juegos de salón")}>
-                Consultar juegos
+          ) : (
+            <div className="mt-7 rounded-lg border-3 border-dashed border-tinta bg-papel p-8 text-center">
+              <p className="mx-auto max-w-[30rem] text-[1.05rem]">
+                Estamos armando el catálogo. Escribinos y te contamos qué tenemos disponible 👇
+              </p>
+              <Button asChild variant="verde" size="chico" className="mt-4">
+                <a
+                  href={linkWhatsApp("¡Hola Astefil! Quiero consultar por los inflables 🎈")}
+                  target="_blank"
+                  rel="noopener"
+                >
+                  Consultar por WhatsApp
+                </a>
               </Button>
             </div>
-          </>
+          )
         ) : modelosFiltrados.length ? (
           /* Vista filtrada: los modelos reales de esa categoría */
           <div className="mt-7 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">

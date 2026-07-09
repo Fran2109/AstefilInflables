@@ -10,6 +10,9 @@ const GLOBITO: Record<string, string> = {
 const ROTACION = ["-rotate-[1.2deg]", "rotate-[.9deg]", "-rotate-[.6deg]"];
 
 export function Testimonios() {
+  // Sin reseñas cargadas todavía: no se muestra nada (evita mostrar la sección vacía).
+  if (TESTIMONIOS.length === 0) return null;
+
   return (
     <section id="testimonios" className="pb-2 pt-16">
       <div className="container">
@@ -20,7 +23,6 @@ export function Testimonios() {
           Familias que ya saltaron
         </TituloSeccion>
 
-        {/* ⚠️ PLACEHOLDERS: reemplazar por reseñas reales (ver data/site.ts). */}
         <div className="mx-auto mt-11 grid max-w-[460px] grid-cols-1 gap-7 md:max-w-none md:grid-cols-3">
           {TESTIMONIOS.map((t, i) => (
             <article

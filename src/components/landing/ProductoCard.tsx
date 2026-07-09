@@ -1,16 +1,17 @@
 import { Search } from "lucide-react";
 import type { Producto } from "@/types/catalogo";
 import { Button } from "@/components/ui/button";
+import { fotoPlaceholder } from "@/lib/placeholder";
 import { useLanding } from "@/context/LandingContext";
 import { useCatalogo } from "@/context/CatalogoContext";
 import { ILUSTRACIONES } from "@/components/landing/ilustraciones";
 
 export function ProductoCard({ producto }: { producto: Producto }) {
   const { precargar, abrirVisor } = useLanding();
-  const { fotos: FOTOS, modelos } = useCatalogo();
-  const fotos = producto.fotos.filter((f) => FOTOS[f]);
+  const { modelos } = useCatalogo();
+  const fotos = producto.fotos;
   const tieneFotos = fotos.length > 0;
-  const primera = tieneFotos ? FOTOS[fotos[0]] : null;
+  const primera = tieneFotos ? fotoPlaceholder(fotos[0], producto.titulo) : null;
 
   // Modelos reales de esta categoría (según el mapeo `cats` de la card).
   const cats = producto.cats ?? [];

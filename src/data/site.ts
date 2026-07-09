@@ -14,9 +14,6 @@ export const SITIO = {
   ],
 } as const;
 
-/** Stickers del hero. */
-export const HERO_STICKERS = ["🎂 Cumples", "🎉 Eventos", "🏫 Jardines y colegios"];
-
 /** Palabras del marquee (se duplican al renderizar para el loop infinito). */
 export const MARQUEE = [
   "CASTILLOS",
@@ -28,9 +25,6 @@ export const MARQUEE = [
   "TEJO DE AIRE",
   "LIVINGS PARA CHICOS",
 ];
-
-/** Chips de juegos de salón. */
-export const JUEGOS_SALON = ["Metegol", "Tejo de aire", "Pool", "Ping pong", "Sapo"];
 
 /** Opciones del select del cotizador. "" = sin elegir. */
 export const OPCIONES_INFLABLE = [
@@ -111,26 +105,8 @@ export const FAQ = [
 ];
 
 /**
- * ⚠️ PLACEHOLDERS: reemplazar por reseñas reales de Instagram/Facebook
- * (texto + nombre + localidad) antes de promocionar el sitio. No inventar.
+ * Reseñas reales de Instagram/Facebook (texto + nombre + localidad). Vacío a
+ * propósito: se cargan de verdad desde el admin (tabla `testimonios`, vía un
+ * ABM a construir). No inventar contenido acá.
  */
-export const TESTIMONIOS = [
-  {
-    texto:
-      "Los chicos no se bajaron del castillo en toda la tarde. Llegaron puntuales a armar y lo retiraron sin que nos diéramos cuenta. ¡Súper recomendables!",
-    quien: "Caro · Grand Bourg",
-    color: "azul" as const,
-  },
-  {
-    texto:
-      "Alquilamos el de la rampa para un cumple en salón y fue un éxito total. Muy buena onda para coordinar todo por WhatsApp.",
-    quien: "Damián · Tortuguitas",
-    color: "rojo" as const,
-  },
-  {
-    texto:
-      "El acuático salvó el cumple en pleno enero. Impecable el estado del inflable y la atención. Ya reservamos de nuevo para diciembre.",
-    quien: "Vane · Del Viso",
-    color: "amarillo" as const,
-  },
-];
+export const TESTIMONIOS: { texto: string; quien: string; color: "azul" | "rojo" | "amarillo" }[] = [];
