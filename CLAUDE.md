@@ -55,15 +55,17 @@ No hay tests. Validar con `npm run build` y en el navegador con las herramientas
   + Storage + seed mínimo) y es el "molde" canónico — para resetear una base sucia, correrlo
   (⚠ borra reservas; NO toca `auth.users`). El resto de los `.sql` en `supabase/` son
   migraciones puntuales/aditivas ya fusionadas en `init.sql` (roles, storage de fotos, medidas
-  con turbina) para aplicar a una base ya viva sin perder datos, más `reset.sql` (borra todo,
-  sin reconstruir — usar antes de un `init.sql` limpio). Se corren a mano en Supabase → SQL
-  Editor. Al cambiar el esquema, actualizar `init.sql` para que la reconstrucción siga fiel.
+  con turbina, zonas) para aplicar a una base ya viva sin perder datos, más `reset.sql` (borra
+  todo, sin reconstruir — usar antes de un `init.sql` limpio). Se corren a mano en Supabase →
+  SQL Editor. Al cambiar el esquema, actualizar `init.sql` para que la reconstrucción siga fiel.
 - **Nombres**: la DB usa **snake_case**; la app usa **camelCase**. El mapeo vive en
   `src/admin/lib/db.ts` (admin) y `src/lib/landingDb.ts` (landing). Mantenerlos en sync.
-- **Tablas**: `reservas`, `inflables`, `config`, `categorias`, `perfiles` (privadas/mixtas);
-  `productos`, `testimonios` (catálogo público, **vacías por defecto** — sin ABM propio
-  todavía, se cargan a mano vía SQL o `db.ts`); vista `catalogo_inflables` (columnas seguras
-  de `inflables` activos — **NO expone precio** — para que la landing liste modelos).
+- **Tablas**: `reservas`, `inflables`, `config`, `categorias`, `zonas`, `perfiles`
+  (privadas/mixtas); `productos`, `testimonios` (catálogo público, **vacías por defecto** —
+  sin ABM propio todavía, se cargan a mano vía SQL o `db.ts`); vista `catalogo_inflables`
+  (columnas seguras de `inflables` activos — **NO expone precio** — para que la landing liste
+  modelos). `categorias` y `zonas` sí traen seed real (5 categorías, 8 zonas) porque son
+  estructurales, no contenido de marketing.
 - **Storage**: bucket público `inflables` (fotos por modelo, subidas desde `InflableDialog` vía
   `admin/lib/db.ts` → `subirFoto`/`borrarFoto`, comprimidas a JPEG en el cliente antes de subir).
   Lectura pública por URL; escritura solo admin (RLS de `storage.objects`).
@@ -75,10 +77,15 @@ No hay tests. Validar con `npm run build` y en el navegador con las herramientas
 
 - **Data layer** (`lib/db.ts`): capa relacional contra Supabase (mappers + CRUD por entidad).
   Reemplaza al adaptador `store` cuando `haySupabase`. Asume sesión iniciada (RLS).
-- **Estado** (`store/AdminContext.tsx`): mantiene reservas/inventario/config/categorías/rol.
+- **Estado** (`store/AdminContext.tsx`): mantiene reservas/inventario/config/categorías/zonas/rol.
   **Ramifica por `haySupabase`**: online persiste por acción vía `db.ts`; offline mantiene el
   modelo viejo (estado + `useEffect` que guarda arrays enteros en `store`). Expone acciones CRUD
   + `mostrarToast` + `rol`/`esAdmin` + `cerrarSesion`. Todo se consume con `useAdmin()`.
+  **Categorías/zonas online arrancan vacías** (no con el seed local `CATEGORIAS_INICIALES`/
+  `ZONAS_INICIALES`) — ese seed es la semilla real solo en modo offline (localStorage, sin
+  Supabase). Mostrar una lista local "fantasma" mientras la tabla no existe/está vacía en modo
+  online mentiría sobre qué hay guardado de verdad; cada vista maneja su propio estado vacío
+  (`Vacio` de `views/comunes.tsx`, también usado en `InventarioView` para `inflables`).
 - **Auth**: login real Supabase (email/clave) en `components/Login.tsx`. `AdminContext` escucha
   `onAuthStateChange`, carga el rol y los datos al iniciar sesión. Sin sesión → `AdminPage`
   muestra `<Login>`. En modo offline, cae al `<Gate>` de PIN viejo (disuasión casual).
@@ -94,15 +101,20 @@ No hay tests. Validar con `npm run build` y en el navegador con las herramientas
     pero si están cargadas deben ser ≥ que sin turbina y no las tres iguales — se validan en
     `InflableDialog`, que además autocompleta con-turbina al tipear sin-turbina hasta que el
     usuario las edite a mano; `fotos` = paths en el bucket `inflables` de Storage)
-  - `Categoria`: `{id (slug), nombre (único), orden, activo}` — 5 seed: Castillos, Gigantes,
-    Acuáticos, Juegos, Eventos.
+  - `Categoria` / `Zona`: mismo shape `{id (slug), nombre (único), orden, activo}` — 5
+    categorías seed (Castillos, Gigantes, Acuáticos, Juegos, Eventos), 8 zonas seed
+    (Tortuguitas, Grand Bourg, Los Polvorines, Malvinas Argentinas, José C. Paz, Del Viso,
+    Pilar, Escobar). `Zona` alimenta "¿Llegamos a tu zona?" de la landing y el `<datalist>`
+    del campo zona/localidad en `ReservaDialog` (ahí `zona` sigue siendo texto libre, no FK —
+    borrar una zona no toca reservas existentes).
   - `Perfil`: `{id (=auth uid), email, rol}` · `Config`: `{nombre, pin}`
 - **Estados** (flujo): Consulta → Reservado → Señado → Entregado → Finalizado; Cancelado
   aparte. Consulta y Cancelado no bloquean inventario. Avanzar estado es un solo paso.
 - **Conflictos** (`lib/conflictos.ts` → `conflictosDe`): misma `fecha` + intersección de
   `inflableIds` entre reservas bloqueantes ⇒ aviso en el formulario y tarjeta en rojo.
 - **Vistas** (`views/`): Inicio (KPIs), Calendario, Reservas, Inventario, **Categorías** (ABM
-  con reordenar/activar/borrar-bloqueado-si-en-uso), **Equipo** (roles, solo admin), Ajustes.
+  con reordenar/activar/borrar-bloqueado-si-en-uso), **Zonas** (mismo ABM pattern, sin bloqueo
+  al borrar porque `Reserva.zona` es texto libre, no FK), **Equipo** (roles, solo admin), Ajustes.
 
 ### Roles ADMIN / EMPLEADO
 
@@ -110,7 +122,7 @@ No hay tests. Validar con `npm run build` y en el navegador con las herramientas
   `empleado`) + backfill (usuarios existentes = `admin`). Los usuarios se crean **solo desde
   el dashboard de Supabase** (Auth → Users); la app no crea cuentas.
 - **Admin** = todo. **Empleado** = operativo: gestiona reservas y ve el resto en lectura; NO
-  toca catálogo/inventario, categorías, equipo ni ajustes.
+  toca catálogo/inventario, categorías, zonas, equipo ni ajustes.
 - Doble capa: RLS lo hace cumplir en la base; la UI lo refleja (`esAdmin` en `useAdmin()`):
   `Rail` filtra los tabs `adminOnly`, `InventarioView` es read-only para empleado, hay botón
   "Cerrar sesión" en el Rail. `EquipoView` deja al admin cambiar roles (no el propio).
@@ -119,8 +131,10 @@ No hay tests. Validar con `npm run build` y en el navegador con las herramientas
 
 - **`CatalogoProvider`** (`context/CatalogoContext.tsx`): arranca con los datos estáticos de
   `src/data/` (render instantáneo) y, si hay Supabase, los reemplaza por los de la base
-  (`lib/landingDb.ts` → `cargarCatalogo`: productos, fotos, categorías, modelos). Fallback
-  estático ante error. Se consume con `useCatalogo()`.
+  (`lib/landingDb.ts` → `cargarCatalogo`: productos, categorías, zonas, modelos). Fallback
+  estático ante error de red. Se consume con `useCatalogo()`. `zonas` sigue la misma regla que
+  productos/testimonios (ver "Verdad vs. placeholder"): si la tabla no existe o está vacía, la
+  landing lo refleja tal cual — nada de listas estáticas hardcodeadas como red de seguridad.
 - **`LandingContext`**: `precargar(valor)` (setea el inflable del cotizador, scrollea y enfoca
   la fecha) + `abrirVisor(cfg)`; renderiza el `<Visor>` una sola vez.
 - **Catálogo con filtro** (`Catalogo.tsx`): chips (Todos + categorías). "Todos" muestra las
@@ -133,6 +147,8 @@ No hay tests. Validar con `npm run build` y en el navegador con las herramientas
 - **Galería "Astefil en acción"** (`Galeria.tsx`): hasta 10 inflables al azar (mezcla
   Fisher–Yates recalculada solo cuando cambian los modelos) que ya tengan foto real subida;
   si ninguno tiene foto todavía, muestra un estado vacío honesto en vez de la tira.
+- **"¿Llegamos a tu zona?"** (`Zonas.tsx`): chips con `useCatalogo().zonas` (DB o fallback
+  estático, ver arriba) — mismo ABM que gestiona el admin.
 - **Visor**: lightbox con flechas/teclado/swipe/miniaturas + lista de modelos por categoría.
 - **Placeholders de foto** (`lib/placeholder.ts` → `fotoPlaceholder`): SVG on-brand generado en
   el cliente (sin red), determinístico por clave, para cualquier card sin foto real todavía.
@@ -208,11 +224,15 @@ obvio (`fotoPlaceholder`) — nunca texto o fotos inventadas presentadas como re
 
 - **Productos** (`data/productos.ts` `PRODUCTOS` y tabla `productos`) y **testimonios**
   (`data/site.ts` `TESTIMONIOS` y tabla `testimonios`): **vacíos por defecto**, a propósito —
-  no hay ABM para cargarlos desde el admin todavía (solo Categorías e Inventario lo tienen).
-  `Catalogo.tsx` muestra un estado vacío con CTA cuando no hay productos; `Testimonios.tsx`
-  directamente no renderiza nada si `TESTIMONIOS` está vacío (no hay link de nav a `#testimonios`,
-  así que ocultar la sección entera es seguro). Cargar contenido real a mano (SQL o `db.ts`), no
-  inventarlo.
+  no hay ABM para cargarlos desde el admin todavía (solo Categorías, Zonas e Inventario lo
+  tienen). `Catalogo.tsx` muestra un estado vacío con CTA cuando no hay productos;
+  `Testimonios.tsx` directamente no renderiza nada si `TESTIMONIOS` está vacío (no hay link de
+  nav a `#testimonios`, así que ocultar la sección entera es seguro). Cargar contenido real a
+  mano (SQL o `db.ts`), no inventarlo.
+- **Zonas** (tabla `zonas`, ABM completo): misma regla — **sin fallback estático**. Si la tabla
+  no existe o está vacía, `Zonas.tsx` muestra un estado honesto ("estamos actualizando
+  cobertura" + CTA WhatsApp) en vez de ocultar la sección (sí hay link de nav a `#zonas`, a
+  diferencia de testimonios). No reintroducir una lista hardcodeada de localidades como fallback.
 - **Precios**: no hay precios publicados a propósito (funnel a "consultá"). En el admin, los
   inflables arrancan con precio 0 = sin definir. No inventar cifras.
 - **Claims de servicio** ("llegamos, armamos, retiramos", pasos de "Cómo funciona", bullets del
@@ -225,6 +245,6 @@ obvio (`fotoPlaceholder`) — nunca texto o fotos inventadas presentadas como re
 ## Pendientes
 
 Ver `docs/BACKLOG.md`. Destacados actuales: ABM de Productos y Testimonios en el admin (hoy
-solo Categorías e Inventario lo tienen), cargar fotos reales por modelo (la feature de subida
-ya existe, faltan las fotos), testimonios reales, precios/fichas, y afinar los claims de
-servicio con Francisco.
+Categorías, Zonas e Inventario lo tienen; Productos/Testimonios no), cargar fotos reales por
+modelo (la feature de subida ya existe, faltan las fotos), testimonios reales, precios/fichas,
+y afinar los claims de servicio con Francisco.

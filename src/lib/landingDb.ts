@@ -43,12 +43,14 @@ export interface CatalogoData {
   modelos: ModeloPublico[];
   /** Nombres de categorías, en orden (tabla `categorias`). Vacío si no existe aún. */
   categorias: string[];
+  /** Nombres de zonas de cobertura, en orden (tabla `zonas`). Vacío si no existe aún. */
+  zonas: string[];
 }
 
 export async function cargarCatalogo(): Promise<CatalogoData | null> {
   if (!supabase) return null;
 
-  const [prod, mod, cats] = await Promise.all([
+  const [prod, mod, cats, zon] = await Promise.all([
     supabase
       .from("productos")
       .select("*")
@@ -58,6 +60,8 @@ export async function cargarCatalogo(): Promise<CatalogoData | null> {
     supabase.from("catalogo_inflables").select("*").order("nombre"),
     // Categorías (puede no existir todavía → se ignora el error).
     supabase.from("categorias").select("nombre").eq("activo", true).order("orden"),
+    // Zonas (puede no existir todavía → se ignora el error).
+    supabase.from("zonas").select("nombre").eq("activo", true).order("orden"),
   ]);
   if (prod.error) throw prod.error;
 
@@ -89,5 +93,9 @@ export async function cargarCatalogo(): Promise<CatalogoData | null> {
     ? []
     : (cats.data as { nombre: string }[]).map((c) => c.nombre);
 
-  return { productos, modelos, categorias };
+  const zonas: string[] = zon.error
+    ? []
+    : (zon.data as { nombre: string }[]).map((z) => z.nombre);
+
+  return { productos, modelos, categorias, zonas };
 }

@@ -68,6 +68,18 @@ export interface Categoria {
   activo: boolean;
 }
 
+/**
+ * Una zona de cobertura: alimenta la sección "¿Llegamos a tu zona?" de la
+ * landing y las sugerencias del campo zona/localidad al cargar una reserva.
+ * `id` es un slug; `orden` define el orden en las listas.
+ */
+export interface Zona {
+  id: string;
+  nombre: string;
+  orden: number;
+  activo: boolean;
+}
+
 /** Config del panel. PIN es disuasión casual, NO seguridad real (todo client-side). */
 export interface Config {
   nombre: string;

@@ -1,5 +1,5 @@
 import { supabase } from "@/lib/supabase";
-import type { Categoria, Config, Inflable, Perfil, Reserva, Rol } from "@/admin/types";
+import type { Categoria, Config, Inflable, Perfil, Reserva, Rol, Zona } from "@/admin/types";
 
 /**
  * Capa de acceso a datos del panel contra Supabase (Postgres relacional).
@@ -179,13 +179,16 @@ export async function cargarTodo(): Promise<{
   reservas: Reserva[];
   config: Config;
   categorias: Categoria[];
+  zonas: Zona[];
 }> {
-  const [inf, res, cfg, cats] = await Promise.all([
+  const [inf, res, cfg, cats, zon] = await Promise.all([
     sb().from("inflables").select("*").order("nombre"),
     sb().from("reservas").select("*").order("fecha"),
     sb().from("config").select("*").eq("id", 1).maybeSingle(),
     // Puede no existir todavía (base sin la tabla `categorias`) → se ignora el error.
     sb().from("categorias").select("*").order("orden"),
+    // Puede no existir todavía (base sin la tabla `zonas`) → se ignora el error.
+    sb().from("zonas").select("*").order("orden"),
   ]);
   if (inf.error) throw inf.error;
   if (res.error) throw res.error;
@@ -197,6 +200,7 @@ export async function cargarTodo(): Promise<{
       ? { nombre: (cfg.data as { nombre: string }).nombre ?? "", pin: null }
       : { nombre: "", pin: null },
     categorias: cats.error ? [] : (cats.data as Categoria[]),
+    zonas: zon.error ? [] : (zon.data as Zona[]),
   };
 }
 
@@ -252,6 +256,25 @@ export async function actualizarCategoria(
 
 export async function borrarCategoria(id: string): Promise<void> {
   const { error } = await sb().from("categorias").delete().eq("id", id);
+  if (error) throw error;
+}
+
+// ---- Zonas ----
+export async function crearZona(z: Zona): Promise<void> {
+  const { error } = await sb().from("zonas").insert(z);
+  if (error) throw error;
+}
+
+export async function actualizarZona(
+  id: string,
+  cambios: Partial<Pick<Zona, "nombre" | "orden" | "activo">>
+): Promise<void> {
+  const { error } = await sb().from("zonas").update(cambios).eq("id", id);
+  if (error) throw error;
+}
+
+export async function borrarZona(id: string): Promise<void> {
+  const { error } = await sb().from("zonas").delete().eq("id", id);
   if (error) throw error;
 }
 

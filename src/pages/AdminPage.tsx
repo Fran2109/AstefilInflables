@@ -1,5 +1,5 @@
 import { useState } from "react";
-import type { Categoria, Inflable, Reserva } from "@/admin/types";
+import type { Categoria, Inflable, Reserva, Zona } from "@/admin/types";
 import { AdminProvider, useAdmin } from "@/admin/store/AdminContext";
 import { Rail, type Vista } from "@/admin/components/Rail";
 import { Gate } from "@/admin/components/Gate";
@@ -9,12 +9,14 @@ import { Toast } from "@/admin/components/Toast";
 import { ReservaDialog } from "@/admin/components/ReservaDialog";
 import { InflableDialog } from "@/admin/components/InflableDialog";
 import { CategoriaDialog } from "@/admin/components/CategoriaDialog";
+import { ZonaDialog } from "@/admin/components/ZonaDialog";
 import { DiaDialog } from "@/admin/components/DiaDialog";
 import { InicioView } from "@/admin/views/InicioView";
 import { CalendarioView } from "@/admin/views/CalendarioView";
 import { ReservasView } from "@/admin/views/ReservasView";
 import { InventarioView } from "@/admin/views/InventarioView";
 import { CategoriasView } from "@/admin/views/CategoriasView";
+import { ZonasView } from "@/admin/views/ZonasView";
 import { EquipoView } from "@/admin/views/EquipoView";
 import { AjustesView } from "@/admin/views/AjustesView";
 
@@ -33,7 +35,8 @@ function AdminInner() {
   const [gateOk, setGateOk] = useState(false);
   const [vista, setVista] = useState<Vista>("inicio");
   // Vistas solo para admin: si un empleado cae en una, se muestra Inicio.
-  const adminOnly = vista === "categorias" || vista === "equipo" || vista === "ajustes";
+  const adminOnly =
+    vista === "categorias" || vista === "zonas" || vista === "equipo" || vista === "ajustes";
   const vistaActual: Vista = adminOnly && !esAdmin ? "inicio" : vista;
 
   // Diálogos
@@ -49,11 +52,16 @@ function AdminInner() {
     open: false,
     categoria: null,
   });
+  const [dlgZona, setDlgZona] = useState<{ open: boolean; zona: Zona | null }>({
+    open: false,
+    zona: null,
+  });
   const [dlgDia, setDlgDia] = useState<{ open: boolean; iso: string | null }>({ open: false, iso: null });
 
   const abrirReserva = (r: Reserva | null) => setDlgReserva({ open: true, reserva: r });
   const abrirInflable = (i: Inflable | null) => setDlgInflable({ open: true, inflable: i });
   const abrirCategoria = (c: Categoria | null) => setDlgCategoria({ open: true, categoria: c });
+  const abrirZona = (z: Zona | null) => setDlgZona({ open: true, zona: z });
   const abrirDia = (iso: string) => setDlgDia({ open: true, iso });
 
   // Modo Supabase: login real. Sin sesión → pantalla de login.
@@ -99,6 +107,7 @@ function AdminInner() {
           {vistaActual === "reservas" && <ReservasView onAbrirReserva={abrirReserva} />}
           {vistaActual === "inventario" && <InventarioView onAbrirInflable={abrirInflable} />}
           {vistaActual === "categorias" && <CategoriasView onAbrirCategoria={abrirCategoria} />}
+          {vistaActual === "zonas" && <ZonasView onAbrirZona={abrirZona} />}
           {vistaActual === "equipo" && <EquipoView />}
           {vistaActual === "ajustes" && <AjustesView />}
         </main>
@@ -119,6 +128,11 @@ function AdminInner() {
         open={dlgCategoria.open}
         categoria={dlgCategoria.categoria}
         onClose={() => setDlgCategoria((d) => ({ ...d, open: false }))}
+      />
+      <ZonaDialog
+        open={dlgZona.open}
+        zona={dlgZona.zona}
+        onClose={() => setDlgZona((d) => ({ ...d, open: false }))}
       />
       <DiaDialog
         open={dlgDia.open}

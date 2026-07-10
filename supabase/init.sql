@@ -2,10 +2,10 @@
 -- Astefil Inflables — Inicialización de la base (Supabase / Postgres)
 -- ============================================================================
 -- Este archivo reconstruye TODO el esquema desde cero (tablas, RLS, vista,
--- Storage), pero solo carga datos de fábrica en **categorías** y **roles**
--- (perfiles). El resto de las tablas (productos, testimonios, inflables,
--- config) quedan creadas pero VACÍAS — se cargan a mano desde el admin
--- (Inventario, Categorías, Ajustes) o con un script de carga aparte.
+-- Storage), pero solo carga datos de fábrica en **categorías**, **zonas** y
+-- **roles** (perfiles). El resto de las tablas (productos, testimonios,
+-- inflables, config) quedan creadas pero VACÍAS — se cargan a mano desde el
+-- admin (Inventario, Categorías, Zonas, Ajustes) o con un script de carga aparte.
 --
 -- No hay tabla de fotos: la landing muestra placeholders on-brand generados
 -- en el cliente (`src/lib/placeholder.ts`) hasta que se carguen fotos reales
@@ -19,7 +19,7 @@
 --     NO se toca: seguís entrando con el mismo email y contraseña.
 --
 -- Modelo de seguridad (RLS):
---   • Público (lectura): categorias, productos, testimonios + vista
+--   • Público (lectura): categorias, zonas, productos, testimonios + vista
 --     catalogo_inflables. Escritura solo con sesión iniciada.
 --   • Privado (solo con sesión): inflables, reservas, config.
 --
@@ -38,6 +38,7 @@ drop table if exists public.testimonios cascade;
 drop table if exists public.productos   cascade;
 drop table if exists public.fotos       cascade;  -- por si quedó de una versión vieja
 drop table if exists public.categorias  cascade;
+drop table if exists public.zonas       cascade;
 drop table if exists public.config      cascade;
 drop table if exists public.perfiles    cascade;
 -- (auth.users NO se toca; el trigger y la función se recrean abajo)
@@ -49,6 +50,15 @@ drop function if exists public.es_admin() cascade;
 
 -- Categorías del catálogo (primer nivel). `id` = slug; `nombre` visible.
 create table public.categorias (
+  id     text primary key,
+  nombre text not null unique,
+  orden  integer not null default 0,
+  activo boolean not null default true
+);
+
+-- Zonas de cobertura: "¿Llegamos a tu zona?" en la landing + sugerencias del
+-- campo zona/localidad al cargar una reserva. `id` = slug; `nombre` visible.
+create table public.zonas (
   id     text primary key,
   nombre text not null unique,
   orden  integer not null default 0,
@@ -163,6 +173,7 @@ create trigger on_auth_user_created
 -- 2. ROW LEVEL SECURITY (por rol)
 -- ----------------------------------------------------------------------------
 alter table public.categorias  enable row level security;
+alter table public.zonas       enable row level security;
 alter table public.productos   enable row level security;
 alter table public.testimonios enable row level security;
 alter table public.inflables   enable row level security;
@@ -174,7 +185,7 @@ alter table public.perfiles    enable row level security;
 do $$
 declare t text;
 begin
-  foreach t in array array['categorias','productos','testimonios']
+  foreach t in array array['categorias','zonas','productos','testimonios']
   loop
     execute format('create policy "lectura publica" on public.%I for select using (true)', t);
     execute format('create policy "escritura admin" on public.%I for all to authenticated using (public.es_admin()) with check (public.es_admin())', t);
@@ -203,7 +214,7 @@ create policy "admin gestiona perfiles" on public.perfiles
   for update to authenticated using (public.es_admin()) with check (public.es_admin());
 
 -- ----------------------------------------------------------------------------
--- 3. SEED — solo categorías y roles. El resto de las tablas (fotos, productos,
+-- 3. SEED — solo categorías, zonas y roles. El resto de las tablas (productos,
 --    testimonios, inflables, config) quedan creadas pero VACÍAS: se cargan a
 --    mano desde el admin o con un script de carga aparte.
 -- ----------------------------------------------------------------------------
@@ -215,6 +226,17 @@ insert into public.categorias (id, nombre, orden) values
   ('acuaticos', 'Acuáticos', 3),
   ('juegos',    'Juegos',    4),
   ('eventos',   'Eventos',   5);
+
+-- Zonas de cobertura reales (el `orden` define cómo se listan; editable).
+insert into public.zonas (id, nombre, orden) values
+  ('tortuguitas',         'Tortuguitas',         1),
+  ('grand-bourg',         'Grand Bourg',         2),
+  ('los-polvorines',      'Los Polvorines',      3),
+  ('malvinas-argentinas', 'Malvinas Argentinas', 4),
+  ('jose-c-paz',          'José C. Paz',         5),
+  ('del-viso',            'Del Viso',            6),
+  ('pilar',               'Pilar',               7),
+  ('escobar',             'Escobar',             8);
 
 -- Perfiles: los usuarios que YA existen en Auth quedan como admin (los fundadores);
 -- los que se creen después arrancan como 'empleado' vía el trigger.

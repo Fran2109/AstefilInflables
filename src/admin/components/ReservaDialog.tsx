@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import type { Estado, Reserva } from "@/admin/types";
 import { ESTADOS } from "@/admin/types";
-import { ZONAS } from "@/admin/lib/seed";
 import { conflictosDe } from "@/admin/lib/conflictos";
 import { uid } from "@/admin/lib/formato";
 import { hoyStr } from "@/admin/lib/fechas";
@@ -53,7 +52,11 @@ function estadoInicial(r: Reserva | null, fechaSugerida?: string): FormState {
 }
 
 export function ReservaDialog({ open, onClose, reserva, fechaSugerida }: Props) {
-  const { inflables, reservas, guardarReserva, eliminarReserva, mostrarToast } = useAdmin();
+  const { inflables, reservas, zonas, guardarReserva, eliminarReserva, mostrarToast } = useAdmin();
+  const nombresZona = [...zonas]
+    .filter((z) => z.activo)
+    .sort((a, b) => a.orden - b.orden)
+    .map((z) => z.nombre);
   const confirmar = useConfirmar();
   const [f, setF] = useState<FormState>(() => estadoInicial(reserva, fechaSugerida));
 
@@ -221,7 +224,7 @@ export function ReservaDialog({ open, onClose, reserva, fechaSugerida }: Props) 
         <Campo label="Zona / localidad" htmlFor="r-zona">
           <input id="r-zona" list="zonas-list" placeholder="Grand Bourg" className={campoInputCls} value={f.zona} onChange={(e) => set("zona", e.target.value)} />
           <datalist id="zonas-list">
-            {ZONAS.map((z) => (
+            {nombresZona.map((z) => (
               <option key={z} value={z} />
             ))}
           </datalist>

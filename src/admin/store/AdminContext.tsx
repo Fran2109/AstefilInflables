@@ -8,13 +8,16 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import type { Categoria, Config, Inflable, Reserva, Rol } from "@/admin/types";
+import type { Categoria, Config, Inflable, Reserva, Rol, Zona } from "@/admin/types";
 import { ESTADOS } from "@/admin/types";
 import { store, K, modoStorage } from "@/admin/lib/store";
-import { seedInflables, reservasEjemplo, COLORES, CATEGORIAS } from "@/admin/lib/seed";
+import { seedInflables, reservasEjemplo, COLORES, CATEGORIAS, ZONAS } from "@/admin/lib/seed";
+import { uid } from "@/admin/lib/formato";
+import { haySupabase, supabase } from "@/lib/supabase";
+import * as db from "@/admin/lib/db";
 
-/** Slug para el id de una categoría: "Juegos de salón" → "juegos-de-salon". */
-function slugCat(s: string): string {
+/** Slug para el id de una categoría/zona: "Juegos de salón" → "juegos-de-salon". */
+function slugificar(s: string): string {
   return s
     .toLowerCase()
     .normalize("NFD")
@@ -25,14 +28,19 @@ function slugCat(s: string): string {
 
 /** Categorías iniciales (fallback local) a partir de la lista de nombres. */
 const CATEGORIAS_INICIALES: Categoria[] = CATEGORIAS.map((nombre, i) => ({
-  id: slugCat(nombre),
+  id: slugificar(nombre),
   nombre,
   orden: i + 1,
   activo: true,
 }));
-import { uid } from "@/admin/lib/formato";
-import { haySupabase, supabase } from "@/lib/supabase";
-import * as db from "@/admin/lib/db";
+
+/** Zonas iniciales (fallback local) a partir de la lista de nombres. */
+const ZONAS_INICIALES: Zona[] = ZONAS.map((nombre, i) => ({
+  id: slugificar(nombre),
+  nombre,
+  orden: i + 1,
+  activo: true,
+}));
 
 interface Toast {
   id: number;
@@ -56,6 +64,8 @@ interface AdminContextValue {
   config: Config;
   /** Categorías del catálogo (de la DB si hay Supabase; si no, las locales), por `orden`. */
   categorias: Categoria[];
+  /** Zonas de cobertura (de la DB si hay Supabase; si no, las locales), por `orden`. */
+  zonas: Zona[];
   modo: string;
   toast: Toast | null;
   mostrarToast: (msg: string) => void;
@@ -72,6 +82,12 @@ interface AdminContextValue {
   toggleCategoria: (id: string) => void;
   eliminarCategoria: (id: string) => void;
   moverCategoria: (id: string, dir: -1 | 1) => void;
+
+  /** ABM de zonas. */
+  guardarZona: (nombre: string, id?: string) => void;
+  toggleZona: (id: string) => void;
+  eliminarZona: (id: string) => void;
+  moverZona: (id: string, dir: -1 | 1) => void;
 
   setNombre: (nombre: string) => void;
   setPin: (pin: string) => void;
@@ -95,7 +111,13 @@ export function AdminProvider({ children }: { children: ReactNode }) {
   const [inflables, setInflables] = useState<Inflable[]>([]);
   const [reservas, setReservas] = useState<Reserva[]>([]);
   const [config, setConfig] = useState<Config>({ nombre: "", pin: null });
-  const [categorias, setCategorias] = useState<Categoria[]>(CATEGORIAS_INICIALES);
+  // El fallback local (CATEGORIAS_INICIALES/ZONAS_INICIALES) es la semilla real
+  // en modo offline (localStorage, sin Supabase) — igual que seedInflables().
+  // En modo online arranca vacío: si la tabla no existe o está vacía, mostrar
+  // una lista local "fantasma" (que parece guardada pero no lo está) sería
+  // mentir. El estado vacío real lo maneja cada vista (Vacio en Categorías/Zonas).
+  const [categorias, setCategorias] = useState<Categoria[]>(online ? [] : CATEGORIAS_INICIALES);
+  const [zonas, setZonas] = useState<Zona[]>(online ? [] : ZONAS_INICIALES);
   const [modo, setModo] = useState<string>(online ? "supabase" : "navegador");
   const [toast, setToast] = useState<Toast | null>(null);
 
@@ -106,6 +128,8 @@ export function AdminProvider({ children }: { children: ReactNode }) {
   inflablesRef.current = inflables;
   const categoriasRef = useRef(categorias);
   categoriasRef.current = categorias;
+  const zonasRef = useRef(zonas);
+  zonasRef.current = zonas;
 
   // Trae los datos desde Supabase (requiere sesión activa).
   const cargarDesdeSupabase = useCallback(async () => {
@@ -115,7 +139,10 @@ export function AdminProvider({ children }: { children: ReactNode }) {
       setInflables(d.inflables);
       setReservas(d.reservas);
       setConfig(d.config);
-      if (d.categorias.length) setCategorias(d.categorias);
+      // Siempre refleja lo real (incluso vacío): no conservar el fallback local
+      // si la tabla no existe o está vacía, para no mostrar datos "fantasma".
+      setCategorias(d.categorias);
+      setZonas(d.zonas);
     } catch {
       mostrarToast("No pudimos cargar los datos");
     } finally {
@@ -291,7 +318,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
         mostrarToast("Categoría guardada ✓");
       } else {
         const orden = lista.reduce((m, c) => Math.max(m, c.orden), 0) + 1;
-        const base = slugCat(n) || "categoria";
+        const base = slugificar(n) || "categoria";
         let nuevoId = base;
         let k = 2;
         while (lista.some((c) => c.id === nuevoId)) nuevoId = base + "-" + k++;
@@ -374,6 +401,103 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     [online, mostrarToast]
   );
 
+  // ---- Zonas (ABM) ----
+  const guardarZona = useCallback(
+    async (nombre: string, id?: string) => {
+      const n = nombre.trim();
+      if (!n) return mostrarToast("Poné un nombre");
+      const lista = zonasRef.current;
+      if (lista.some((z) => z.nombre.toLowerCase() === n.toLowerCase() && z.id !== id))
+        return mostrarToast("Ya existe una zona con ese nombre");
+
+      if (id) {
+        if (online) {
+          try {
+            await db.actualizarZona(id, { nombre: n });
+          } catch {
+            return mostrarToast("Error al guardar la zona");
+          }
+        }
+        setZonas((prev) => prev.map((z) => (z.id === id ? { ...z, nombre: n } : z)));
+        mostrarToast("Zona guardada ✓");
+      } else {
+        const orden = lista.reduce((m, z) => Math.max(m, z.orden), 0) + 1;
+        const base = slugificar(n) || "zona";
+        let nuevoId = base;
+        let k = 2;
+        while (lista.some((z) => z.id === nuevoId)) nuevoId = base + "-" + k++;
+        const nueva: Zona = { id: nuevoId, nombre: n, orden, activo: true };
+        if (online) {
+          try {
+            await db.crearZona(nueva);
+          } catch {
+            return mostrarToast("Error al crear la zona");
+          }
+        }
+        setZonas((prev) => [...prev, nueva]);
+        mostrarToast("Zona creada ✓");
+      }
+    },
+    [online, mostrarToast]
+  );
+
+  const toggleZona = useCallback(
+    async (id: string) => {
+      const z = zonasRef.current.find((x) => x.id === id);
+      if (!z) return;
+      const activo = !z.activo;
+      if (online) {
+        try {
+          await db.actualizarZona(id, { activo });
+        } catch {
+          return mostrarToast("Error al actualizar");
+        }
+      }
+      setZonas((prev) => prev.map((x) => (x.id === id ? { ...x, activo } : x)));
+    },
+    [online, mostrarToast]
+  );
+
+  const eliminarZona = useCallback(
+    async (id: string) => {
+      if (online) {
+        try {
+          await db.borrarZona(id);
+        } catch {
+          return mostrarToast("Error al eliminar");
+        }
+      }
+      setZonas((prev) => prev.filter((x) => x.id !== id));
+      mostrarToast("Zona eliminada");
+    },
+    [online, mostrarToast]
+  );
+
+  const moverZona = useCallback(
+    async (id: string, dir: -1 | 1) => {
+      const orden = [...zonasRef.current].sort((a, b) => a.orden - b.orden);
+      const idx = orden.findIndex((z) => z.id === id);
+      const j = idx + dir;
+      if (idx < 0 || j < 0 || j >= orden.length) return;
+      const a = orden[idx];
+      const b = orden[j];
+      if (online) {
+        try {
+          await db.actualizarZona(a.id, { orden: b.orden });
+          await db.actualizarZona(b.id, { orden: a.orden });
+        } catch {
+          return mostrarToast("Error al reordenar");
+        }
+      }
+      setZonas((prev) =>
+        prev.map((z) =>
+          z.id === a.id ? { ...z, orden: b.orden } : z.id === b.id ? { ...z, orden: a.orden } : z
+        )
+      );
+    },
+    [online, mostrarToast]
+  );
+
   // ---- Config ----
   const setNombre = useCallback(
     async (nombre: string) => {
@@ -450,19 +574,21 @@ export function AdminProvider({ children }: { children: ReactNode }) {
   const value = useMemo<AdminContextValue>(
     () => ({
       cargando, online, sesion, emailUsuario, rol, esAdmin, cerrarSesion,
-      inflables, reservas, config, categorias, modo, toast, mostrarToast,
+      inflables, reservas, config, categorias, zonas, modo, toast, mostrarToast,
       guardarReserva, eliminarReserva, avanzarEstado,
       guardarInflable, eliminarInflable,
       guardarCategoria, toggleCategoria, eliminarCategoria, moverCategoria,
+      guardarZona, toggleZona, eliminarZona, moverZona,
       setNombre, setPin: guardarPin, definirPin: guardarPin,
       cargarEjemplos, borrarTodo, importarBackup,
     }),
     [
       cargando, online, sesion, emailUsuario, rol, esAdmin, cerrarSesion,
-      inflables, reservas, config, categorias, modo, toast, mostrarToast,
+      inflables, reservas, config, categorias, zonas, modo, toast, mostrarToast,
       guardarReserva, eliminarReserva, avanzarEstado,
       guardarInflable, eliminarInflable,
       guardarCategoria, toggleCategoria, eliminarCategoria, moverCategoria,
+      guardarZona, toggleZona, eliminarZona, moverZona,
       setNombre, guardarPin, cargarEjemplos, borrarTodo, importarBackup,
     ]
   );

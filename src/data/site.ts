@@ -69,17 +69,6 @@ export const PASOS = [
   },
 ];
 
-/** Zonas de cobertura (basadas en Tortuguitas y alrededores; confirmar cobertura real). */
-export const ZONAS = [
-  "Tortuguitas",
-  "Grand Bourg",
-  "Los Polvorines",
-  "Malvinas Argentinas",
-  "José C. Paz",
-  "Del Viso",
-  "Pilar",
-  "Escobar",
-];
 
 export const FAQ = [
   {

@@ -8,6 +8,7 @@ export type Vista =
   | "reservas"
   | "inventario"
   | "categorias"
+  | "zonas"
   | "equipo"
   | "ajustes";
 
@@ -17,6 +18,7 @@ const TABS: { id: Vista; ico: string; label: string; adminOnly?: boolean }[] = [
   { id: "reservas", ico: "🎈", label: "Reservas" },
   { id: "inventario", ico: "🏰", label: "Inventario" },
   { id: "categorias", ico: "🏷️", label: "Categorías", adminOnly: true },
+  { id: "zonas", ico: "📍", label: "Zonas", adminOnly: true },
   { id: "equipo", ico: "👥", label: "Equipo", adminOnly: true },
   { id: "ajustes", ico: "⚙️", label: "Ajustes", adminOnly: true },
 ];
