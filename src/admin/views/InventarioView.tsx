@@ -1,60 +1,60 @@
-import type { Inflable } from "@/admin/types";
+import type { Articulo } from "@/admin/types";
 import { plata } from "@/admin/lib/formato";
 import { useAdmin } from "@/admin/store/AdminContext";
 import { CabeceraVista, Vacio } from "@/admin/views/comunes";
 import { Button } from "@/components/ui/button";
 
-export function InventarioView({ onAbrirInflable }: { onAbrirInflable: (i: Inflable | null) => void }) {
-  const { inflables, reservas, esAdmin } = useAdmin();
+export function InventarioView({ onAbrirArticulo }: { onAbrirArticulo: (a: Articulo | null) => void }) {
+  const { articulos, reservas, esAdmin } = useAdmin();
 
   return (
     <div>
       <CabeceraVista
         titulo="Inventario"
-        sub="Tus inflables y juegos, con su precio base por evento."
+        sub="Tus artículos y juegos, con su precio base por evento."
         accion={
           esAdmin ? (
-            <Button variant="rojo" size="chico" onClick={() => onAbrirInflable(null)}>
+            <Button variant="rojo" size="chico" onClick={() => onAbrirArticulo(null)}>
               + Agregar
             </Button>
           ) : undefined
         }
       />
 
-      {inflables.length === 0 ? (
+      {articulos.length === 0 ? (
         <Vacio>
           {esAdmin
-            ? 'Todavía no hay inflables cargados. Creá el primero con "+ Agregar".'
-            : "Todavía no hay inflables cargados."}
+            ? 'Todavía no hay artículos cargados. Creá el primero con "+ Agregar".'
+            : "Todavía no hay artículos cargados."}
         </Vacio>
       ) : (
         <div className="grid grid-cols-[repeat(auto-fill,minmax(230px,1fr))] gap-4">
-          {inflables.map((inf) => {
+          {articulos.map((art) => {
             const usos = reservas.filter(
-              (r) => r.estado !== "Cancelado" && (r.inflableIds || []).includes(inf.id)
+              (r) => r.estado !== "Cancelado" && (r.articuloIds || []).includes(art.id)
             ).length;
             return (
               <div
-                key={inf.id}
+                key={art.id}
                 className="rounded-2xl border-3 border-tinta bg-white p-4 shadow-hard-sm"
-                style={{ opacity: inf.activo ? 1 : 0.55 }}
+                style={{ opacity: art.activo ? 1 : 0.55 }}
               >
                 <h4 className="flex items-center justify-between gap-2 text-[1.05rem]">
-                  {inf.nombre}
-                  <span className="h-3.5 w-3.5 flex-none rounded-full border-2 border-tinta" style={{ background: inf.color }} />
+                  {art.nombre}
+                  <span className="h-3.5 w-3.5 flex-none rounded-full border-2 border-tinta" style={{ background: art.color }} />
                 </h4>
                 <div className="font-alt text-[.78rem] font-bold text-[#5a4a41]">
-                  {inf.cat}
-                  {inf.activo ? "" : " · fuera de servicio"}
+                  {art.cat}
+                  {art.activo ? "" : " · fuera de servicio"}
                 </div>
-                {inf.ancho && inf.largo ? (
+                {art.ancho && art.largo ? (
                   <div className="mt-1 font-alt text-[.78rem] font-bold text-[#5a4a41]">
-                    📏 {inf.ancho} × {inf.largo}
-                    {inf.alto ? " × " + inf.alto : ""} m
+                    📏 {art.ancho} × {art.largo}
+                    {art.alto ? " × " + art.alto : ""} m
                   </div>
                 ) : null}
-                {inf.precio > 0 ? (
-                  <div className="my-2.5 font-display text-[1.4rem]">{plata(inf.precio)}</div>
+                {art.precio > 0 ? (
+                  <div className="my-2.5 font-display text-[1.4rem]">{plata(art.precio)}</div>
                 ) : (
                   <div className="my-2.5 text-[.95rem] text-gris">precio sin definir</div>
                 )}
@@ -62,7 +62,7 @@ export function InventarioView({ onAbrirInflable }: { onAbrirInflable: (i: Infla
                   {usos} reserva{usos === 1 ? "" : "s"}
                 </div>
                 {esAdmin && (
-                  <Button variant="blanco" size="mini" onClick={() => onAbrirInflable(inf)}>
+                  <Button variant="blanco" size="mini" onClick={() => onAbrirArticulo(art)}>
                     Editar
                   </Button>
                 )}

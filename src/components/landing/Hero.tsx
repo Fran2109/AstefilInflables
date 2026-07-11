@@ -1,8 +1,11 @@
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { scrollAId } from "@/lib/scroll";
 import { linkWhatsApp } from "@/lib/whatsapp";
 
 export function Hero() {
+  const navigate = useNavigate();
+
   return (
     <section className="relative py-14 pt-9 md:pt-14">
       <div className="container grid items-center gap-9 md:grid-cols-[1.1fr_.9fr] md:gap-11">
@@ -32,6 +35,9 @@ export function Hero() {
               >
                 Consultar ahora
               </a>
+            </Button>
+            <Button variant="amarillo" onClick={() => navigate("/quinta")}>
+              Conocé la quinta 🌳
             </Button>
           </div>
         </div>

@@ -4,12 +4,13 @@
 -- Este archivo reconstruye TODO el esquema desde cero (tablas, RLS, vista,
 -- Storage), pero solo carga datos de fábrica en **categorías**, **zonas** y
 -- **roles** (perfiles). El resto de las tablas (productos, testimonios,
--- inflables, config) quedan creadas pero VACÍAS — se cargan a mano desde el
+-- articulos, config) quedan creadas pero VACÍAS — se cargan a mano desde el
 -- admin (Inventario, Categorías, Zonas, Ajustes) o con un script de carga aparte.
 --
 -- No hay tabla de fotos: la landing muestra placeholders on-brand generados
 -- en el cliente (`src/lib/placeholder.ts`) hasta que se carguen fotos reales
--- por inflable (columna `inflables.fotos`, vía Supabase Storage).
+-- por artículo (columna `articulos.fotos`, vía Supabase Storage — el bucket
+-- se sigue llamando `inflables` por compatibilidad, es un detalle interno).
 --
 -- Cómo usarlo:
 --   Supabase → tu proyecto → SQL Editor → New query → pegá TODO → Run.
@@ -20,8 +21,8 @@
 --
 -- Modelo de seguridad (RLS):
 --   • Público (lectura): categorias, zonas, productos, testimonios + vista
---     catalogo_inflables. Escritura solo con sesión iniciada.
---   • Privado (solo con sesión): inflables, reservas, config.
+--     catalogo_articulos. Escritura solo con sesión iniciada.
+--   • Privado (solo con sesión): articulos, reservas, config.
 --
 -- Nombres: columnas en snake_case (convención Postgres); la app mapea a camelCase.
 -- ============================================================================
@@ -31,9 +32,9 @@ create extension if not exists "pgcrypto";
 -- ----------------------------------------------------------------------------
 -- 0. RESET (borra todo lo de la app; NO toca auth.users)
 -- ----------------------------------------------------------------------------
-drop view  if exists public.catalogo_inflables cascade;
+drop view  if exists public.catalogo_articulos cascade;
 drop table if exists public.reservas    cascade;
-drop table if exists public.inflables   cascade;
+drop table if exists public.articulos   cascade;
 drop table if exists public.testimonios cascade;
 drop table if exists public.productos   cascade;
 drop table if exists public.fotos       cascade;  -- por si quedó de una versión vieja
@@ -49,11 +50,18 @@ drop function if exists public.es_admin() cascade;
 -- ----------------------------------------------------------------------------
 
 -- Categorías del catálogo (primer nivel). `id` = slug; `nombre` visible.
+-- Los 4 campos *_req configuran, por categoría, si descripción/medidas/medidas
+-- con turbina/fotos son obligatorias, opcionales o no aplican para sus
+-- artículos (ej: un gazebo no usa turbina). Ver ArticuloDialog.tsx.
 create table public.categorias (
   id     text primary key,
   nombre text not null unique,
   orden  integer not null default 0,
-  activo boolean not null default true
+  activo boolean not null default true,
+  descripcion_req     text not null default 'opcional' check (descripcion_req in ('obligatorio','opcional','no_aplica')),
+  medidas_req          text not null default 'opcional' check (medidas_req in ('obligatorio','opcional','no_aplica')),
+  medidas_turbina_req  text not null default 'opcional' check (medidas_turbina_req in ('obligatorio','opcional','no_aplica')),
+  fotos_req            text not null default 'opcional' check (fotos_req in ('obligatorio','opcional','no_aplica'))
 );
 
 -- Zonas de cobertura: "¿Llegamos a tu zona?" en la landing + sugerencias del
@@ -92,7 +100,10 @@ create table public.testimonios (
 
 -- Inventario. precio 0 = sin definir. Dimensiones en metros (ancho × largo × alto).
 -- `cat` referencia categorias.nombre (se actualiza en cascada si se renombra).
-create table public.inflables (
+-- Qué campos son obligatorios/opcionales/no aplican los define la categoría
+-- (categorias.*_req) — la tabla los deja todos nullable, la validación real
+-- vive en ArticuloDialog.tsx según esa config.
+create table public.articulos (
   id          uuid primary key default gen_random_uuid(),
   nombre      text not null,
   cat         text not null references public.categorias(nombre) on update cascade,
@@ -106,10 +117,11 @@ create table public.inflables (
   ancho_turbina numeric,  -- medidas con la turbina puesta (ocupa más); opcionales
   largo_turbina numeric,
   alto_turbina  numeric,
-  fotos       text[] not null default '{}'  -- paths en el bucket `inflables` de Storage
+  fotos       text[] not null default '{}',  -- paths en el bucket `inflables` de Storage
+  notas_internas text not null default ''  -- solo para el equipo; no está en catalogo_articulos
 );
 
--- Reservas. fecha 'YYYY-MM-DD'. inflable_ids referencia inflables.id.
+-- Reservas. fecha 'YYYY-MM-DD'. articulo_ids referencia articulos.id.
 create table public.reservas (
   id            uuid primary key default gen_random_uuid(),
   fecha         date not null,
@@ -118,7 +130,7 @@ create table public.reservas (
   telefono      text not null default '',
   hora_entrega  text not null default '',
   hora_retiro   text not null default '',
-  inflable_ids  uuid[] not null default '{}',
+  articulo_ids  uuid[] not null default '{}',
   zona          text not null default '',
   direccion     text not null default '',
   precio        numeric not null default 0,
@@ -176,7 +188,7 @@ alter table public.categorias  enable row level security;
 alter table public.zonas       enable row level security;
 alter table public.productos   enable row level security;
 alter table public.testimonios enable row level security;
-alter table public.inflables   enable row level security;
+alter table public.articulos   enable row level security;
 alter table public.reservas    enable row level security;
 alter table public.config      enable row level security;
 alter table public.perfiles    enable row level security;
@@ -196,7 +208,7 @@ end $$;
 do $$
 declare t text;
 begin
-  foreach t in array array['inflables','config']
+  foreach t in array array['articulos','config']
   loop
     execute format('create policy "lectura autenticada" on public.%I for select to authenticated using (true)', t);
     execute format('create policy "escritura admin" on public.%I for all to authenticated using (public.es_admin()) with check (public.es_admin())', t);
@@ -215,11 +227,14 @@ create policy "admin gestiona perfiles" on public.perfiles
 
 -- ----------------------------------------------------------------------------
 -- 3. SEED — solo categorías, zonas y roles. El resto de las tablas (productos,
---    testimonios, inflables, config) quedan creadas pero VACÍAS: se cargan a
+--    testimonios, articulos, config) quedan creadas pero VACÍAS: se cargan a
 --    mano desde el admin o con un script de carga aparte.
 -- ----------------------------------------------------------------------------
 
--- Categorías (el `orden` define cómo se listan; editable).
+-- Categorías (el `orden` define cómo se listan; editable). Las 5 son de
+-- inflables, así que arrancan con los 4 *_req en 'opcional' (comportamiento
+-- de siempre); ajustar desde el ABM al cargar categorías de otro tipo de
+-- artículo (ej: Gazebos con medidas_turbina_req = 'no_aplica').
 insert into public.categorias (id, nombre, orden) values
   ('castillos', 'Castillos', 1),
   ('gigantes',  'Gigantes',  2),
@@ -247,15 +262,16 @@ on conflict (id) do nothing;
 -- ----------------------------------------------------------------------------
 -- 4. VISTA PÚBLICA del inventario (solo columnas seguras, sin precio)
 -- ----------------------------------------------------------------------------
-create view public.catalogo_inflables as
+create view public.catalogo_articulos as
   select id, nombre, cat, descripcion, ancho, largo, alto, fotos
-  from public.inflables
+  from public.articulos
   where activo = true;
 
-grant select on public.catalogo_inflables to anon, authenticated;
+grant select on public.catalogo_articulos to anon, authenticated;
 
 -- ----------------------------------------------------------------------------
--- 5. STORAGE — fotos por modelo (bucket público `inflables`)
+-- 5. STORAGE — fotos por modelo (bucket público `inflables`; el nombre queda
+--    así por compatibilidad, es un detalle interno que no afecta a usuarios)
 -- ----------------------------------------------------------------------------
 insert into storage.buckets (id, name, public)
 values ('inflables', 'inflables', true)

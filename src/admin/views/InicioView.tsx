@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { CabeceraVista, Panel, Vacio } from "@/admin/views/comunes";
 
 export function InicioView({ onAbrirReserva }: { onAbrirReserva: (r: Reserva | null) => void }) {
-  const { reservas, inflables, config, mostrarToast } = useAdmin();
+  const { reservas, articulos, config, mostrarToast } = useAdmin();
   const hoy = hoyStr();
   const mes = hoy.slice(0, 7);
 
@@ -64,7 +64,7 @@ export function InicioView({ onAbrirReserva }: { onAbrirReserva: (r: Reserva | n
         .map(
           (r) =>
             "• " + (r.horaEntrega || "s/hora") + " — " + (r.cliente || "?") +
-            " (" + nombresInf(r.inflableIds, inflables).join(", ") + ")\n  " +
+            " (" + nombresInf(r.articuloIds, articulos).join(", ") + ")\n  " +
             [r.direccion, r.zona].filter(Boolean).join(", ") +
             (r.telefono ? " · 📱 " + r.telefono : "") +
             (r.precio ? " · Resta " + plata((Number(r.precio) || 0) - (Number(r.sena) || 0)) : "")
@@ -103,7 +103,7 @@ export function InicioView({ onAbrirReserva }: { onAbrirReserva: (r: Reserva | n
             <Vacio>Sin entregas próximas. Cuando cargues reservas van a aparecer acá. 🎈</Vacio>
           ) : (
             proximas.map((r) => {
-              const conf = conflictosDe(r, reservas, inflables).length > 0;
+              const conf = conflictosDe(r, reservas, articulos).length > 0;
               return (
                 <div key={r.id} className="flex flex-wrap items-center gap-3 rounded-xl border-2 border-tinta bg-papel px-3 py-2.5">
                   <span className="min-w-[86px] font-alt font-extrabold">
@@ -114,7 +114,7 @@ export function InicioView({ onAbrirReserva }: { onAbrirReserva: (r: Reserva | n
                     <strong>{r.cliente || "Sin nombre"}</strong>
                     {conf && <span className="ml-1 font-alt text-[.78rem] text-rojo">⚠ conflicto</span>}
                     <small className="block text-[#5a4a41]">
-                      {nombresInf(r.inflableIds, inflables).join(", ")}
+                      {nombresInf(r.articuloIds, articulos).join(", ")}
                       {r.zona ? " · " + r.zona : ""}
                     </small>
                   </span>

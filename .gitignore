@@ -37,3 +37,7 @@ pnpm-debug.log*
 
 # Claude Code — settings locales/permisos de la máquina (no compartir)
 .claude/settings.local.json
+
+# Fotos fuente de la quinta (pesadas, con video) — al repo van solo las
+# optimizadas de public/img/quinta/
+/Quinta/

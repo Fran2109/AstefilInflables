@@ -1,4 +1,4 @@
-import type { Inflable, Reserva } from "@/admin/types";
+import type { Articulo, Reserva } from "@/admin/types";
 import { telWa, plata } from "@/admin/lib/formato";
 import { nombresInf } from "@/admin/lib/conflictos";
 import { fmtFechaLarga } from "@/admin/lib/fechas";
@@ -7,10 +7,10 @@ import { fmtFechaLarga } from "@/admin/lib/fechas";
  * Arma el link de WhatsApp al cliente. Mensaje distinto para Consulta vs. confirmación.
  * Devuelve null si la reserva no tiene teléfono válido.
  */
-export function linkWaCliente(r: Reserva, inflables: Inflable[]): string | null {
+export function linkWaCliente(r: Reserva, articulos: Articulo[]): string | null {
   const tel = telWa(r.telefono);
   if (!tel) return null;
-  const infs = nombresInf(r.inflableIds, inflables).join(", ");
+  const infs = nombresInf(r.articuloIds, articulos).join(", ");
   let msg: string;
   if (r.estado === "Consulta") {
     msg =

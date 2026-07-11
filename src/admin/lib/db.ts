@@ -1,5 +1,5 @@
 import { supabase } from "@/lib/supabase";
-import type { Categoria, Config, Inflable, Perfil, Reserva, Rol, Zona } from "@/admin/types";
+import type { Articulo, Categoria, Config, Perfil, Requisito, Reserva, Rol, Zona } from "@/admin/types";
 
 /**
  * Capa de acceso a datos del panel contra Supabase (Postgres relacional).
@@ -24,7 +24,7 @@ type ReservaRow = {
   telefono: string;
   hora_entrega: string;
   hora_retiro: string;
-  inflable_ids: string[];
+  articulo_ids: string[];
   zona: string;
   direccion: string;
   precio: number;
@@ -42,7 +42,7 @@ function reservaDesde(r: ReservaRow): Reserva {
     telefono: r.telefono,
     horaEntrega: r.hora_entrega ?? "",
     horaRetiro: r.hora_retiro ?? "",
-    inflableIds: r.inflable_ids ?? [],
+    articuloIds: r.articulo_ids ?? [],
     zona: r.zona ?? "",
     direccion: r.direccion ?? "",
     precio: Number(r.precio) || 0,
@@ -61,7 +61,7 @@ function reservaHacia(r: Reserva): ReservaRow {
     telefono: r.telefono,
     hora_entrega: r.horaEntrega ?? "",
     hora_retiro: r.horaRetiro ?? "",
-    inflable_ids: r.inflableIds ?? [],
+    articulo_ids: r.articuloIds ?? [],
     zona: r.zona ?? "",
     direccion: r.direccion ?? "",
     precio: Number(r.precio) || 0,
@@ -71,8 +71,8 @@ function reservaHacia(r: Reserva): ReservaRow {
   };
 }
 
-// ---- Mapeos Inflable (nombres casi idénticos) ----
-type InflableRow = {
+// ---- Mapeos Articulo (nombres casi idénticos) ----
+type ArticuloRow = {
   id: string;
   nombre: string;
   cat: string;
@@ -87,47 +87,103 @@ type InflableRow = {
   largo_turbina: number | null;
   alto_turbina: number | null;
   fotos: string[] | null;
+  notas_internas: string | null;
 };
 
-function inflableDesde(i: InflableRow): Inflable {
+function articuloDesde(a: ArticuloRow): Articulo {
   return {
-    id: i.id,
-    nombre: i.nombre,
-    cat: i.cat,
-    precio: Number(i.precio) || 0,
-    activo: i.activo,
-    color: i.color,
-    descripcion: i.descripcion ?? "",
-    ancho: i.ancho ?? undefined,
-    largo: i.largo ?? undefined,
-    alto: i.alto ?? undefined,
-    anchoTurbina: i.ancho_turbina ?? undefined,
-    largoTurbina: i.largo_turbina ?? undefined,
-    altoTurbina: i.alto_turbina ?? undefined,
-    fotos: i.fotos ?? [],
+    id: a.id,
+    nombre: a.nombre,
+    cat: a.cat,
+    precio: Number(a.precio) || 0,
+    activo: a.activo,
+    color: a.color,
+    descripcion: a.descripcion ?? "",
+    ancho: a.ancho ?? undefined,
+    largo: a.largo ?? undefined,
+    alto: a.alto ?? undefined,
+    anchoTurbina: a.ancho_turbina ?? undefined,
+    largoTurbina: a.largo_turbina ?? undefined,
+    altoTurbina: a.alto_turbina ?? undefined,
+    fotos: a.fotos ?? [],
+    notasInternas: a.notas_internas ?? "",
   };
 }
 
-function inflableHacia(i: Inflable): InflableRow {
+function articuloHacia(a: Articulo): ArticuloRow {
   return {
-    id: i.id,
-    nombre: i.nombre,
-    cat: i.cat,
-    precio: Number(i.precio) || 0,
-    activo: i.activo,
-    color: i.color,
-    descripcion: i.descripcion ?? "",
-    ancho: i.ancho ?? null,
-    largo: i.largo ?? null,
-    alto: i.alto ?? null,
-    ancho_turbina: i.anchoTurbina ?? null,
-    largo_turbina: i.largoTurbina ?? null,
-    alto_turbina: i.altoTurbina ?? null,
-    fotos: i.fotos ?? [],
+    id: a.id,
+    nombre: a.nombre,
+    cat: a.cat,
+    precio: Number(a.precio) || 0,
+    activo: a.activo,
+    color: a.color,
+    descripcion: a.descripcion ?? "",
+    ancho: a.ancho ?? null,
+    largo: a.largo ?? null,
+    alto: a.alto ?? null,
+    ancho_turbina: a.anchoTurbina ?? null,
+    largo_turbina: a.largoTurbina ?? null,
+    alto_turbina: a.altoTurbina ?? null,
+    fotos: a.fotos ?? [],
+    notas_internas: a.notasInternas ?? "",
   };
 }
 
-// ---- Fotos de inflables (Supabase Storage, bucket público `inflables`) ----
+// ---- Mapeos Categoria (los 4 *_req en snake_case ↔ camelCase) ----
+type CategoriaRow = {
+  id: string;
+  nombre: string;
+  orden: number;
+  activo: boolean;
+  descripcion_req: Requisito;
+  medidas_req: Requisito;
+  medidas_turbina_req: Requisito;
+  fotos_req: Requisito;
+};
+
+function categoriaDesde(c: CategoriaRow): Categoria {
+  return {
+    id: c.id,
+    nombre: c.nombre,
+    orden: c.orden,
+    activo: c.activo,
+    descripcionReq: c.descripcion_req,
+    medidasReq: c.medidas_req,
+    medidasTurbinaReq: c.medidas_turbina_req,
+    fotosReq: c.fotos_req,
+  };
+}
+
+function categoriaHacia(c: Categoria): CategoriaRow {
+  return {
+    id: c.id,
+    nombre: c.nombre,
+    orden: c.orden,
+    activo: c.activo,
+    descripcion_req: c.descripcionReq,
+    medidas_req: c.medidasReq,
+    medidas_turbina_req: c.medidasTurbinaReq,
+    fotos_req: c.fotosReq,
+  };
+}
+
+/** Mapea los campos camelCase de un `Partial<Categoria>` a columnas snake_case. */
+function camposCategoriaHacia(
+  cambios: Partial<Pick<Categoria, "nombre" | "orden" | "activo" | "descripcionReq" | "medidasReq" | "medidasTurbinaReq" | "fotosReq">>
+): Partial<CategoriaRow> {
+  const out: Partial<CategoriaRow> = {};
+  if (cambios.nombre !== undefined) out.nombre = cambios.nombre;
+  if (cambios.orden !== undefined) out.orden = cambios.orden;
+  if (cambios.activo !== undefined) out.activo = cambios.activo;
+  if (cambios.descripcionReq !== undefined) out.descripcion_req = cambios.descripcionReq;
+  if (cambios.medidasReq !== undefined) out.medidas_req = cambios.medidasReq;
+  if (cambios.medidasTurbinaReq !== undefined) out.medidas_turbina_req = cambios.medidasTurbinaReq;
+  if (cambios.fotosReq !== undefined) out.fotos_req = cambios.fotosReq;
+  return out;
+}
+
+// ---- Fotos de artículos (Supabase Storage, bucket público `inflables`) ----
 const BUCKET = "inflables";
 
 /** URL pública de una foto a partir de su path en el bucket. */
@@ -175,14 +231,14 @@ export async function borrarFoto(path: string): Promise<void> {
 
 // ---- Carga inicial ----
 export async function cargarTodo(): Promise<{
-  inflables: Inflable[];
+  articulos: Articulo[];
   reservas: Reserva[];
   config: Config;
   categorias: Categoria[];
   zonas: Zona[];
 }> {
-  const [inf, res, cfg, cats, zon] = await Promise.all([
-    sb().from("inflables").select("*").order("nombre"),
+  const [art, res, cfg, cats, zon] = await Promise.all([
+    sb().from("articulos").select("*").order("nombre"),
     sb().from("reservas").select("*").order("fecha"),
     sb().from("config").select("*").eq("id", 1).maybeSingle(),
     // Puede no existir todavía (base sin la tabla `categorias`) → se ignora el error.
@@ -190,16 +246,16 @@ export async function cargarTodo(): Promise<{
     // Puede no existir todavía (base sin la tabla `zonas`) → se ignora el error.
     sb().from("zonas").select("*").order("orden"),
   ]);
-  if (inf.error) throw inf.error;
+  if (art.error) throw art.error;
   if (res.error) throw res.error;
   if (cfg.error) throw cfg.error;
   return {
-    inflables: (inf.data as InflableRow[]).map(inflableDesde),
+    articulos: (art.data as ArticuloRow[]).map(articuloDesde),
     reservas: (res.data as ReservaRow[]).map(reservaDesde),
     config: cfg.data
       ? { nombre: (cfg.data as { nombre: string }).nombre ?? "", pin: null }
       : { nombre: "", pin: null },
-    categorias: cats.error ? [] : (cats.data as Categoria[]),
+    categorias: cats.error ? [] : (cats.data as CategoriaRow[]).map(categoriaDesde),
     zonas: zon.error ? [] : (zon.data as Zona[]),
   };
 }
@@ -242,15 +298,15 @@ export async function cambiarRol(id: string, rol: Rol): Promise<void> {
 
 // ---- Categorías ----
 export async function crearCategoria(c: Categoria): Promise<void> {
-  const { error } = await sb().from("categorias").insert(c);
+  const { error } = await sb().from("categorias").insert(categoriaHacia(c));
   if (error) throw error;
 }
 
 export async function actualizarCategoria(
   id: string,
-  cambios: Partial<Pick<Categoria, "nombre" | "orden" | "activo">>
+  cambios: Partial<Pick<Categoria, "nombre" | "orden" | "activo" | "descripcionReq" | "medidasReq" | "medidasTurbinaReq" | "fotosReq">>
 ): Promise<void> {
-  const { error } = await sb().from("categorias").update(cambios).eq("id", id);
+  const { error } = await sb().from("categorias").update(camposCategoriaHacia(cambios)).eq("id", id);
   if (error) throw error;
 }
 
@@ -295,14 +351,14 @@ export async function insertarReservas(rs: Reserva[]): Promise<void> {
   if (error) throw error;
 }
 
-// ---- Inflables ----
-export async function upsertInflable(i: Inflable): Promise<void> {
-  const { error } = await sb().from("inflables").upsert(inflableHacia(i));
+// ---- Artículos ----
+export async function upsertArticulo(a: Articulo): Promise<void> {
+  const { error } = await sb().from("articulos").upsert(articuloHacia(a));
   if (error) throw error;
 }
 
-export async function borrarInflable(id: string): Promise<void> {
-  const { error } = await sb().from("inflables").delete().eq("id", id);
+export async function borrarArticulo(id: string): Promise<void> {
+  const { error } = await sb().from("articulos").delete().eq("id", id);
   if (error) throw error;
 }
 
@@ -313,14 +369,14 @@ export async function guardarConfig(nombre: string): Promise<void> {
 }
 
 // ---- Operaciones masivas (borrar todo / importar) ----
-export async function reemplazarTodo(inflables: Inflable[], reservas: Reserva[]): Promise<void> {
+export async function reemplazarTodo(articulos: Articulo[], reservas: Reserva[]): Promise<void> {
   // Borra todo (filtro que matchea cualquier fila) y reinserta.
   const delRes = await sb().from("reservas").delete().not("id", "is", null);
   if (delRes.error) throw delRes.error;
-  const delInf = await sb().from("inflables").delete().not("id", "is", null);
-  if (delInf.error) throw delInf.error;
-  if (inflables.length) {
-    const { error } = await sb().from("inflables").insert(inflables.map(inflableHacia));
+  const delArt = await sb().from("articulos").delete().not("id", "is", null);
+  if (delArt.error) throw delArt.error;
+  if (articulos.length) {
+    const { error } = await sb().from("articulos").insert(articulos.map(articuloHacia));
     if (error) throw error;
   }
   if (reservas.length) {

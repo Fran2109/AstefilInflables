@@ -14,7 +14,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 export function ReservasView({ onAbrirReserva }: { onAbrirReserva: (r: Reserva | null) => void }) {
-  const { reservas, inflables, avanzarEstado, mostrarToast } = useAdmin();
+  const { reservas, articulos, avanzarEstado, mostrarToast } = useAdmin();
   const confirmar = useConfirmar();
   const [busca, setBusca] = useState("");
   const [fEstado, setFEstado] = useState("");
@@ -94,11 +94,11 @@ export function ReservasView({ onAbrirReserva }: { onAbrirReserva: (r: Reserva |
           <Vacio>No hay reservas con esos filtros. Creá la primera con "+ Nueva reserva". 🎪</Vacio>
         ) : (
           lista.map((r) => {
-            const confs = conflictosDe(r, reservas, inflables);
+            const confs = conflictosDe(r, reservas, articulos);
             const resto = (Number(r.precio) || 0) - (Number(r.sena) || 0);
             const idx = ESTADOS.indexOf(r.estado);
             const sig = idx >= 0 && idx < 4 ? ESTADOS[idx + 1] : null;
-            const wa = linkWaCliente(r, inflables);
+            const wa = linkWaCliente(r, articulos);
             return (
               <div
                 key={r.id}
@@ -120,7 +120,7 @@ export function ReservasView({ onAbrirReserva }: { onAbrirReserva: (r: Reserva |
                     {r.cliente || "Sin nombre"} <EstadoBadge estado={r.estado} />
                   </h4>
                   <div className="text-[.86rem] text-[#5a4a41]">
-                    {nombresInf(r.inflableIds, inflables).join(", ") || "—"}
+                    {nombresInf(r.articuloIds, articulos).join(", ") || "—"}
                   </div>
                   <div className="text-[.86rem] text-[#5a4a41]">
                     {[r.zona, r.direccion].filter(Boolean).join(" · ")}
@@ -128,7 +128,7 @@ export function ReservasView({ onAbrirReserva }: { onAbrirReserva: (r: Reserva |
                   </div>
                   {confs.length > 0 && (
                     <div className="font-alt text-[.78rem] font-semibold text-rojo">
-                      ⚠ Mismo inflable ya reservado ese día ({confs.map((c) => c.res.cliente || "otra reserva").join(", ")})
+                      ⚠ Mismo artículo ya reservado ese día ({confs.map((c) => c.res.cliente || "otra reserva").join(", ")})
                     </div>
                   )}
                 </div>

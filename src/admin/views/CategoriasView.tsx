@@ -10,18 +10,18 @@ export function CategoriasView({
 }: {
   onAbrirCategoria: (c: Categoria | null) => void;
 }) {
-  const { categorias, inflables, toggleCategoria, eliminarCategoria, moverCategoria } = useAdmin();
+  const { categorias, articulos, toggleCategoria, eliminarCategoria, moverCategoria } = useAdmin();
   const confirmar = useConfirmar();
   const orden = [...categorias].sort((a, b) => a.orden - b.orden);
 
   const usosDe = (nombre: string) =>
-    inflables.filter((i) => i.cat === nombre).length;
+    articulos.filter((a) => a.cat === nombre).length;
 
   return (
     <div>
       <CabeceraVista
         titulo="Categorías"
-        sub="Agrupan tus inflables y ordenan los filtros del catálogo en la web."
+        sub="Agrupan tus artículos y ordenan los filtros del catálogo en la web."
         accion={
           <Button variant="rojo" size="chico" onClick={() => onAbrirCategoria(null)}>
             + Agregar
@@ -65,7 +65,7 @@ export function CategoriasView({
                 <div className="min-w-[9rem] flex-1">
                   <div className="text-[1.1rem] font-extrabold">{c.nombre}</div>
                   <div className="font-alt text-[.78rem] font-bold text-[#5a4a41]">
-                    {usos} inflable{usos === 1 ? "" : "s"}
+                    {usos} artículo{usos === 1 ? "" : "s"}
                     {c.activo ? "" : " · oculta"}
                   </div>
                 </div>

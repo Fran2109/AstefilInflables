@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import type { Inflable, Reserva } from "@/admin/types";
+import type { Articulo, Reserva } from "@/admin/types";
 import { hoyStr } from "@/admin/lib/fechas";
 import { nombresInf } from "@/admin/lib/conflictos";
 import { useAdmin } from "@/admin/store/AdminContext";
@@ -17,7 +17,7 @@ function descargar(nombre: string, contenido: string, tipo: string) {
 }
 
 export function AjustesView() {
-  const { config, reservas, inflables, online, emailUsuario, cerrarSesion, setNombre, setPin, cargarEjemplos, borrarTodo, importarBackup, mostrarToast } =
+  const { config, reservas, articulos, online, emailUsuario, cerrarSesion, setNombre, setPin, cargarEjemplos, borrarTodo, importarBackup, mostrarToast } =
     useAdmin();
   const confirmar = useConfirmar();
   const [nombre, setNombreLocal] = useState(config.nombre || "");
@@ -29,18 +29,18 @@ export function AjustesView() {
       version: 1,
       exportado: new Date().toISOString(),
       config: { nombre: config.nombre },
-      inflables,
+      articulos,
       reservas,
     };
     descargar("astefil-backup-" + hoyStr() + ".json", JSON.stringify(data, null, 2), "application/json");
   };
 
   const exportarCsv = () => {
-    const cab = ["fecha", "cliente", "telefono", "zona", "direccion", "inflables", "estado", "precio", "sena", "resta", "hora_entrega", "hora_retiro", "notas"];
+    const cab = ["fecha", "cliente", "telefono", "zona", "direccion", "articulos", "estado", "precio", "sena", "resta", "hora_entrega", "hora_retiro", "notas"];
     const filas = reservas.map((r) =>
       [
         r.fecha, r.cliente, r.telefono, r.zona, r.direccion,
-        nombresInf(r.inflableIds, inflables).join(" + "),
+        nombresInf(r.articuloIds, articulos).join(" + "),
         r.estado, r.precio, r.sena, (Number(r.precio) || 0) - (Number(r.sena) || 0),
         r.horaEntrega, r.horaRetiro, r.notas,
       ]
@@ -54,9 +54,9 @@ export function AjustesView() {
     const f = e.target.files?.[0];
     if (!f) return;
     try {
-      const data = JSON.parse(await f.text()) as { reservas?: Reserva[]; inflables?: Inflable[]; config?: { nombre?: string } };
-      if (!Array.isArray(data.reservas) || !Array.isArray(data.inflables)) throw new Error("inválido");
-      await importarBackup(data.reservas, data.inflables, data.config?.nombre);
+      const data = JSON.parse(await f.text()) as { reservas?: Reserva[]; articulos?: Articulo[]; config?: { nombre?: string } };
+      if (!Array.isArray(data.reservas) || !Array.isArray(data.articulos)) throw new Error("inválido");
+      await importarBackup(data.reservas, data.articulos, data.config?.nombre);
     } catch {
       mostrarToast("Archivo inválido");
     }

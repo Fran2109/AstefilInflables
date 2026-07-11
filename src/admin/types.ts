@@ -19,7 +19,7 @@ export interface Reserva {
   telefono: string;
   horaEntrega: string;
   horaRetiro: string;
-  inflableIds: string[];
+  articuloIds: string[];
   zona: string;
   direccion: string;
   precio: number;
@@ -28,26 +28,28 @@ export interface Reserva {
   creado: string;
 }
 
-/** Un inflable/juego del inventario. precio 0 = "sin definir". */
-export interface Inflable {
+/** Un artículo del inventario (inflable u otro rubro: gazebo, candy bar, etc.). precio 0 = "sin definir". */
+export interface Articulo {
   id: string;
   nombre: string;
   cat: string;
   precio: number;
   activo: boolean;
   color: string;
-  /** Descripción para ficha/catálogo (opcional). */
+  /** Descripción para ficha/catálogo (obligatoria/opcional/no aplica según Categoria.descripcionReq). */
   descripcion?: string;
-  /** Dimensiones sin turbina, en metros (opcionales): ancho × largo × alto. */
+  /** Dimensiones sin turbina, en metros (obligatorias/opcionales/no aplica según Categoria.medidasReq). */
   ancho?: number;
   largo?: number;
   alto?: number;
-  /** Dimensiones CON turbina, en metros (opcionales): ≥ que sin turbina, no todas iguales. */
+  /** Dimensiones CON turbina, en metros (≥ que sin turbina, no todas iguales); según Categoria.medidasTurbinaReq. */
   anchoTurbina?: number;
   largoTurbina?: number;
   altoTurbina?: number;
-  /** Fotos del modelo: paths dentro del bucket `inflables` de Supabase Storage. */
+  /** Fotos del artículo: paths dentro del bucket `inflables` de Supabase Storage (según Categoria.fotosReq). */
   fotos?: string[];
+  /** Notas solo para el equipo (estado, ubicación, defectos) — nunca se muestran en la landing. Siempre opcional. */
+  notasInternas?: string;
 }
 
 /** Rol de un usuario del panel. `admin` = todo; `empleado` = solo operativo (reservas). */
@@ -60,12 +62,26 @@ export interface Perfil {
   rol: Rol;
 }
 
+/**
+ * Requisito de un atributo de artículo para una categoría dada:
+ * `obligatorio` (bloquea guardar si falta), `opcional` o `no_aplica` (el
+ * campo ni se muestra en el formulario). Ej: Gazebos → medidasTurbinaReq
+ * "no_aplica" porque no usan turbina.
+ */
+export type Requisito = "obligatorio" | "opcional" | "no_aplica";
+
 /** Una categoría del catálogo. `id` es un slug; `orden` define el orden en las listas. */
 export interface Categoria {
   id: string;
   nombre: string;
   orden: number;
   activo: boolean;
+  descripcionReq: Requisito;
+  /** Medidas sin turbina (ancho+largo obligatorios si "obligatorio"; alto siempre opcional). */
+  medidasReq: Requisito;
+  /** Medidas con turbina, como grupo completo (ancho+largo+alto juntos). */
+  medidasTurbinaReq: Requisito;
+  fotosReq: Requisito;
 }
 
 /**

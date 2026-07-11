@@ -37,6 +37,34 @@ function textoHorario(desde: string, hasta: string): string {
   return "";
 }
 
+/** Datos del formulario de consulta de la quinta (página /quinta). */
+export interface DatosConsultaQuinta {
+  nombre: string;
+  fecha: string; // 'YYYY-MM-DD' o "" — fecha puntual o inicio del rango
+  fechaHasta: string; // 'YYYY-MM-DD' o "" — fin del rango (fechas flexibles)
+  personas: string; // texto del input numérico ("" = sin dato)
+  motivo: string;
+  extras: string[]; // artículos del catálogo a sumar (se cotizan aparte)
+}
+
+/** Arma el texto de la fecha: puntual, rango o "a definir". */
+function textoFechas(fecha: string, hasta: string): string {
+  if (fecha && hasta) return "entre el " + formatearFecha(fecha) + " y el " + formatearFecha(hasta);
+  return formatearFecha(fecha || hasta);
+}
+
+/** Construye el link de WhatsApp con el mensaje de consulta por la quinta. */
+export function linkConsultaQuinta(d: DatosConsultaQuinta): string {
+  let msg = "¡Hola Astefil! 🌳\n";
+  msg += "Soy " + (d.nombre || "—") + " y quiero consultar por la quinta El Esfuerzo.\n\n";
+  msg += "• Fecha: " + textoFechas(d.fecha, d.fechaHasta) + "\n";
+  if (d.personas) msg += "• Personas: " + d.personas + "\n";
+  if (d.motivo) msg += "• Motivo: " + d.motivo + "\n";
+  if (d.extras.length) msg += "• Extras del catálogo: " + d.extras.join(", ") + "\n";
+  msg += "\n¿Me pasan precio, disponibilidad y ubicación? ¡Gracias!";
+  return linkWhatsApp(msg);
+}
+
 /** Construye el link de WhatsApp con el mensaje del cotizador armado. */
 export function linkCotizacion(datos: DatosCotizacion): string {
   const { nombre, inflable, fecha, horarioDesde, horarioHasta, zona, lugar, direccion } = datos;

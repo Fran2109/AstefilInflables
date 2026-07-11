@@ -8,10 +8,7 @@ export const SITIO = {
   email: "astefil.inflables@gmail.com",
   instagram: { handle: "@astefil.inflables", url: "https://www.instagram.com/astefil.inflables/" },
   facebook: { handle: "/astefilinflables", url: "https://www.facebook.com/astefilinflables/" },
-  telefonos: [
-    { label: "11 6226-3170 (WhatsApp)", wa: "541162263170" },
-    { label: "11 5591-1624 (WhatsApp)", wa: "541155911624" },
-  ],
+  telefonos: [{ label: "11 6226-3170 (WhatsApp)", wa: "541162263170" }],
 } as const;
 
 /** Palabras del marquee (se duplican al renderizar para el loop infinito). */

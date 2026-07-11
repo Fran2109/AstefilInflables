@@ -26,7 +26,7 @@ interface FormState {
   telefono: string;
   horaEntrega: string;
   horaRetiro: string;
-  inflableIds: string[];
+  articuloIds: string[];
   zona: string;
   direccion: string;
   precio: string;
@@ -42,7 +42,7 @@ function estadoInicial(r: Reserva | null, fechaSugerida?: string): FormState {
     telefono: r?.telefono || "",
     horaEntrega: r?.horaEntrega || "",
     horaRetiro: r?.horaRetiro || "",
-    inflableIds: r?.inflableIds || [],
+    articuloIds: r?.articuloIds || [],
     zona: r?.zona || "",
     direccion: r?.direccion || "",
     precio: r?.precio != null ? String(r.precio) : "",
@@ -52,7 +52,7 @@ function estadoInicial(r: Reserva | null, fechaSugerida?: string): FormState {
 }
 
 export function ReservaDialog({ open, onClose, reserva, fechaSugerida }: Props) {
-  const { inflables, reservas, zonas, guardarReserva, eliminarReserva, mostrarToast } = useAdmin();
+  const { articulos, reservas, zonas, guardarReserva, eliminarReserva, mostrarToast } = useAdmin();
   const nombresZona = [...zonas]
     .filter((z) => z.activo)
     .sort((a, b) => a.orden - b.orden)
@@ -67,40 +67,40 @@ export function ReservaDialog({ open, onClose, reserva, fechaSugerida }: Props) 
   const set = <K extends keyof FormState>(k: K, v: FormState[K]) =>
     setF((prev) => ({ ...prev, [k]: v }));
 
-  const toggleInflable = (id: string) =>
+  const toggleArticulo = (id: string) =>
     setF((prev) => ({
       ...prev,
-      inflableIds: prev.inflableIds.includes(id)
-        ? prev.inflableIds.filter((x) => x !== id)
-        : [...prev.inflableIds, id],
+      articuloIds: prev.articuloIds.includes(id)
+        ? prev.articuloIds.filter((x) => x !== id)
+        : [...prev.articuloIds, id],
     }));
 
-  // Inflables activos + los ya seleccionados aunque estén inactivos.
+  // Artículos activos + los ya seleccionados aunque estén inactivos.
   const disponibles = useMemo(
-    () => inflables.filter((i) => i.activo || f.inflableIds.includes(i.id)),
-    [inflables, f.inflableIds]
+    () => articulos.filter((a) => a.activo || f.articuloIds.includes(a.id)),
+    [articulos, f.articuloIds]
   );
 
   const confs = useMemo(
     () =>
       conflictosDe(
-        { id: reserva?.id ?? "", estado: f.estado, fecha: f.fecha, inflableIds: f.inflableIds },
+        { id: reserva?.id ?? "", estado: f.estado, fecha: f.fecha, articuloIds: f.articuloIds },
         reservas,
-        inflables
+        articulos
       ),
-    [reserva, f.estado, f.fecha, f.inflableIds, reservas, inflables]
+    [reserva, f.estado, f.fecha, f.articuloIds, reservas, articulos]
   );
 
   const guardar = async () => {
     if (!f.fecha) return mostrarToast("Falta la fecha");
     if (!f.cliente.trim()) return mostrarToast("Poné el nombre del cliente");
-    if (!f.inflableIds.length) return mostrarToast("Elegí al menos un inflable");
+    if (!f.articuloIds.length) return mostrarToast("Elegí al menos un artículo");
     if (confs.length) {
       const ok = await confirmar({
         titulo: "Conflicto de reserva",
         mensaje: (
           <>
-            ⚠ Ese inflable ya está reservado ese día ({confs.map((c) => c.res.cliente).join(", ")}).
+            ⚠ Ese artículo ya está reservado ese día ({confs.map((c) => c.res.cliente).join(", ")}).
             ¿Guardar igual?
           </>
         ),
@@ -118,7 +118,7 @@ export function ReservaDialog({ open, onClose, reserva, fechaSugerida }: Props) 
       telefono: f.telefono.trim(),
       horaEntrega: f.horaEntrega,
       horaRetiro: f.horaRetiro,
-      inflableIds: f.inflableIds,
+      articuloIds: f.articuloIds,
       zona: f.zona.trim(),
       direccion: f.direccion.trim(),
       precio: Number(f.precio) || 0,
@@ -196,19 +196,19 @@ export function ReservaDialog({ open, onClose, reserva, fechaSugerida }: Props) 
           <input id="r-hret" type="time" className={campoInputCls} value={f.horaRetiro} onChange={(e) => set("horaRetiro", e.target.value)} />
         </Campo>
 
-        <Campo label="Inflables / juegos *" ancho>
+        <Campo label="Artículos / juegos *" ancho>
           <div className="flex flex-wrap gap-2">
-            {disponibles.map((inf) => {
-              const checked = f.inflableIds.includes(inf.id);
+            {disponibles.map((art) => {
+              const checked = f.articuloIds.includes(art.id);
               return (
                 <label
-                  key={inf.id}
+                  key={art.id}
                   className={`inline-flex cursor-pointer items-center gap-1.5 rounded-full border-2 border-tinta px-3 py-1.5 font-alt text-[.85rem] font-bold ${
                     checked ? "bg-amarillo shadow-hard-sm" : "bg-white"
                   }`}
                 >
-                  <input type="checkbox" className="h-4 w-4 accent-rojo" checked={checked} onChange={() => toggleInflable(inf.id)} />
-                  {inf.nombre}
+                  <input type="checkbox" className="h-4 w-4 accent-rojo" checked={checked} onChange={() => toggleArticulo(art.id)} />
+                  {art.nombre}
                 </label>
               );
             })}
@@ -216,7 +216,7 @@ export function ReservaDialog({ open, onClose, reserva, fechaSugerida }: Props) 
           {confs.length > 0 && (
             <div className="font-alt text-[.78rem] font-semibold text-rojo">
               ⚠ Ese día ya está reservado:{" "}
-              {confs.map((c) => c.inflables.join("/") + " (" + (c.res.cliente || "otra reserva") + ")").join(" · ")}
+              {confs.map((c) => c.articulos.join("/") + " (" + (c.res.cliente || "otra reserva") + ")").join(" · ")}
             </div>
           )}
         </Campo>

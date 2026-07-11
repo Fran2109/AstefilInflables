@@ -57,7 +57,7 @@ export async function cargarCatalogo(): Promise<CatalogoData | null> {
       .eq("activo", true)
       .order("orden"),
     // Vista pública del inventario (puede no existir todavía → se ignora el error).
-    supabase.from("catalogo_inflables").select("*").order("nombre"),
+    supabase.from("catalogo_articulos").select("*").order("nombre"),
     // Categorías (puede no existir todavía → se ignora el error).
     supabase.from("categorias").select("nombre").eq("activo", true).order("orden"),
     // Zonas (puede no existir todavía → se ignora el error).

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import type { Categoria, Inflable, Reserva, Zona } from "@/admin/types";
+import type { Articulo, Categoria, Reserva, Zona } from "@/admin/types";
 import { AdminProvider, useAdmin } from "@/admin/store/AdminContext";
 import { Rail, type Vista } from "@/admin/components/Rail";
 import { Gate } from "@/admin/components/Gate";
@@ -7,7 +7,7 @@ import { Login } from "@/admin/components/Login";
 import { ConfirmProvider } from "@/admin/components/Confirm";
 import { Toast } from "@/admin/components/Toast";
 import { ReservaDialog } from "@/admin/components/ReservaDialog";
-import { InflableDialog } from "@/admin/components/InflableDialog";
+import { ArticuloDialog } from "@/admin/components/ArticuloDialog";
 import { CategoriaDialog } from "@/admin/components/CategoriaDialog";
 import { ZonaDialog } from "@/admin/components/ZonaDialog";
 import { DiaDialog } from "@/admin/components/DiaDialog";
@@ -44,9 +44,9 @@ function AdminInner() {
     open: false,
     reserva: null,
   });
-  const [dlgInflable, setDlgInflable] = useState<{ open: boolean; inflable: Inflable | null }>({
+  const [dlgArticulo, setDlgArticulo] = useState<{ open: boolean; articulo: Articulo | null }>({
     open: false,
-    inflable: null,
+    articulo: null,
   });
   const [dlgCategoria, setDlgCategoria] = useState<{ open: boolean; categoria: Categoria | null }>({
     open: false,
@@ -59,7 +59,7 @@ function AdminInner() {
   const [dlgDia, setDlgDia] = useState<{ open: boolean; iso: string | null }>({ open: false, iso: null });
 
   const abrirReserva = (r: Reserva | null) => setDlgReserva({ open: true, reserva: r });
-  const abrirInflable = (i: Inflable | null) => setDlgInflable({ open: true, inflable: i });
+  const abrirArticulo = (a: Articulo | null) => setDlgArticulo({ open: true, articulo: a });
   const abrirCategoria = (c: Categoria | null) => setDlgCategoria({ open: true, categoria: c });
   const abrirZona = (z: Zona | null) => setDlgZona({ open: true, zona: z });
   const abrirDia = (iso: string) => setDlgDia({ open: true, iso });
@@ -105,7 +105,7 @@ function AdminInner() {
           {vistaActual === "inicio" && <InicioView onAbrirReserva={abrirReserva} />}
           {vistaActual === "calendario" && <CalendarioView onAbrirDia={abrirDia} />}
           {vistaActual === "reservas" && <ReservasView onAbrirReserva={abrirReserva} />}
-          {vistaActual === "inventario" && <InventarioView onAbrirInflable={abrirInflable} />}
+          {vistaActual === "inventario" && <InventarioView onAbrirArticulo={abrirArticulo} />}
           {vistaActual === "categorias" && <CategoriasView onAbrirCategoria={abrirCategoria} />}
           {vistaActual === "zonas" && <ZonasView onAbrirZona={abrirZona} />}
           {vistaActual === "equipo" && <EquipoView />}
@@ -119,10 +119,10 @@ function AdminInner() {
         fechaSugerida={dlgReserva.fecha}
         onClose={() => setDlgReserva((d) => ({ ...d, open: false }))}
       />
-      <InflableDialog
-        open={dlgInflable.open}
-        inflable={dlgInflable.inflable}
-        onClose={() => setDlgInflable((d) => ({ ...d, open: false }))}
+      <ArticuloDialog
+        open={dlgArticulo.open}
+        articulo={dlgArticulo.articulo}
+        onClose={() => setDlgArticulo((d) => ({ ...d, open: false }))}
       />
       <CategoriaDialog
         open={dlgCategoria.open}

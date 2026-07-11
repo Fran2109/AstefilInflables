@@ -15,7 +15,7 @@ interface Props {
 }
 
 export function DiaDialog({ open, iso, onClose, onAbrirReserva, onNuevaEnDia }: Props) {
-  const { reservas, inflables } = useAdmin();
+  const { reservas, articulos } = useAdmin();
   if (!iso) return null;
 
   const delDia = reservas
@@ -49,7 +49,7 @@ export function DiaDialog({ open, iso, onClose, onAbrirReserva, onNuevaEnDia }: 
               <span className="flex-1 min-w-[140px]">
                 <strong>{r.cliente || "Sin nombre"}</strong>
                 <small className="block text-[#5a4a41]">
-                  {nombresInf(r.inflableIds, inflables).join(", ")}
+                  {nombresInf(r.articuloIds, articulos).join(", ")}
                   {r.horaEntrega ? " · " + r.horaEntrega : ""}
                 </small>
               </span>

@@ -55,19 +55,24 @@ No hay tests. Validar con `npm run build` y en el navegador con las herramientas
   + Storage + seed mínimo) y es el "molde" canónico — para resetear una base sucia, correrlo
   (⚠ borra reservas; NO toca `auth.users`). El resto de los `.sql` en `supabase/` son
   migraciones puntuales/aditivas ya fusionadas en `init.sql` (roles, storage de fotos, medidas
-  con turbina, zonas) para aplicar a una base ya viva sin perder datos, más `reset.sql` (borra
-  todo, sin reconstruir — usar antes de un `init.sql` limpio). Se corren a mano en Supabase →
-  SQL Editor. Al cambiar el esquema, actualizar `init.sql` para que la reconstrucción siga fiel.
+  con turbina, zonas, `articulos-rename.sql`, `notas-internas.sql`) para aplicar a una base ya
+  viva sin perder datos, más `reset.sql` (borra todo, sin reconstruir — usar antes de un
+  `init.sql` limpio). Se corren a mano en Supabase → SQL Editor. Al cambiar el esquema,
+  actualizar `init.sql` para que la reconstrucción siga fiel.
 - **Nombres**: la DB usa **snake_case**; la app usa **camelCase**. El mapeo vive en
   `src/admin/lib/db.ts` (admin) y `src/lib/landingDb.ts` (landing). Mantenerlos en sync.
-- **Tablas**: `reservas`, `inflables`, `config`, `categorias`, `zonas`, `perfiles`
+- **Tablas**: `reservas`, `articulos`, `config`, `categorias`, `zonas`, `perfiles`
   (privadas/mixtas); `productos`, `testimonios` (catálogo público, **vacías por defecto** —
-  sin ABM propio todavía, se cargan a mano vía SQL o `db.ts`); vista `catalogo_inflables`
-  (columnas seguras de `inflables` activos — **NO expone precio** — para que la landing liste
+  sin ABM propio todavía, se cargan a mano vía SQL o `db.ts`); vista `catalogo_articulos`
+  (columnas seguras de `articulos` activos — **NO expone precio** — para que la landing liste
   modelos). `categorias` y `zonas` sí traen seed real (5 categorías, 8 zonas) porque son
-  estructurales, no contenido de marketing.
-- **Storage**: bucket público `inflables` (fotos por modelo, subidas desde `InflableDialog` vía
+  estructurales, no contenido de marketing. `articulos` reemplazó a la vieja `inflables`: el
+  negocio también alquila gazebos, candy bar, estufas, etc., no solo inflables (ver bullet de
+  `Categoria` más abajo, esquema de atributos configurables).
+- **Storage**: bucket público `inflables` (fotos por modelo, subidas desde `ArticuloDialog` vía
   `admin/lib/db.ts` → `subirFoto`/`borrarFoto`, comprimidas a JPEG en el cliente antes de subir).
+  El bucket conserva ese nombre por compatibilidad (detalle interno, no visible) aunque la
+  entidad se llame `Articulo`.
   Lectura pública por URL; escritura solo admin (RLS de `storage.objects`).
 - **RLS por rol** (ver "Roles"): catálogo → lectura pública, escritura solo admin; inventario
   y config → lectura de cualquier logueado, escritura solo admin; reservas → cualquier
@@ -85,7 +90,7 @@ No hay tests. Validar con `npm run build` y en el navegador con las herramientas
   `ZONAS_INICIALES`) — ese seed es la semilla real solo en modo offline (localStorage, sin
   Supabase). Mostrar una lista local "fantasma" mientras la tabla no existe/está vacía en modo
   online mentiría sobre qué hay guardado de verdad; cada vista maneja su propio estado vacío
-  (`Vacio` de `views/comunes.tsx`, también usado en `InventarioView` para `inflables`).
+  (`Vacio` de `views/comunes.tsx`, también usado en `InventarioView` para `articulos`).
 - **Auth**: login real Supabase (email/clave) en `components/Login.tsx`. `AdminContext` escucha
   `onAuthStateChange`, carga el rol y los datos al iniciar sesión. Sin sesión → `AdminPage`
   muestra `<Login>`. En modo offline, cae al `<Gate>` de PIN viejo (disuasión casual).
@@ -94,24 +99,41 @@ No hay tests. Validar con `npm run build` y en el navegador con las herramientas
   `await confirmar({titulo, mensaje, textoConfirmar, peligro})`).
 - **Modelo** (`types.ts`):
   - `Reserva`: `{id, fecha:'YYYY-MM-DD', estado, cliente, telefono, horaEntrega, horaRetiro,
-    inflableIds[], zona, direccion, precio, sena, notas, creado}`
-  - `Inflable`: `{id, nombre, cat, precio, activo, color, descripcion?, ancho?, largo?, alto?,
+    articuloIds[], zona, direccion, precio, sena, notas, creado}`
+  - `Articulo`: `{id, nombre, cat, precio, activo, color, descripcion?, ancho?, largo?, alto?,
     anchoTurbina?, largoTurbina?, altoTurbina?, fotos?}` (precio 0 = sin definir; `cat` → FK a
-    `categorias.nombre`; medidas "sin turbina" opcionales, "con turbina" también opcionales
-    pero si están cargadas deben ser ≥ que sin turbina y no las tres iguales — se validan en
-    `InflableDialog`, que además autocompleta con-turbina al tipear sin-turbina hasta que el
-    usuario las edite a mano; `fotos` = paths en el bucket `inflables` de Storage)
-  - `Categoria` / `Zona`: mismo shape `{id (slug), nombre (único), orden, activo}` — 5
-    categorías seed (Castillos, Gigantes, Acuáticos, Juegos, Eventos), 8 zonas seed
-    (Tortuguitas, Grand Bourg, Los Polvorines, Malvinas Argentinas, José C. Paz, Del Viso,
-    Pilar, Escobar). `Zona` alimenta "¿Llegamos a tu zona?" de la landing y el `<datalist>`
-    del campo zona/localidad en `ReservaDialog` (ahí `zona` sigue siendo texto libre, no FK —
-    borrar una zona no toca reservas existentes).
+    `categorias.nombre`). No es solo inflables: el negocio también alquila gazebos, candy bar,
+    pool, metegol, estufas, plaza blanda, etc. — qué atributos de este shape son obligatorios,
+    opcionales o no aplican para una categoría dada lo define esa `Categoria` (ver abajo), no el
+    tipo `Articulo` en sí (todos los campos quedan opcionales acá; la exigencia es dinámica).
+    Medidas "sin turbina" y "con turbina" son grupos independientes; si con-turbina está
+    cargado debe ser ≥ que sin-turbina y no las tres iguales — se valida en `ArticuloDialog`,
+    que además autocompleta con-turbina al tipear sin-turbina hasta que el usuario las edite a
+    mano, y oculta por completo el bloque de turbina si la categoría tiene
+    `medidasTurbinaReq: "no_aplica"`; `fotos` = paths en el bucket `inflables` de Storage.
+    `notasInternas` es un campo aparte (siempre opcional, no depende de la categoría): notas
+    solo para el equipo (estado, ubicación, defectos) — nunca se expone en `catalogo_articulos`
+    ni en ningún componente de la landing.
+  - `Categoria`: `{id (slug), nombre (único), orden, activo, descripcionReq, medidasReq,
+    medidasTurbinaReq, fotosReq}`, cada `*Req` es un `Requisito` (`"obligatorio" | "opcional" |
+    "no_aplica"`) que `ArticuloDialog` usa para mostrar/ocultar y exigir/no exigir ese bloque del
+    formulario según la categoría elegida — "obligatorio" bloquea "Guardar" si falta (mismo
+    criterio que el nombre); "no_aplica" oculta el campo y lo limpia al guardar aunque tuviera
+    datos de una categoría anterior. `medidasTurbinaReq` es un único interruptor para el grupo
+    completo ancho/largo/alto con turbina (no campo por campo). Editable desde `CategoriaDialog`
+    (ABM de Categorías). 5 categorías seed (Castillos, Gigantes, Acuáticos, Juegos, Eventos),
+    todas con los 4 `*Req` en `"opcional"` (comportamiento de siempre) — ajustar por categoría
+    desde el ABM (ej: una futura categoría "Gazebos" con `medidasTurbinaReq: "no_aplica"`).
+  - `Zona`: `{id (slug), nombre (único), orden, activo}` — 8 zonas seed (Tortuguitas, Grand
+    Bourg, Los Polvorines, Malvinas Argentinas, José C. Paz, Del Viso, Pilar, Escobar). Alimenta
+    "¿Llegamos a tu zona?" de la landing y el `<datalist>` del campo zona/localidad en
+    `ReservaDialog` (ahí `zona` sigue siendo texto libre, no FK — borrar una zona no toca
+    reservas existentes).
   - `Perfil`: `{id (=auth uid), email, rol}` · `Config`: `{nombre, pin}`
 - **Estados** (flujo): Consulta → Reservado → Señado → Entregado → Finalizado; Cancelado
   aparte. Consulta y Cancelado no bloquean inventario. Avanzar estado es un solo paso.
 - **Conflictos** (`lib/conflictos.ts` → `conflictosDe`): misma `fecha` + intersección de
-  `inflableIds` entre reservas bloqueantes ⇒ aviso en el formulario y tarjeta en rojo.
+  `articuloIds` entre reservas bloqueantes ⇒ aviso en el formulario y tarjeta en rojo.
 - **Vistas** (`views/`): Inicio (KPIs), Calendario, Reservas, Inventario, **Categorías** (ABM
   con reordenar/activar/borrar-bloqueado-si-en-uso), **Zonas** (mismo ABM pattern, sin bloqueo
   al borrar porque `Reserva.zona` es texto libre, no FK), **Equipo** (roles, solo admin), Ajustes.
@@ -140,7 +162,7 @@ No hay tests. Validar con `npm run build` y en el navegador con las herramientas
 - **Catálogo con filtro** (`Catalogo.tsx`): chips (Todos + categorías). "Todos" muestra las
   cards-categoría (`ProductoCard`, vacío por defecto — ver "Verdad vs. placeholder"); al elegir
   una categoría se listan sus **modelos reales** del inventario (`ModeloCard`) leídos de
-  `catalogo_inflables`, con foto real si el admin la subió o un placeholder on-brand si no.
+  `catalogo_articulos`, con foto real si el admin la subió o un placeholder on-brand si no.
 - **Cotizador**: formulario controlado (`DatosCotizacion` en `lib/whatsapp.ts` → `linkCotizacion`
   arma el mensaje/link en vivo); incluye horario tentativo como rango (`horarioDesde`/
   `horarioHasta`, opcionales) y dirección. No hay backend de envío: **WhatsApp ES el funnel**.
@@ -150,6 +172,23 @@ No hay tests. Validar con `npm run build` y en el navegador con las herramientas
 - **"¿Llegamos a tu zona?"** (`Zonas.tsx`): chips con `useCatalogo().zonas` (DB o fallback
   estático, ver arriba) — mismo ABM que gestiona el admin.
 - **Visor**: lightbox con flechas/teclado/swipe/miniaturas + lista de modelos por categoría.
+- **Página `/quinta`** (`pages/QuintaPage.tsx` + `data/quinta.ts`): la quinta "El Esfuerzo",
+  que se alquila por día. Contenido **estático a propósito** (sin ABM ni tabla en Supabase:
+  es una sola quinta que no cambia seguido — se edita en `data/quinta.ts`). La **ubicación NO
+  se publica**: la pasa la respuesta de WhatsApp. Tiene su propio formulario de consulta
+  (`FormularioConsulta`, mismo patrón que el Cotizador): nombre, fecha puntual o rango,
+  cantidad de personas (mínimo 30, salta de a 5) y motivo (`MOTIVOS_QUINTA`); arma el
+  mensaje con `linkConsultaQuinta` (`lib/whatsapp.ts`, que también acepta `extras` del
+  catálogo — hoy el formulario no los pide, se sacaron a pedido de Francisco).
+  **Fotos reales** en `public/img/quinta/` (portada, galería de 9 y una de eventos con
+  inflables), optimizadas con Pillow desde la carpeta fuente `Quinta/` del repo (gitignoreada
+  por peso; si llegan fotos nuevas, re-optimizar a ~1400px JPEG q80). La sección "¿Le sumamos
+  inflables?" (`SeccionInflables`) es cross-sell real —hubo cumpleaños con inflables de
+  Astefil en la quinta— y linkea al catálogo de la landing. El `Header` es route-aware:
+  muestra un nav distinto por ruta (landing: sus secciones + "Quinta 🌳" al final como chip
+  destacado en amarillo; `/quinta`: Catálogo/Fotos/Consultá). Un link de sección scrollea
+  en la página actual si el id existe; si no, vuelve a `/` y scrollea al montarse. El logo
+  scrollea al tope de la página actual (ambas tienen `id="inicio"` en su `<main>`).
 - **Placeholders de foto** (`lib/placeholder.ts` → `fotoPlaceholder`): SVG on-brand generado en
   el cliente (sin red), determinístico por clave, para cualquier card sin foto real todavía.
   El `Visor` distingue URLs/paths reales (`http`, `blob:`, `/`) de claves de placeholder.
@@ -209,9 +248,13 @@ Patrones no negociables:
 
 ## Datos reales — fuente de verdad (no inventar otros)
 
-- WhatsApp principal: **54 11 6226-3170** (`541162263170`) — constante `WHATSAPP` en
-  `src/lib/whatsapp.ts`. Secundario: 54 11 5591-1624 (footer, `src/data/site.ts`).
+- WhatsApp: **54 11 6226-3170** (`541162263170`) — constante `WHATSAPP` en `src/lib/whatsapp.ts`,
+  también en `SITIO.telefonos` (`src/data/site.ts`) para el footer. Único número; no agregar otro.
 - Email: astefil.inflables@gmail.com · Instagram: @astefil.inflables · Facebook: /astefilinflables
+- Quinta "El Esfuerzo" (página `/quinta`, datos en `data/quinta.ts`): alquiler por día de 10 a
+  20 hs; pileta de 3,30 × 8 m con profundidad de 1 a 2,20 m; comodidades reales listadas ahí
+  (parrilla, horno, heladeras, etc.); música a volumen moderado; los artículos del catálogo se
+  alquilan aparte con costo extra. **Ubicación solo por WhatsApp** — no publicarla.
 - URL de producción: definir al deployar en Vercel. Con dominio propio, actualizar `og:*` en
   `index.html`, el JSON-LD, y el QR del flyer (`tools/build_flyer.py`). En Vercel hay que
   cargar `VITE_SUPABASE_*` como Environment Variables (el `.env` no se sube).
@@ -234,11 +277,11 @@ obvio (`fotoPlaceholder`) — nunca texto o fotos inventadas presentadas como re
   cobertura" + CTA WhatsApp) en vez de ocultar la sección (sí hay link de nav a `#zonas`, a
   diferencia de testimonios). No reintroducir una lista hardcodeada de localidades como fallback.
 - **Precios**: no hay precios publicados a propósito (funnel a "consultá"). En el admin, los
-  inflables arrancan con precio 0 = sin definir. No inventar cifras.
+  artículos arrancan con precio 0 = sin definir. No inventar cifras.
 - **Claims de servicio** ("llegamos, armamos, retiramos", pasos de "Cómo funciona", bullets del
   visor): plausibles pero **pendientes de confirmación de Francisco**.
-- **Fotos por modelo**: el admin ya permite subirlas de verdad (`InflableDialog` → Storage). Un
-  inflable sin fotos cargadas muestra un `fotoPlaceholder` (banda de color + "FOTO de muestra"),
+- **Fotos por modelo**: el admin ya permite subirlas de verdad (`ArticuloDialog` → Storage). Un
+  artículo sin fotos cargadas muestra un `fotoPlaceholder` (banda de color + "FOTO de muestra"),
   nunca una imagen real inventada. El repo viejo (`Fran2109/Astefil_Inflables`,
   `Frontend/src/assets/inflables/*`) tiene fotos reales de los 19 modelos, listas para portar.
 
