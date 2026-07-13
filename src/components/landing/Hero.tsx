@@ -1,10 +1,18 @@
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { VisorFotos } from "@/components/ui/visor-fotos";
 import { scrollAId } from "@/lib/scroll";
 import { linkWhatsApp } from "@/lib/whatsapp";
 
+const FOTO_HERO = {
+  src: "/img/hero.jpg",
+  alt: "Castillo inflable de Astefil con arco de colores armado en un jardín",
+};
+
 export function Hero() {
   const navigate = useNavigate();
+  const [fotoAbierta, setFotoAbierta] = useState(false);
 
   return (
     <section className="relative py-14 pt-9 md:pt-14">
@@ -53,16 +61,29 @@ export function Hero() {
               aria-hidden="true"
               className="absolute left-1/2 top-[-16px] h-8 w-[120px] -translate-x-1/2 -rotate-3 rounded border-2 border-tinta bg-amarillo/90"
             />
-            <img
-              src="/img/hero.jpg"
-              alt="Castillo inflable de Astefil con arco de colores armado en un jardín"
-              width={860}
-              height={1146}
-              className="w-full rounded-lg border-3 border-tinta object-cover"
-            />
+            <button
+              type="button"
+              onClick={() => setFotoAbierta(true)}
+              aria-label="Ver la foto en grande"
+              className="block w-full cursor-zoom-in"
+            >
+              <img
+                src={FOTO_HERO.src}
+                alt={FOTO_HERO.alt}
+                width={860}
+                height={1146}
+                className="w-full rounded-lg border-3 border-tinta object-cover"
+              />
+            </button>
           </figure>
         </div>
       </div>
+
+      <VisorFotos
+        fotos={[FOTO_HERO]}
+        indice={fotoAbierta ? 0 : null}
+        onCerrar={() => setFotoAbierta(false)}
+      />
     </section>
   );
 }

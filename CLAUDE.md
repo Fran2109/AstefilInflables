@@ -180,11 +180,14 @@ No hay tests. Validar con `npm run build` y en el navegador con las herramientas
   cantidad de personas (mínimo 30, salta de a 5) y motivo (`MOTIVOS_QUINTA`); arma el
   mensaje con `linkConsultaQuinta` (`lib/whatsapp.ts`, que también acepta `extras` del
   catálogo — hoy el formulario no los pide, se sacaron a pedido de Francisco).
-  **Fotos reales** en `public/img/quinta/` (portada, galería de 9 y una de eventos con
-  inflables), optimizadas con Pillow desde la carpeta fuente `Quinta/` del repo (gitignoreada
-  por peso; si llegan fotos nuevas, re-optimizar a ~1400px JPEG q80). La sección "¿Le sumamos
-  inflables?" (`SeccionInflables`) es cross-sell real —hubo cumpleaños con inflables de
-  Astefil en la quinta— y linkea al catálogo de la landing. El `Header` es route-aware:
+  **Fotos reales** en `public/img/quinta/` (portada + galería de 12 exteriores + 6 de eventos
+  con inflables), optimizadas con Pillow (luz/color + upscale + afilado, ~1800px JPEG q86)
+  desde la carpeta fuente `Quinta/` del repo (gitignoreada por peso; ahí también está el video
+  del que se sacó algún cuadro). Toda foto es ampliable con `VisorFotos` (ver "Imágenes
+  ampliables"): la portada del hero se maximiza, las dos galerías son carrousel. La sección
+  "¿Le sumamos inflables?" (`SeccionInflables`) es cross-sell real —hubo cumpleaños con
+  inflables de Astefil en la quinta— y linkea al catálogo de la landing; su layout reordena a
+  título→texto→fotos→botón en móvil. El `Header` es route-aware:
   muestra un nav distinto por ruta (landing: sus secciones + "Quinta 🌳" al final como chip
   destacado en amarillo; `/quinta`: Catálogo/Fotos/Consultá). Un link de sección scrollea
   en la página actual si el id existe; si no, vuelve a `/` y scrollea al montarse. El logo
@@ -237,6 +240,13 @@ Patrones no negociables:
   ocurren *dentro* del propio panel (`panelRef.current?.contains(e.target)` antes de cerrar) —
   si no, scrollear una lista larga de opciones (p. ej. las horas del `TimePicker`) cierra el
   panel antes de poder elegir algo.
+- **Imágenes ampliables**: toda imagen de contenido es clickeable — las individuales (heros,
+  portadas) se **maximizan** en un lightbox, y los grupos de imágenes se ven como **carrousel**.
+  Para fotos "sueltas" o galerías simples usar `VisorFotos` (`components/ui/visor-fotos.tsx`):
+  con una sola foto oculta flechas/contador/miniaturas, con varias es carrousel completo
+  (flechas, teclado, swipe, miniaturas). El catálogo usa su `Visor` propio (trae info de
+  producto y CTA). El disparador lleva `cursor-zoom-in`. Al agregar una imagen o galería
+  nueva, conectarla a uno de estos visores — nada de imágenes "muertas" sin click.
 - **Confirmación de acciones que modifican datos**: toda acción del admin que escribe en la
   base (crear, editar, borrar, cambiar estado o rol, activar/desactivar, importar, borrar todo)
   **debe pedir confirmación** con `useConfirmar()` (`const ok = await confirmar({...})`).
@@ -250,6 +260,9 @@ Patrones no negociables:
 
 - WhatsApp: **54 11 6226-3170** (`541162263170`) — constante `WHATSAPP` en `src/lib/whatsapp.ts`,
   también en `SITIO.telefonos` (`src/data/site.ts`) para el footer. Único número; no agregar otro.
+  Los botones/íconos globales (Header + `WhatsAppFloat`) usan `mensajeConsulta(pathname)`: en
+  `/quinta` mandan el prearmado de la quinta (`MSG_QUINTA`), en el resto el de inflables
+  (`MSG_INFLABLES`). Si agregás una página con su propio mensaje, se cambia solo ahí.
 - Email: astefil.inflables@gmail.com · Instagram: @astefil.inflables · Facebook: /astefilinflables
 - Quinta "El Esfuerzo" (página `/quinta`, datos en `data/quinta.ts`): alquiler por día de 10 a
   20 hs; pileta de 3,30 × 8 m con profundidad de 1 a 2,20 m; comodidades reales listadas ahí

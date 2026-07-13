@@ -1,10 +1,12 @@
-import { linkWhatsApp } from "@/lib/whatsapp";
+import { useLocation } from "react-router-dom";
+import { linkWhatsApp, mensajeConsulta } from "@/lib/whatsapp";
 
-/** Botón flotante de WhatsApp, siempre visible. */
+/** Botón flotante de WhatsApp, siempre visible. El mensaje se ajusta a la ruta. */
 export function WhatsAppFloat() {
+  const { pathname } = useLocation();
   return (
     <a
-      href={linkWhatsApp("¡Hola Astefil! Quiero consultar por un inflable 🎉")}
+      href={linkWhatsApp(mensajeConsulta(pathname))}
       target="_blank"
       rel="noopener"
       aria-label="Escribinos por WhatsApp"

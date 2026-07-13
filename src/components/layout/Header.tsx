@@ -4,7 +4,7 @@ import { Menu, MessageCircle } from "lucide-react";
 import { Logo } from "@/components/layout/Logo";
 import { Button } from "@/components/ui/button";
 import { scrollAId } from "@/lib/scroll";
-import { linkWhatsApp } from "@/lib/whatsapp";
+import { linkWhatsApp, mensajeConsulta } from "@/lib/whatsapp";
 
 /**
  * Un link del nav: o scrollea a una sección de la página, o navega a otra
@@ -102,7 +102,7 @@ export function Header() {
         </nav>
 
         <Button asChild variant="verde" size="chico" className="hidden md:inline-flex">
-          <a href={linkWhatsApp()} target="_blank" rel="noopener">
+          <a href={linkWhatsApp(mensajeConsulta(pathname))} target="_blank" rel="noopener">
             WhatsApp
           </a>
         </Button>
@@ -123,7 +123,7 @@ export function Header() {
             </button>
           ))}
           <a
-            href={linkWhatsApp("¡Hola Astefil! Quiero consultar por un inflable 🎉")}
+            href={linkWhatsApp(mensajeConsulta(pathname))}
             target="_blank"
             rel="noopener"
             onClick={() => setAbierto(false)}

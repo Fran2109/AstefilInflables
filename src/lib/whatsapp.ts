@@ -10,6 +10,18 @@ export function linkWhatsApp(texto?: string, telefono: string = WHATSAPP): strin
   return texto ? `${base}&text=${encodeURIComponent(texto)}` : base;
 }
 
+/** Mensajes de consulta genéricos (los botones/íconos globales de WhatsApp). */
+export const MSG_INFLABLES = "¡Hola Astefil! Quiero consultar por un inflable 🎉";
+export const MSG_QUINTA = "¡Hola Astefil! Quiero consultar por la quinta El Esfuerzo 🌳";
+
+/**
+ * Mensaje por defecto según la ruta: en `/quinta` arma el de la quinta, en el
+ * resto el de inflables. Lo usan el botón del Header y el ícono flotante.
+ */
+export function mensajeConsulta(pathname: string): string {
+  return pathname.startsWith("/quinta") ? MSG_QUINTA : MSG_INFLABLES;
+}
+
 /** Datos que arma el cotizador de la landing. */
 export interface DatosCotizacion {
   nombre: string;

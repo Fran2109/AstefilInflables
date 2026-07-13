@@ -26,6 +26,8 @@ const labelCls = "mb-1.5 block font-alt text-[.92rem] font-extrabold";
 export function QuintaPage() {
   // Índice de la foto abierta en el visor de la galería (null = cerrado).
   const [fotoAbierta, setFotoAbierta] = useState<number | null>(null);
+  // Visor de la portada del hero (foto individual).
+  const [portadaAbierta, setPortadaAbierta] = useState(false);
 
   // Título propio + arrancar arriba (el router no resetea el scroll).
   useEffect(() => {
@@ -69,16 +71,29 @@ export function QuintaPage() {
                 aria-hidden="true"
                 className="absolute left-1/2 top-[-16px] h-8 w-[120px] -translate-x-1/2 -rotate-3 rounded border-2 border-tinta bg-amarillo/90"
               />
-              <img
-                src={QUINTA.portada.src}
-                alt={QUINTA.portada.alt}
-                width={1400}
-                height={1050}
-                className="w-full rounded-lg border-3 border-tinta object-cover"
-              />
+              <button
+                type="button"
+                onClick={() => setPortadaAbierta(true)}
+                aria-label="Ver la foto en grande"
+                className="block w-full cursor-zoom-in"
+              >
+                <img
+                  src={QUINTA.portada.src}
+                  alt={QUINTA.portada.alt}
+                  width={1400}
+                  height={1050}
+                  className="w-full rounded-lg border-3 border-tinta object-cover"
+                />
+              </button>
             </figure>
           </div>
         </section>
+
+        <VisorFotos
+          fotos={[QUINTA.portada]}
+          indice={portadaAbierta ? 0 : null}
+          onCerrar={() => setPortadaAbierta(false)}
+        />
 
         {/* Fotos reales */}
         <section id="fotos" className="border-y-3 border-tinta bg-papel py-12">
@@ -182,8 +197,20 @@ function SeccionInflables() {
 
   return (
     <section className="border-y-3 border-tinta bg-cielo py-12">
-      <div className="container grid items-center gap-9 md:grid-cols-[1fr_1fr]">
-        <div className="mx-auto grid w-full max-w-[480px] grid-cols-2 gap-5">
+      {/* En mobile el orden del DOM manda: título+texto → fotos → botón. En
+          md+ se arma la grilla: fotos a la izquierda (2 filas), texto y botón
+          a la derecha, pegados al centro vertical. */}
+      <div className="container grid items-center gap-9 md:grid-cols-[1fr_1fr] md:gap-y-0">
+        <div className="md:col-start-2 md:row-start-1 md:self-end">
+          <h2 className="mb-3 text-[clamp(1.8rem,4vw,2.6rem)]">¿Le sumamos inflables? 🎈</h2>
+          <p className="max-w-[36rem] text-[1.05rem] leading-[1.55] md:mb-5">
+            La quinta y los inflables son la combinación que mejor nos sale: castillos, tobogán
+            acuático, juegos de salón o candy bar, armados en el mismo parque (como en las fotos,
+            de eventos reales acá). Se cotizan aparte — decinos qué te gustaría sumar cuando
+            consultes.
+          </p>
+        </div>
+        <div className="mx-auto grid w-full max-w-[480px] grid-cols-2 gap-5 md:col-start-1 md:row-span-2 md:row-start-1">
           {QUINTA.fotosInflables.map((f, i) => (
             <button
               key={f.src}
@@ -202,14 +229,7 @@ function SeccionInflables() {
             </button>
           ))}
         </div>
-        <div>
-          <h2 className="mb-3 text-[clamp(1.8rem,4vw,2.6rem)]">¿Le sumamos inflables? 🎈</h2>
-          <p className="mb-5 max-w-[36rem] text-[1.05rem] leading-[1.55]">
-            La quinta y los inflables son la combinación que mejor nos sale: castillos, tobogán
-            acuático, juegos de salón o candy bar, armados en el mismo parque (como en las fotos,
-            de eventos reales acá). Se cotizan aparte — decinos qué te gustaría sumar cuando
-            consultes.
-          </p>
+        <div className="md:col-start-2 md:row-start-2 md:self-start">
           <Button variant="rojo" onClick={irAlCatalogo}>
             Ver el catálogo
           </Button>
@@ -290,15 +310,21 @@ function FormularioConsulta() {
               <label htmlFor="q-fecha" className={labelCls}>
                 Fecha (una puntual, o un rango si tenés flexibilidad)
               </label>
-              <div className="flex items-center gap-2">
-                <DatePicker id="q-fecha" value={fecha} onChange={setFecha} triggerClassName={inputCls} />
-                <span className="font-alt font-bold text-[#5a4a41]">al</span>
-                <DatePicker
-                  id="q-fecha-hasta"
-                  value={fechaHasta}
-                  onChange={setFechaHasta}
-                  triggerClassName={inputCls}
-                />
+              {/* En móvil se apilan (evita que el 2º picker se salga del form);
+                  en sm+ van lado a lado, cada uno flex-1 min-w-0 para encoger bien. */}
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                <div className="w-full sm:min-w-0 sm:flex-1">
+                  <DatePicker id="q-fecha" value={fecha} onChange={setFecha} triggerClassName={inputCls} />
+                </div>
+                <span className="font-alt font-bold text-[#5a4a41] sm:shrink-0">al</span>
+                <div className="w-full sm:min-w-0 sm:flex-1">
+                  <DatePicker
+                    id="q-fecha-hasta"
+                    value={fechaHasta}
+                    onChange={setFechaHasta}
+                    triggerClassName={inputCls}
+                  />
+                </div>
               </div>
             </div>
             <div className="md:col-span-2">
