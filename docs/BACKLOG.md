@@ -34,8 +34,11 @@ verdad vs. placeholder).
 - [x] Visor de fotos genérico (`VisorFotos`) para heros y galerías de la quinta.
 - [ ] Scrollspy en el nav + header compacto al scrollear (el header ya es sticky).
 - [ ] Botón compartir (Web Share API con fallback a copiar link).
-- [ ] **JSON-LD**: hoy `index.html` no tiene ninguno. Sumar `LocalBusiness` (negocio, zona,
-      contacto) y `FAQPage` con las 5 preguntas del FAQ (`FAQ` en `src/data/site.ts`).
+- [x] **JSON-LD**: `LocalBusiness` + `FAQPage`, inyectados en el build por el plugin
+      `jsonLd` de `vite.config.ts` desde `src/data/site.ts` (sin duplicar el FAQ). Sin
+      `url`, `address` ni `priceRange`: no hay dato real todavía. Pendiente fino: el
+      mismo JSON-LD viaja a `/quinta` y `/admin` por ser una SPA con un solo
+      `index.html` — si molesta, mover el `FAQPage` a la landing.
 - [ ] Falta `og:url` en `index.html` (están el resto de los `og:*`) — cargarlo cuando haya
       dominio definitivo.
 

@@ -277,9 +277,10 @@ Patrones no negociables:
   alquilan aparte con costo extra. **Ubicación solo por WhatsApp** — no publicarla.
 - URL de producción: definir al deployar en Vercel. Con dominio propio, actualizar `og:*` en
   `index.html` (falta `og:url`) y el QR del flyer (`tools/build_flyer.py`, hoy apunta a
-  `fran2109.github.io`). Todavía **no hay JSON-LD** en el `index.html`: sumarlo está en el
-  backlog. En Vercel hay que cargar `VITE_SUPABASE_*` como Environment Variables (el `.env`
-  no se sube).
+  `fran2109.github.io`). El **JSON-LD** (`LocalBusiness` + `FAQPage`) lo genera el plugin
+  `jsonLd` de `vite.config.ts` desde `src/data/site.ts` — no está escrito a mano en el HTML,
+  así que el FAQ no se duplica; cuando haya dominio, sumarle `url` ahí. En Vercel hay que
+  cargar `VITE_SUPABASE_*` como Environment Variables (el `.env` no se sube).
 
 ## Verdad vs. placeholder — MUY IMPORTANTE
 
