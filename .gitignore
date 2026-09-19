@@ -35,8 +35,14 @@ pnpm-debug.log*
 .env.local
 .env.*.local
 
-# Claude Code — settings locales/permisos de la máquina (no compartir)
+# Claude Code — settings locales/permisos de la máquina (no compartir).
+# settings.json lo escribe `graphify claude install` con rutas absolutas al
+# Python de esta máquina: si se sube, se rompe en cualquier otra.
 .claude/settings.local.json
+.claude/settings.json
+
+# Grafo de conocimiento de graphify (se regenera con `graphify update .`)
+graphify-out/
 
 # Fotos fuente de la quinta (pesadas, con video) — al repo van solo las
 # optimizadas de public/img/quinta/

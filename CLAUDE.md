@@ -40,8 +40,10 @@ python tools/build_og_image.py    # → public/og-image.jpg
 python tools/build_flyer.py       # → marketing/flyer-astefil.{png,pdf}
 ```
 
-No hay tests. Validar con `npm run build` y en el navegador con las herramientas de preview
-(el screenshot a veces se cuelga en `/admin`; usar `preview_eval` para inspeccionar el DOM).
+Requiere **Node 20+**. No hay tests: validar con `npm run build` y en el navegador con las
+herramientas de preview — `preview_start` con el nombre **`astefil-app`** (`.claude/launch.json`,
+puerto 5173). El screenshot a veces se cuelga en `/admin`; ahí inspeccionar el DOM con
+`read_page` / `javascript_tool` en vez de insistir con la captura.
 
 ## Supabase — persistencia, auth y RLS (LEER antes de tocar datos)
 
@@ -55,10 +57,10 @@ No hay tests. Validar con `npm run build` y en el navegador con las herramientas
   + Storage + seed mínimo) y es el "molde" canónico — para resetear una base sucia, correrlo
   (⚠ borra reservas; NO toca `auth.users`). El resto de los `.sql` en `supabase/` son
   migraciones puntuales/aditivas ya fusionadas en `init.sql` (roles, storage de fotos, medidas
-  con turbina, zonas, `articulos-rename.sql`, `notas-internas.sql`) para aplicar a una base ya
-  viva sin perder datos, más `reset.sql` (borra todo, sin reconstruir — usar antes de un
-  `init.sql` limpio). Se corren a mano en Supabase → SQL Editor. Al cambiar el esquema,
-  actualizar `init.sql` para que la reconstrucción siga fiel.
+  con turbina, zonas, `articulos-rename.sql`, `notas-internas.sql`, `eliminar_tabla_fotos.sql`)
+  para aplicar a una base ya viva sin perder datos, más `reset.sql` (borra todo, sin
+  reconstruir — usar antes de un `init.sql` limpio). Se corren a mano en Supabase → SQL
+  Editor. Al cambiar el esquema, actualizar `init.sql` para que la reconstrucción siga fiel.
 - **Nombres**: la DB usa **snake_case**; la app usa **camelCase**. El mapeo vive en
   `src/admin/lib/db.ts` (admin) y `src/lib/landingDb.ts` (landing). Mantenerlos en sync.
 - **Tablas**: `reservas`, `articulos`, `config`, `categorias`, `zonas`, `perfiles`
@@ -136,7 +138,12 @@ No hay tests. Validar con `npm run build` y en el navegador con las herramientas
   `articuloIds` entre reservas bloqueantes ⇒ aviso en el formulario y tarjeta en rojo.
 - **Vistas** (`views/`): Inicio (KPIs), Calendario, Reservas, Inventario, **Categorías** (ABM
   con reordenar/activar/borrar-bloqueado-si-en-uso), **Zonas** (mismo ABM pattern, sin bloqueo
-  al borrar porque `Reserva.zona` es texto libre, no FK), **Equipo** (roles, solo admin), Ajustes.
+  al borrar porque `Reserva.zona` es texto libre, no FK), **Equipo** (roles, solo admin),
+  **Ajustes** (nombre/PIN, cerrar sesión, backup: exportar JSON + reservas CSV, importar JSON,
+  cargar ejemplos, borrar todo — todo lo destructivo pasa por `useConfirmar()`).
+- **WhatsApp al cliente** (`admin/lib/whatsapp.ts` → `linkWaCliente`): arma el mensaje desde una
+  reserva (uno para `Consulta`, otro de confirmación con ítems/fecha/precio/seña). Es distinto
+  de `src/lib/whatsapp.ts`, que es el de la landing (cotizador/consulta de quinta) — no mezclarlos.
 
 ### Roles ADMIN / EMPLEADO
 
@@ -269,8 +276,10 @@ Patrones no negociables:
   (parrilla, horno, heladeras, etc.); música a volumen moderado; los artículos del catálogo se
   alquilan aparte con costo extra. **Ubicación solo por WhatsApp** — no publicarla.
 - URL de producción: definir al deployar en Vercel. Con dominio propio, actualizar `og:*` en
-  `index.html`, el JSON-LD, y el QR del flyer (`tools/build_flyer.py`). En Vercel hay que
-  cargar `VITE_SUPABASE_*` como Environment Variables (el `.env` no se sube).
+  `index.html` (falta `og:url`) y el QR del flyer (`tools/build_flyer.py`, hoy apunta a
+  `fran2109.github.io`). Todavía **no hay JSON-LD** en el `index.html`: sumarlo está en el
+  backlog. En Vercel hay que cargar `VITE_SUPABASE_*` como Environment Variables (el `.env`
+  no se sube).
 
 ## Verdad vs. placeholder — MUY IMPORTANTE
 
@@ -300,7 +309,22 @@ obvio (`fotoPlaceholder`) — nunca texto o fotos inventadas presentadas como re
 
 ## Pendientes
 
-Ver `docs/BACKLOG.md`. Destacados actuales: ABM de Productos y Testimonios en el admin (hoy
-Categorías, Zonas e Inventario lo tienen; Productos/Testimonios no), cargar fotos reales por
+Ver `docs/BACKLOG.md` (actualizado al estado real; `README.md` también). Destacados
+actuales: ABM de Productos y Testimonios en el admin (hoy Categorías, Zonas e Inventario lo
+tienen; Productos/Testimonios no), cargar fotos reales por
 modelo (la feature de subida ya existe, faltan las fotos), testimonios reales, precios/fichas,
 y afinar los claims de servicio con Francisco.
+
+## graphify
+
+Hay un grafo de conocimiento del código en `graphify-out/` (nodos, comunidades y relaciones
+entre archivos). Se genera local con tree-sitter, sin costo de API.
+
+- Para preguntas sobre el código, si existe `graphify-out/graph.json` arrancar por
+  `graphify query "<pregunta>"`. Para relaciones entre dos cosas, `graphify path "<A>" "<B>"`;
+  para un concepto puntual, `graphify explain "<concepto>"`. Devuelven un subgrafo acotado,
+  bastante más chico que `GRAPH_REPORT.md` o que un grep crudo.
+- Si existe `graphify-out/wiki/index.md`, usarlo para navegar en general.
+- Leer `graphify-out/GRAPH_REPORT.md` solo para revisar arquitectura a lo ancho, o cuando
+  `query`/`path`/`explain` no traigan contexto suficiente.
+- Después de cambiar código, `graphify update .` para mantener el grafo al día.
