@@ -27,6 +27,9 @@
     <!-- El JSON-LD (LocalBusiness + FAQPage) lo inyecta el plugin `jsonLd` de
          vite.config.ts, generado desde src/data/site.ts para que el FAQ no
          quede duplicado ni se desincronice del que se ve en la página. -->
+    <!-- La foto del hero es el LCP de la home: que empiece a bajar junto
+         con el HTML y no recién cuando React monte el componente. -->
+    <link rel="preload" as="image" href="/img/hero.jpg" fetchpriority="high" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link

@@ -1,9 +1,8 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { VisorFotos } from "@/components/ui/visor-fotos";
 import { scrollAId } from "@/lib/scroll";
-import { linkWhatsApp } from "@/lib/whatsapp";
+import { linkWhatsApp, MSG_INFLABLES } from "@/lib/whatsapp";
 
 const FOTO_HERO = {
   src: "/img/hero.jpg",
@@ -11,7 +10,6 @@ const FOTO_HERO = {
 };
 
 export function Hero() {
-  const navigate = useNavigate();
   const [fotoAbierta, setFotoAbierta] = useState(false);
 
   return (
@@ -31,21 +29,26 @@ export function Hero() {
             para que tu evento sea el que todos recuerdan. Escribinos y coordinamos todo por
             WhatsApp.
           </p>
-          <div className="flex flex-wrap gap-3.5">
-            <Button variant="rojo" onClick={() => scrollAId("catalogo")}>
-              Ver el catálogo
-            </Button>
-            <Button asChild variant="verde">
-              <a
-                href={linkWhatsApp("¡Hola Astefil! Quiero consultar por un inflable 🎉")}
-                target="_blank"
-                rel="noopener"
-              >
-                Consultar ahora
+          {/* Dato real y verificable, no un claim pendiente: la cobertura sale
+              de la tabla `zonas` y el canal es el único que existe. */}
+          <p className="sticker mb-5 inline-block !bg-white">
+            Zona norte y noroeste del GBA · Te respondemos por WhatsApp
+          </p>
+
+          {/* Una sola acción principal. Antes eran tres botones del mismo peso
+              y el ojo no tenía dónde caer, justo en la pantalla que más
+              importa. WhatsApp va primero porque la visitante llega de
+              Instagram o del QR del flyer: ya sabe qué alquilamos, y como no
+              hay precios publicados, navegar el catálogo no le contesta
+              "¿cuánto sale y tenés mi fecha?". Solo WhatsApp se la contesta. */}
+          <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:gap-3.5">
+            <Button asChild variant="verde" className="w-full shadow-hard-lg sm:w-auto">
+              <a href={linkWhatsApp(MSG_INFLABLES)} target="_blank" rel="noopener">
+                Pedime precio por WhatsApp
               </a>
             </Button>
-            <Button variant="amarillo" onClick={() => navigate("/quinta")}>
-              Conocé la quinta 🌳
+            <Button variant="blanco" size="chico" onClick={() => scrollAId("catalogo")}>
+              Ver el catálogo
             </Button>
           </div>
         </div>
@@ -72,6 +75,8 @@ export function Hero() {
                 alt={FOTO_HERO.alt}
                 width={860}
                 height={1146}
+                fetchPriority="high"
+                decoding="sync"
                 className="w-full rounded-lg border-3 border-tinta object-cover"
               />
             </button>

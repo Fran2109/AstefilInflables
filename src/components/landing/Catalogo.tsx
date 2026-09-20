@@ -73,7 +73,13 @@ export function Catalogo() {
           )
         ) : modelosFiltrados.length ? (
           /* Vista filtrada: los modelos reales de esa categoría */
-          <div className="mt-7 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          <div
+            /* `key={filtro}` fuerza el remonte al cambiar de categoría: sin
+               esto React reusa las cards y la cascada solo correría la primera
+               vez. Es el único movimiento coreografiado del sitio. */
+            key={filtro}
+            className="grilla-modelos mt-7 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3"
+          >
             {modelosFiltrados.map((m) => (
               <ModeloCard key={m.id} modelo={m} />
             ))}
