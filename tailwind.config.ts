@@ -90,6 +90,13 @@ const config: Config = {
           "0%,100%": { transform: "translateY(0)" },
           "50%": { transform: "translateY(-14px)" },
         },
+        // Pulso de espera. Solo opacidad: la marca prohíbe degradados, así que
+        // nada de shimmer (que es un gradiente en movimiento), y animar la
+        // sombra sería repintar en cada frame.
+        respirar: {
+          "0%,100%": { opacity: ".5" },
+          "50%": { opacity: "1" },
+        },
         rodar: {
           from: { transform: "translateX(0)" },
           to: { transform: "translateX(-50%)" },
@@ -98,6 +105,7 @@ const config: Config = {
       animation: {
         flota: "flota 5.5s ease-in-out infinite",
         rodar: "rodar 22s linear infinite",
+        respirar: "respirar 1.6s ease-in-out infinite",
       },
     },
   },

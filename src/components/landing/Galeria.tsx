@@ -3,6 +3,7 @@ import { TituloSeccion } from "@/components/landing/TituloSeccion";
 import { SITIO } from "@/data/site";
 import { useLanding } from "@/context/LandingContext";
 import { useCatalogo } from "@/context/CatalogoContext";
+import { Esqueleto } from "@/components/landing/Esqueleto";
 
 const MAX_TIRA = 10;
 
@@ -23,7 +24,7 @@ function mezclar<T>(arr: T[]): T[] {
  */
 export function Galeria() {
   const { abrirVisor } = useLanding();
-  const { modelos } = useCatalogo();
+  const { modelos, cargando } = useCatalogo();
 
   const conFoto = useMemo(
     () => modelos.filter((m) => m.fotos && m.fotos.length > 0),
@@ -61,7 +62,17 @@ export function Galeria() {
         </TituloSeccion>
       </div>
 
-      {tira.length === 0 ? (
+      {cargando ? (
+        <div
+          className="flex gap-[26px] overflow-hidden px-5 pb-10 pt-[30px]"
+          role="status"
+          aria-label="Cargando las fotos"
+        >
+          {Array.from({ length: 5 }, (_, i) => (
+            <Esqueleto key={i} className="h-[220px] w-[293px] flex-none" />
+          ))}
+        </div>
+      ) : tira.length === 0 ? (
         <div className="container pb-12">
           <div className="mt-2 rounded-lg border-3 border-dashed border-tinta bg-cielo p-8 text-center">
             <p className="mx-auto max-w-[30rem] text-[1.05rem]">

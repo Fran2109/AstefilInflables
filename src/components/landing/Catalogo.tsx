@@ -4,11 +4,12 @@ import { cn } from "@/lib/utils";
 import { TituloSeccion } from "@/components/landing/TituloSeccion";
 import { ProductoCard } from "@/components/landing/ProductoCard";
 import { ModeloCard } from "@/components/landing/ModeloCard";
+import { Esqueleto, EsqueletoGrilla } from "@/components/landing/Esqueleto";
 import { linkWhatsApp } from "@/lib/whatsapp";
 import { useCatalogo } from "@/context/CatalogoContext";
 
 export function Catalogo() {
-  const { productos, modelos, categorias } = useCatalogo();
+  const { productos, modelos, categorias, cargando } = useCatalogo();
   // null = "Todos" (overview de categorías con fotos).
   const [filtro, setFiltro] = useState<string | null>(null);
 
@@ -33,14 +34,20 @@ export function Catalogo() {
           <ChipFiltro activo={filtro === null} onClick={() => setFiltro(null)}>
             Todos
           </ChipFiltro>
-          {categorias.map((c) => (
-            <ChipFiltro key={c} activo={filtro === c} onClick={() => setFiltro(c)}>
-              {c}
-            </ChipFiltro>
-          ))}
+          {cargando
+            ? Array.from({ length: 4 }, (_, i) => (
+                <Esqueleto key={i} className="h-[34px] w-[104px] !rounded-full" />
+              ))
+            : categorias.map((c) => (
+                <ChipFiltro key={c} activo={filtro === c} onClick={() => setFiltro(c)}>
+                  {c}
+                </ChipFiltro>
+              ))}
         </div>
 
-        {filtro === null ? (
+        {cargando ? (
+          <EsqueletoGrilla />
+        ) : filtro === null ? (
           /* Overview: las categorías con foto */
           productos.length ? (
             <div className="mt-7 grid grid-cols-1 gap-[26px] sm:grid-cols-2 lg:grid-cols-3">

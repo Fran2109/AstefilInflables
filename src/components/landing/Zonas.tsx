@@ -1,9 +1,10 @@
 import { Button } from "@/components/ui/button";
 import { linkWhatsApp } from "@/lib/whatsapp";
 import { useCatalogo } from "@/context/CatalogoContext";
+import { Esqueleto } from "@/components/landing/Esqueleto";
 
 export function Zonas() {
-  const { zonas } = useCatalogo();
+  const { zonas, cargando } = useCatalogo();
 
   return (
     <section id="zonas" className="pt-5">
@@ -11,7 +12,17 @@ export function Zonas() {
         <div className="rounded-[calc(var(--radio)+6px)] border-3 border-tinta bg-amarillo p-9 text-center shadow-hard-lg">
           <h2 className="mb-2.5 text-[clamp(1.8rem,4vw,2.6rem)]">¿Llegamos a tu zona?</h2>
 
-          {zonas.length > 0 ? (
+          {cargando ? (
+            <div
+              className="flex flex-wrap justify-center gap-3"
+              role="status"
+              aria-label="Cargando las zonas de cobertura"
+            >
+              {Array.from({ length: 6 }, (_, i) => (
+                <Esqueleto key={i} className="h-[34px] w-[124px] !rounded-full !bg-white/60" />
+              ))}
+            </div>
+          ) : zonas.length > 0 ? (
             <>
               <p className="mx-auto mb-[22px] max-w-[44rem] leading-[1.55]">
                 Trabajamos en <strong>zona norte y noroeste del GBA</strong>. Estas son algunas de
