@@ -16,7 +16,8 @@ interface Props {
 }
 
 export function ArticuloDialog({ open, onClose, articulo }: Props) {
-  const { reservas, categorias, guardarArticulo, eliminarArticulo, mostrarToast } = useAdmin();
+  const { reservas, categorias, guardarArticulo, eliminarArticulo, mostrarToast, guardando } =
+    useAdmin();
   const confirmar = useConfirmar();
   // Nombres de categorías activas, ordenadas (para el desplegable).
   const nombresCat = [...categorias]
@@ -89,7 +90,7 @@ export function ArticuloDialog({ open, onClose, articulo }: Props) {
         setFotos((prev) => [...prev, path]);
       }
     } catch {
-      mostrarToast("No se pudo subir la foto");
+      mostrarToast("No se pudo subir la foto", "error");
     } finally {
       setSubiendo(false);
       if (fileRef.current) fileRef.current.value = "";
@@ -138,7 +139,7 @@ export function ArticuloDialog({ open, onClose, articulo }: Props) {
 
   const guardar = async () => {
     if (problema) return mostrarToast(problema);
-    if (subiendo) return mostrarToast("Esperá a que terminen de subir las fotos");
+    if (subiendo) return mostrarToast("Esperá a que terminen de subir las fotos", "error");
 
     // Los campos "no aplica" para la categoría elegida no se guardan, aunque
     // hayan quedado con datos de una categoría anterior.
@@ -209,7 +210,7 @@ export function ArticuloDialog({ open, onClose, articulo }: Props) {
               disabled={!!problema || subiendo}
               title={problema ?? (subiendo ? "Esperá a que terminen de subir las fotos" : undefined)}
             >
-              Guardar
+              {guardando ? "Guardando…" : "Guardar"}
             </Button>
           </div>
         </>

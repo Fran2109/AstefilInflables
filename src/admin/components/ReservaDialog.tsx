@@ -52,7 +52,8 @@ function estadoInicial(r: Reserva | null, fechaSugerida?: string): FormState {
 }
 
 export function ReservaDialog({ open, onClose, reserva, fechaSugerida }: Props) {
-  const { articulos, reservas, zonas, guardarReserva, eliminarReserva, mostrarToast } = useAdmin();
+  const { articulos, reservas, zonas, guardarReserva, eliminarReserva, mostrarToast, guardando } =
+    useAdmin();
   const nombresZona = [...zonas]
     .filter((z) => z.activo)
     .sort((a, b) => a.orden - b.orden)
@@ -165,8 +166,8 @@ export function ReservaDialog({ open, onClose, reserva, fechaSugerida }: Props) 
             <Button variant="blanco" onClick={onClose}>
               Cancelar
             </Button>
-            <Button variant="verde" onClick={guardar}>
-              Guardar
+            <Button variant="verde" onClick={guardar} disabled={guardando}>
+              {guardando ? "Guardando…" : "Guardar"}
             </Button>
           </div>
         </>

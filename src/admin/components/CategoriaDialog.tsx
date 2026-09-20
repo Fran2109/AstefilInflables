@@ -29,7 +29,7 @@ const REQ_DE_LABEL: Record<string, Requisito> = {
  * obligatorios/opcionales/no aplican (el orden se maneja con las flechas).
  */
 export function CategoriaDialog({ open, onClose, categoria }: Props) {
-  const { guardarCategoria } = useAdmin();
+  const { guardarCategoria, guardando } = useAdmin();
   const [nombre, setNombre] = useState("");
   const [descripcionReq, setDescripcionReq] = useState("Opcional");
   const [medidasReq, setMedidasReq] = useState("Opcional");
@@ -69,8 +69,8 @@ export function CategoriaDialog({ open, onClose, categoria }: Props) {
           <Button variant="blanco" onClick={onClose}>
             Cancelar
           </Button>
-          <Button variant="verde" onClick={guardar}>
-            {categoria ? "Guardar" : "Crear"}
+          <Button variant="verde" onClick={guardar} disabled={guardando}>
+            {guardando ? "Guardando…" : categoria ? "Guardar" : "Crear"}
           </Button>
         </div>
       }

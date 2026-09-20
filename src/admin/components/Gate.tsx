@@ -18,7 +18,7 @@ export function Gate({ onUnlock }: { onUnlock: () => void }) {
     if (v === config.pin) {
       onUnlock();
     } else {
-      mostrarToast("PIN incorrecto");
+      mostrarToast("PIN incorrecto", "error");
       setPin("");
     }
   };

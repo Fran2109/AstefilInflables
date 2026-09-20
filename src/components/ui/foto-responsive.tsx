@@ -1,3 +1,4 @@
+import type React from "react";
 import { MEDIDAS } from "@/data/imagenes";
 
 /** Los mismos anchos que genera `tools/build_fotos.py`. */
@@ -33,9 +34,15 @@ interface Props {
 export function FotoResponsive({ src, alt, sizes, prioridad = false, className }: Props) {
   const medida = MEDIDAS[src];
 
-  const carga = prioridad
-    ? ({ loading: "eager", decoding: "sync", fetchPriority: "high" } as const)
-    : ({ loading: "lazy", decoding: "async" } as const);
+  // `fetchpriority` en minúscula a propósito: React 18 no conoce la versión
+  // camelCase y la reporta como prop desconocida en cada render (ruido en
+  // consola en todas las páginas). El cast es porque los tipos de React 18 sí
+  // esperan `fetchPriority`; el atributo que llega al DOM es el correcto.
+  const carga = (
+    prioridad
+      ? { loading: "eager", decoding: "sync", fetchpriority: "high" }
+      : { loading: "lazy", decoding: "async" }
+  ) as React.ImgHTMLAttributes<HTMLImageElement>;
 
   if (!medida) {
     return <img src={src} alt={alt} className={className} {...carga} />;

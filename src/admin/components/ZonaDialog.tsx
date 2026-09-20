@@ -13,7 +13,7 @@ interface Props {
 
 /** Alta/edición de una zona (solo el nombre; el orden se maneja con las flechas). */
 export function ZonaDialog({ open, onClose, zona }: Props) {
-  const { guardarZona } = useAdmin();
+  const { guardarZona, guardando } = useAdmin();
   const [nombre, setNombre] = useState("");
 
   useEffect(() => {
@@ -36,8 +36,8 @@ export function ZonaDialog({ open, onClose, zona }: Props) {
           <Button variant="blanco" onClick={onClose}>
             Cancelar
           </Button>
-          <Button variant="verde" onClick={guardar}>
-            {zona ? "Guardar" : "Crear"}
+          <Button variant="verde" onClick={guardar} disabled={guardando}>
+            {guardando ? "Guardando…" : zona ? "Guardar" : "Crear"}
           </Button>
         </div>
       }

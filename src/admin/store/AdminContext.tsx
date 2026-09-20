@@ -49,10 +49,15 @@ const ZONAS_INICIALES: Zona[] = ZONAS.map((nombre, i) => ({
 interface Toast {
   id: number;
   msg: string;
+  /** "error" pinta el toast en rojo. Antes un guardado exitoso y un fallo se
+      veían exactamente igual, y el operador no tenía cómo distinguirlos. */
+  tipo: "ok" | "error";
 }
 
 interface AdminContextValue {
   cargando: boolean;
+  /** Hay al menos una escritura a la base en curso. */
+  guardando: boolean;
   /** true = persistencia en Supabase; false = localStorage local. */
   online: boolean;
   /** Estado de sesión (solo relevante online): null = averiguando. */
@@ -72,7 +77,7 @@ interface AdminContextValue {
   zonas: Zona[];
   modo: string;
   toast: Toast | null;
-  mostrarToast: (msg: string) => void;
+  mostrarToast: (msg: string, tipo?: "ok" | "error") => void;
 
   guardarReserva: (r: Reserva) => void;
   eliminarReserva: (id: string) => void;
@@ -110,6 +115,10 @@ const AdminContext = createContext<AdminContextValue | null>(null);
 export function AdminProvider({ children }: { children: ReactNode }) {
   const online = haySupabase;
   const [cargando, setCargando] = useState(true);
+  // Escrituras en vuelo. Es un contador y no un booleano porque hay acciones
+  // que disparan dos escrituras seguidas (reordenar dos categorías, por
+  // ejemplo) y un booleano se apagaría al terminar la primera.
+  const [escrituras, setEscrituras] = useState(0);
   const [sesion, setSesion] = useState<boolean | null>(online ? null : true);
   const [emailUsuario, setEmailUsuario] = useState("");
   // Online arranca en "empleado" (mínimo privilegio) hasta confirmar el rol.
@@ -128,7 +137,20 @@ export function AdminProvider({ children }: { children: ReactNode }) {
   const [modo, setModo] = useState<string>(online ? "supabase" : "navegador");
   const [toast, setToast] = useState<Toast | null>(null);
 
-  const mostrarToast = useCallback((msg: string) => setToast({ id: Date.now(), msg }), []);
+  /** Marca la escritura como en curso mientras corre, pase lo que pase. */
+  const escribir = useCallback(async <T,>(fn: () => Promise<T>): Promise<T> => {
+    setEscrituras((n) => n + 1);
+    try {
+      return await fn();
+    } finally {
+      setEscrituras((n) => n - 1);
+    }
+  }, []);
+
+  const mostrarToast = useCallback(
+    (msg: string, tipo: "ok" | "error" = "ok") => setToast({ id: Date.now(), msg, tipo }),
+    []
+  );
 
   // Refs para leer inventario/categorías más recientes sin recrear callbacks.
   const articulosRef = useRef(articulos);
@@ -151,7 +173,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
       setCategorias(d.categorias);
       setZonas(d.zonas);
     } catch {
-      mostrarToast("No pudimos cargar los datos");
+      mostrarToast("No pudimos cargar los datos", "error");
     } finally {
       setCargando(false);
     }
@@ -222,30 +244,30 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     async (r: Reserva) => {
       if (online) {
         try {
-          await db.upsertReserva(r);
+          await escribir(() => db.upsertReserva(r));
         } catch {
-          return mostrarToast("Error al guardar la reserva");
+          return mostrarToast("Error al guardar la reserva", "error");
         }
       }
       setReservas((prev) =>
         prev.some((x) => x.id === r.id) ? prev.map((x) => (x.id === r.id ? r : x)) : [...prev, r]
       );
     },
-    [online, mostrarToast]
+    [online, mostrarToast, escribir]
   );
 
   const eliminarReserva = useCallback(
     async (id: string) => {
       if (online) {
         try {
-          await db.borrarReserva(id);
+          await escribir(() => db.borrarReserva(id));
         } catch {
-          return mostrarToast("Error al eliminar");
+          return mostrarToast("Error al eliminar", "error");
         }
       }
       setReservas((prev) => prev.filter((x) => x.id !== id));
     },
-    [online, mostrarToast]
+    [online, mostrarToast, escribir]
   );
 
   const avanzarEstado = useCallback(
@@ -255,14 +277,14 @@ export function AdminProvider({ children }: { children: ReactNode }) {
       const actualizada: Reserva = { ...r, estado: ESTADOS[idx + 1] };
       if (online) {
         try {
-          await db.upsertReserva(actualizada);
+          await escribir(() => db.upsertReserva(actualizada));
         } catch {
-          return mostrarToast("Error al actualizar");
+          return mostrarToast("Error al actualizar", "error");
         }
       }
       setReservas((prev) => prev.map((x) => (x.id === r.id ? actualizada : x)));
     },
-    [online, mostrarToast]
+    [online, mostrarToast, escribir]
   );
 
   // ---- Inventario ----
@@ -274,30 +296,30 @@ export function AdminProvider({ children }: { children: ReactNode }) {
         : { id: uid(), color: COLORES[lista.length % COLORES.length], ...data };
       if (online) {
         try {
-          await db.upsertArticulo(obj);
+          await escribir(() => db.upsertArticulo(obj));
         } catch {
-          return mostrarToast("Error al guardar el artículo");
+          return mostrarToast("Error al guardar el artículo", "error");
         }
       }
       setArticulos((prev) =>
         id ? prev.map((x) => (x.id === id ? obj : x)) : [...prev, obj]
       );
     },
-    [online, mostrarToast]
+    [online, mostrarToast, escribir]
   );
 
   const eliminarArticulo = useCallback(
     async (id: string) => {
       if (online) {
         try {
-          await db.borrarArticulo(id);
+          await escribir(() => db.borrarArticulo(id));
         } catch {
-          return mostrarToast("Error al eliminar");
+          return mostrarToast("Error al eliminar", "error");
         }
       }
       setArticulos((prev) => prev.filter((x) => x.id !== id));
     },
-    [online, mostrarToast]
+    [online, mostrarToast, escribir]
   );
 
   // ---- Categorías (ABM) ----
@@ -322,9 +344,9 @@ export function AdminProvider({ children }: { children: ReactNode }) {
         const anterior = lista.find((c) => c.id === id);
         if (online) {
           try {
-            await db.actualizarCategoria(id, { nombre: n, ...req });
+            await escribir(() => db.actualizarCategoria(id, { nombre: n, ...req }));
           } catch {
-            return mostrarToast("Error al guardar la categoría");
+            return mostrarToast("Error al guardar la categoría", "error");
           }
         }
         setCategorias((prev) => prev.map((c) => (c.id === id ? { ...c, nombre: n, ...req } : c)));
@@ -341,16 +363,16 @@ export function AdminProvider({ children }: { children: ReactNode }) {
         const nueva: Categoria = { id: nuevoId, nombre: n, orden, activo: true, ...req };
         if (online) {
           try {
-            await db.crearCategoria(nueva);
+            await escribir(() => db.crearCategoria(nueva));
           } catch {
-            return mostrarToast("Error al crear la categoría");
+            return mostrarToast("Error al crear la categoría", "error");
           }
         }
         setCategorias((prev) => [...prev, nueva]);
         mostrarToast("Categoría creada ✓");
       }
     },
-    [online, mostrarToast]
+    [online, mostrarToast, escribir]
   );
 
   const toggleCategoria = useCallback(
@@ -360,14 +382,14 @@ export function AdminProvider({ children }: { children: ReactNode }) {
       const activo = !c.activo;
       if (online) {
         try {
-          await db.actualizarCategoria(id, { activo });
+          await escribir(() => db.actualizarCategoria(id, { activo }));
         } catch {
-          return mostrarToast("Error al actualizar");
+          return mostrarToast("Error al actualizar", "error");
         }
       }
       setCategorias((prev) => prev.map((x) => (x.id === id ? { ...x, activo } : x)));
     },
-    [online, mostrarToast]
+    [online, mostrarToast, escribir]
   );
 
   const eliminarCategoria = useCallback(
@@ -381,15 +403,15 @@ export function AdminProvider({ children }: { children: ReactNode }) {
         );
       if (online) {
         try {
-          await db.borrarCategoria(id);
+          await escribir(() => db.borrarCategoria(id));
         } catch {
-          return mostrarToast("Error al eliminar");
+          return mostrarToast("Error al eliminar", "error");
         }
       }
       setCategorias((prev) => prev.filter((x) => x.id !== id));
       mostrarToast("Categoría eliminada");
     },
-    [online, mostrarToast]
+    [online, mostrarToast, escribir]
   );
 
   const moverCategoria = useCallback(
@@ -402,10 +424,10 @@ export function AdminProvider({ children }: { children: ReactNode }) {
       const b = orden[j];
       if (online) {
         try {
-          await db.actualizarCategoria(a.id, { orden: b.orden });
-          await db.actualizarCategoria(b.id, { orden: a.orden });
+          await escribir(() => db.actualizarCategoria(a.id, { orden: b.orden }));
+          await escribir(() => db.actualizarCategoria(b.id, { orden: a.orden }));
         } catch {
-          return mostrarToast("Error al reordenar");
+          return mostrarToast("Error al reordenar", "error");
         }
       }
       setCategorias((prev) =>
@@ -414,7 +436,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
         )
       );
     },
-    [online, mostrarToast]
+    [online, mostrarToast, escribir]
   );
 
   // ---- Zonas (ABM) ----
@@ -429,9 +451,9 @@ export function AdminProvider({ children }: { children: ReactNode }) {
       if (id) {
         if (online) {
           try {
-            await db.actualizarZona(id, { nombre: n });
+            await escribir(() => db.actualizarZona(id, { nombre: n }));
           } catch {
-            return mostrarToast("Error al guardar la zona");
+            return mostrarToast("Error al guardar la zona", "error");
           }
         }
         setZonas((prev) => prev.map((z) => (z.id === id ? { ...z, nombre: n } : z)));
@@ -445,16 +467,16 @@ export function AdminProvider({ children }: { children: ReactNode }) {
         const nueva: Zona = { id: nuevoId, nombre: n, orden, activo: true };
         if (online) {
           try {
-            await db.crearZona(nueva);
+            await escribir(() => db.crearZona(nueva));
           } catch {
-            return mostrarToast("Error al crear la zona");
+            return mostrarToast("Error al crear la zona", "error");
           }
         }
         setZonas((prev) => [...prev, nueva]);
         mostrarToast("Zona creada ✓");
       }
     },
-    [online, mostrarToast]
+    [online, mostrarToast, escribir]
   );
 
   const toggleZona = useCallback(
@@ -464,29 +486,29 @@ export function AdminProvider({ children }: { children: ReactNode }) {
       const activo = !z.activo;
       if (online) {
         try {
-          await db.actualizarZona(id, { activo });
+          await escribir(() => db.actualizarZona(id, { activo }));
         } catch {
-          return mostrarToast("Error al actualizar");
+          return mostrarToast("Error al actualizar", "error");
         }
       }
       setZonas((prev) => prev.map((x) => (x.id === id ? { ...x, activo } : x)));
     },
-    [online, mostrarToast]
+    [online, mostrarToast, escribir]
   );
 
   const eliminarZona = useCallback(
     async (id: string) => {
       if (online) {
         try {
-          await db.borrarZona(id);
+          await escribir(() => db.borrarZona(id));
         } catch {
-          return mostrarToast("Error al eliminar");
+          return mostrarToast("Error al eliminar", "error");
         }
       }
       setZonas((prev) => prev.filter((x) => x.id !== id));
       mostrarToast("Zona eliminada");
     },
-    [online, mostrarToast]
+    [online, mostrarToast, escribir]
   );
 
   const moverZona = useCallback(
@@ -499,10 +521,10 @@ export function AdminProvider({ children }: { children: ReactNode }) {
       const b = orden[j];
       if (online) {
         try {
-          await db.actualizarZona(a.id, { orden: b.orden });
-          await db.actualizarZona(b.id, { orden: a.orden });
+          await escribir(() => db.actualizarZona(a.id, { orden: b.orden }));
+          await escribir(() => db.actualizarZona(b.id, { orden: a.orden }));
         } catch {
-          return mostrarToast("Error al reordenar");
+          return mostrarToast("Error al reordenar", "error");
         }
       }
       setZonas((prev) =>
@@ -511,7 +533,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
         )
       );
     },
-    [online, mostrarToast]
+    [online, mostrarToast, escribir]
   );
 
   // ---- Config ----
@@ -519,15 +541,15 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     async (nombre: string) => {
       if (online) {
         try {
-          await db.guardarConfig(nombre);
+          await escribir(() => db.guardarConfig(nombre));
         } catch {
-          return mostrarToast("Error al guardar el nombre");
+          return mostrarToast("Error al guardar el nombre", "error");
         }
       }
       setConfig((prev) => ({ ...prev, nombre }));
       mostrarToast("Nombre guardado ✓");
     },
-    [online, mostrarToast]
+    [online, mostrarToast, escribir]
   );
 
   // PIN: solo aplica en modo local (offline). Online la barrera es el login.
@@ -544,39 +566,39 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     const nuevas = reservasEjemplo(articulosRef.current);
     if (online) {
       try {
-        await db.insertarReservas(nuevas);
+        await escribir(() => db.insertarReservas(nuevas));
       } catch {
-        return mostrarToast("Error al cargar ejemplos");
+        return mostrarToast("Error al cargar ejemplos", "error");
       }
     }
     setReservas((prev) => [...prev, ...nuevas]);
     mostrarToast("5 reservas de ejemplo cargadas (fijate el conflicto del día +2 😉)");
-  }, [online, mostrarToast]);
+  }, [online, mostrarToast, escribir]);
 
   const borrarTodo = useCallback(async () => {
     const nuevoInv = seedArticulos();
     if (online) {
       try {
-        await db.reemplazarTodo(nuevoInv, []);
-        await db.guardarConfig("");
+        await escribir(() => db.reemplazarTodo(nuevoInv, []));
+        await escribir(() => db.guardarConfig(""));
       } catch {
-        return mostrarToast("Error al borrar");
+        return mostrarToast("Error al borrar", "error");
       }
     }
     setReservas([]);
     setArticulos(nuevoInv);
     setConfig({ nombre: "", pin: online ? null : "" });
     mostrarToast("Todo borrado. Inventario reiniciado.");
-  }, [online, mostrarToast]);
+  }, [online, mostrarToast, escribir]);
 
   const importarBackup = useCallback(
     async (res: Reserva[], art: Articulo[], nombre?: string) => {
       if (online) {
         try {
-          await db.reemplazarTodo(art, res);
-          if (nombre !== undefined) await db.guardarConfig(nombre);
+          await escribir(() => db.reemplazarTodo(art, res));
+          if (nombre !== undefined) await escribir(() => db.guardarConfig(nombre));
         } catch {
-          return mostrarToast("Error al importar");
+          return mostrarToast("Error al importar", "error");
         }
       }
       setReservas(res);
@@ -584,12 +606,12 @@ export function AdminProvider({ children }: { children: ReactNode }) {
       if (nombre !== undefined) setConfig((prev) => ({ ...prev, nombre }));
       mostrarToast("Backup importado ✓ (" + res.length + " reservas)");
     },
-    [online, mostrarToast]
+    [online, mostrarToast, escribir]
   );
 
   const value = useMemo<AdminContextValue>(
     () => ({
-      cargando, online, sesion, emailUsuario, rol, esAdmin, cerrarSesion,
+      cargando, guardando: escrituras > 0, online, sesion, emailUsuario, rol, esAdmin, cerrarSesion,
       articulos, reservas, config, categorias, zonas, modo, toast, mostrarToast,
       guardarReserva, eliminarReserva, avanzarEstado,
       guardarArticulo, eliminarArticulo,
@@ -599,7 +621,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
       cargarEjemplos, borrarTodo, importarBackup,
     }),
     [
-      cargando, online, sesion, emailUsuario, rol, esAdmin, cerrarSesion,
+      cargando, escrituras, online, sesion, emailUsuario, rol, esAdmin, cerrarSesion,
       articulos, reservas, config, categorias, zonas, modo, toast, mostrarToast,
       guardarReserva, eliminarReserva, avanzarEstado,
       guardarArticulo, eliminarArticulo,

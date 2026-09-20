@@ -15,7 +15,7 @@ export function EquipoView() {
   useEffect(() => {
     db.cargarPerfiles()
       .then(setPerfiles)
-      .catch(() => mostrarToast("No pudimos cargar el equipo"))
+      .catch(() => mostrarToast("No pudimos cargar el equipo", "error"))
       .finally(() => setCargando(false));
   }, [mostrarToast]);
 
@@ -40,7 +40,7 @@ export function EquipoView() {
       setPerfiles((prev) => prev.map((x) => (x.id === p.id ? { ...x, rol } : x)));
       mostrarToast("Rol actualizado ✓");
     } catch {
-      mostrarToast("Error al cambiar el rol");
+      mostrarToast("Error al cambiar el rol", "error");
     }
   };
 
