@@ -19,7 +19,7 @@ export function Footer() {
           </div>
 
           <div>
-            <h4 className="mb-3 text-[1.1rem] font-extrabold text-amarillo">Contacto</h4>
+            <h3 className="mb-3 text-[1.1rem] font-extrabold text-amarillo">Contacto</h3>
             <ul className="flex flex-col gap-2 text-[.96rem]">
               {SITIO.telefonos.map((t) => (
                 <li key={t.wa}>
@@ -44,7 +44,7 @@ export function Footer() {
           </div>
 
           <div>
-            <h4 className="mb-3 text-[1.1rem] font-extrabold text-amarillo">Seguinos</h4>
+            <h3 className="mb-3 text-[1.1rem] font-extrabold text-amarillo">Seguinos</h3>
             <ul className="flex flex-col gap-2 text-[.96rem]">
               <li>
                 📷{" "}

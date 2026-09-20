@@ -30,7 +30,7 @@ export function Catalogo() {
         </TituloSeccion>
 
         {/* Barra de filtros por categoría */}
-        <div className="mt-8 flex flex-wrap gap-2.5" role="tablist" aria-label="Filtrar por categoría">
+        <div className="mt-8 flex flex-wrap gap-2.5" role="group" aria-label="Filtrar por categoría">
           <ChipFiltro activo={filtro === null} onClick={() => setFiltro(null)}>
             Todos
           </ChipFiltro>
@@ -44,6 +44,17 @@ export function Catalogo() {
                 </ChipFiltro>
               ))}
         </div>
+
+        {/* Filtrar reemplaza la grilla entera. Sin esto, para quien usa lector
+            de pantalla el botón se marca como presionado y nada más: no hay
+            forma de saber qué apareció abajo. */}
+        <p aria-live="polite" className="sr-only">
+          {cargando
+            ? "Cargando el catálogo"
+            : filtro === null
+              ? `${productos.length} categorías en el catálogo`
+              : `${modelosFiltrados.length} modelos de ${filtro}`}
+        </p>
 
         {cargando ? (
           <EsqueletoGrilla />
@@ -119,8 +130,7 @@ function ChipFiltro({
   return (
     <button
       type="button"
-      role="tab"
-      aria-selected={activo}
+      aria-pressed={activo}
       onClick={onClick}
       className={cn(
         "rounded-full border-3 border-tinta px-4 py-1.5 font-alt text-[.9rem] font-extrabold transition-transform active:translate-y-[2px]",

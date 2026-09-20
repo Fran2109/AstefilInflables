@@ -70,11 +70,12 @@ export function Cotizador() {
               />
             </div>
             <div>
-              <label htmlFor="f-inflable" className={labelCls}>
+              <label id="f-inflable-label" htmlFor="f-inflable" className={labelCls}>
                 ¿Qué te interesa?
               </label>
               <Select
                 id="f-inflable"
+                ariaLabelledBy="f-inflable-label"
                 value={inflableSeleccionado}
                 onChange={setInflableSeleccionado}
                 options={opciones}
@@ -83,11 +84,12 @@ export function Cotizador() {
               />
             </div>
             <div>
-              <label htmlFor="f-fecha" className={labelCls}>
+              <label id="f-fecha-label" htmlFor="f-fecha" className={labelCls}>
                 Fecha del evento
               </label>
               <DatePicker
                 id="f-fecha"
+                ariaLabelledBy="f-fecha-label"
                 value={fecha}
                 onChange={setFecha}
                 triggerClassName={inputCls}
@@ -129,11 +131,12 @@ export function Cotizador() {
               />
             </div>
             <div>
-              <label htmlFor="f-lugar" className={labelCls}>
+              <label id="f-lugar-label" htmlFor="f-lugar" className={labelCls}>
                 ¿Dónde es la fiesta?
               </label>
               <Select
                 id="f-lugar"
+                ariaLabelledBy="f-lugar-label"
                 value={lugar}
                 onChange={setLugar}
                 options={OPCIONES_LUGAR}

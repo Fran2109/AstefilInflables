@@ -9,6 +9,16 @@ interface Props {
   onChange: (v: string) => void;
   options: string[];
   id?: string;
+  /**
+   * Id del `<label>` visible que nombra este campo.
+   *
+   * El disparador es un `<button>`, y un `<button>` no es un elemento
+   * "labelable": un `<label for>` apuntándole NO crea la asociación, así que
+   * el nombre accesible terminaba siendo el placeholder ("dd/mm/aaaa") y el
+   * texto visible del campo no se anunciaba nunca. `aria-labelledby` sí
+   * funciona y no duplica el texto.
+   */
+  ariaLabelledBy?: string;
   placeholder?: string;
   /** Clases del botón disparador (define el estilo del "campo" en cada contexto). */
   triggerClassName: string;
@@ -19,7 +29,15 @@ interface Props {
  * el estilo del sistema operativo). La lista se renderiza en un portal con
  * posición fija para que no la recorte el scroll de un contenedor/modal.
  */
-export function Select({ value, onChange, options, id, placeholder, triggerClassName }: Props) {
+export function Select({
+  value,
+  onChange,
+  options,
+  id,
+  ariaLabelledBy,
+  placeholder,
+  triggerClassName,
+}: Props) {
   const [open, setOpen] = useState(false);
   const { refTrigger, refPanel, estilo } = usePanelFlotante<HTMLUListElement>({
     abierto: open,
@@ -32,6 +50,7 @@ export function Select({ value, onChange, options, id, placeholder, triggerClass
         ref={refTrigger}
         id={id}
         type="button"
+        aria-labelledby={ariaLabelledBy}
         aria-haspopup="listbox"
         aria-expanded={open}
         onClick={() => setOpen((o) => !o)}
