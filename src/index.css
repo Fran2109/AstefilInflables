@@ -19,6 +19,31 @@
     --tinta: #1b1310;
     --radio: 18px;
 
+    /* ===== Vocabulario de movimiento "vinilo inflado" =====
+       Sale del material que el negocio alquila, no de un catálogo de efectos.
+       El flyer lo define: "formas redondeadas que parecen a punto de rebotar"
+       y "nada aquí flota sin peso; todo está inflado, apoyado, anclado".
+
+       De ahí dos reglas que gobiernan todo lo demás:
+       1. Nada entra desvaneciéndose ni deslizándose desde abajo. Las cosas
+          CRECEN desde donde tocan el piso (scale + transform-origin) —
+          el fade-in + slide-up flota, y acá nada flota sin peso.
+       2. La profundidad es el desplazamiento de la sombra dura, nunca blur
+          ni degradado. Ya lo hace el Button: hover levanta a 8px, :active
+          cae sobre la sombra y la anula. Ese botón es el ADN. */
+
+    /* El pulso del sitio: un solo sobrepaso de ~4,5%, como lona que termina
+       de tensarse. Un back-out clásico sobrepasa 12% y lee a juguete barato. */
+    --ease-inflar: cubic-bezier(0.22, 1.2, 0.36, 1);
+    /* Peso que cae y queda, sin rebote. */
+    --ease-asentar: cubic-bezier(0.19, 0.86, 0.22, 1);
+    /* Lo que se va, se va sin ceremonia. Salir siempre más rápido que entrar. */
+    --ease-salir: cubic-bezier(0.55, 0, 0.85, 0.35);
+
+    --dur-feedback: 100ms;  /* respuesta a un dedo: la que ya usa el Button */
+    --dur-entrada: 380ms;   /* algo que aparece y se asienta */
+    --dur-salida: 140ms;
+
     /* ===== Tokens semánticos shadcn/ui (para tablas/formularios del admin) ===== */
     --background: 48 40% 98%; /* papel */
     --foreground: 20 22% 9%; /* tinta */
@@ -120,14 +145,44 @@
   }
 }
 
-/* Respetar reduced-motion (regla global) */
+/* El sobrepaso asimétrico real (entra rápido, sobrepasa poco, se asienta
+   largo) solo se puede modelar con linear(). Baseline desde dic-2023; donde
+   no exista, queda el cubic-bezier de arriba. */
+@supports (animation-timing-function: linear(0, 1)) {
+  :root {
+    --ease-inflar: linear(
+      0, 0.132 3.4%, 0.464 8.7%, 0.75 13.6%, 0.914 18%, 0.994 22.3%,
+      1.032 27%, 1.045 32.4%, 1.032 40.5%, 1.006 52%, 0.997 64%, 1
+    );
+  }
+}
+
+/* Reducir movimiento no es quedarse sin interfaz.
+   La regla anterior mataba `animation` y `transition` en `*` con !important,
+   y con eso se llevaba puesto el feedback funcional: el squish del Button, la
+   rotación del chevron del Select, el aviso del toast. El usuario que pide
+   menos movimiento quiere que no se muevan las cosas solas, no perder la
+   respuesta a lo que toca. */
 @media (prefers-reduced-motion: reduce) {
+  /* 1. Lo decorativo se apaga del todo. */
+  .animate-flota,
+  .animate-rodar,
+  .animate-respirar,
+  [data-motion="decorativo"] {
+    animation: none !important;
+  }
+
+  /* 2. El resto conserva el feedback, acotado a un parpadeo y sin repetir. */
   *,
   *::before,
   *::after {
-    animation: none !important;
-    transition: none !important;
+    animation-duration: var(--dur-feedback) !important;
+    animation-delay: 0ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: var(--dur-feedback) !important;
+    transition-delay: 0ms !important;
   }
+
   html {
     scroll-behavior: auto;
   }

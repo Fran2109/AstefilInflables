@@ -31,7 +31,7 @@ export function ProductoCard({ producto }: { producto: Producto }) {
     });
 
   return (
-    <article className="flex flex-col overflow-hidden rounded-lg border-3 border-tinta bg-papel shadow-hard transition-transform duration-150 hover:-translate-y-1 hover:translate-x-[-3px] hover:-rotate-[.4deg] hover:shadow-[10px_12px_0_var(--tinta)]">
+    <article className="flex flex-col overflow-hidden rounded-lg border-3 border-tinta bg-papel shadow-hard transition-[transform,box-shadow] duration-150 ease-out hover:-translate-y-1 hover:translate-x-[-3px] hover:-rotate-[.4deg] hover:shadow-[10px_12px_0_var(--tinta)]">
       {tieneFotos && primera ? (
         <div
           role="button"

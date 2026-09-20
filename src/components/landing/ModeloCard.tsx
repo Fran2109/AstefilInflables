@@ -29,7 +29,7 @@ export function ModeloCard({ modelo }: { modelo: ModeloPublico }) {
     abrirVisor({ titulo: nombre, tag: cat, desc: descripcion ?? "", fotos, valorCotizador: nombre });
 
   return (
-    <article className="flex flex-col overflow-hidden rounded-lg border-3 border-tinta bg-papel shadow-hard-sm transition-transform duration-150 hover:-translate-y-1 hover:shadow-hard">
+    <article className="flex flex-col overflow-hidden rounded-lg border-3 border-tinta bg-papel shadow-hard-sm transition-[transform,box-shadow] duration-150 ease-out hover:-translate-y-1 hover:shadow-hard">
       {tieneFotos ? (
         <div
           role="button"

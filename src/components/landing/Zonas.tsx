@@ -29,7 +29,7 @@ export function Zonas() {
                 las localidades donde ya estuvimos saltando — si la tuya no aparece, consultanos
                 igual:
               </p>
-              <div className="flex flex-wrap justify-center gap-3">
+              <div className="flex animate-aterrizar flex-wrap justify-center gap-3">
                 {zonas.map((z) => (
                   <span key={z} className="chip !bg-white">
                     {z}

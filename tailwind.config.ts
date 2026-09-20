@@ -90,6 +90,27 @@ const config: Config = {
           "0%,100%": { transform: "translateY(0)" },
           "50%": { transform: "translateY(-14px)" },
         },
+        /* INFLAR: crece desde donde toca el piso. Es el reemplazo del
+           fade-in + slide-up: un inflable no se desliza hacia adentro del
+           cuadro, se hincha desde su base. Quien lo use tiene que poner
+           `origin-bottom` para que el anclaje sea real. La opacidad puede
+           acompañar al scale — nunca al translate. */
+        inflar: {
+          from: { transform: "scale(.9)", opacity: "0" },
+          to: { transform: "scale(1)", opacity: "1" },
+        },
+        /* DESINFLAR: se va hacia adentro y rápido. */
+        desinflar: {
+          from: { transform: "scale(1)", opacity: "1" },
+          to: { transform: "scale(.96)", opacity: "0" },
+        },
+        /* ATERRIZAR: llega desde 6px de altura y cae sobre su sombra. Sin
+           opacidad a propósito: un translate que además se desvanece es el
+           slide-up de siempre, y acá nada flota sin peso. */
+        aterrizar: {
+          from: { transform: "translate(-6px, -6px)" },
+          to: { transform: "translate(0, 0)" },
+        },
         // Pulso de espera. Solo opacidad: la marca prohíbe degradados, así que
         // nada de shimmer (que es un gradiente en movimiento), y animar la
         // sombra sería repintar en cada frame.
@@ -106,6 +127,9 @@ const config: Config = {
         flota: "flota 5.5s ease-in-out infinite",
         rodar: "rodar 22s linear infinite",
         respirar: "respirar 1.6s ease-in-out infinite",
+        inflar: "inflar var(--dur-entrada) var(--ease-inflar) both",
+        desinflar: "desinflar var(--dur-salida) var(--ease-salir) both",
+        aterrizar: "aterrizar var(--dur-entrada) var(--ease-asentar) both",
       },
     },
   },

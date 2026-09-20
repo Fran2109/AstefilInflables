@@ -88,7 +88,7 @@ export function Galeria() {
         <div
           tabIndex={0}
           aria-label="Galería de fotos, deslizá para ver más"
-          className="flex gap-[26px] overflow-x-auto px-5 pb-10 pt-[30px] [scroll-snap-type:x_mandatory]"
+          className="flex animate-aterrizar gap-[26px] overflow-x-auto px-5 pb-10 pt-[30px] [scroll-snap-type:x_mandatory]"
         >
           {tira.map((m, i) => (
             <button
