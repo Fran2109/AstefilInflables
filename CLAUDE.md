@@ -38,6 +38,10 @@ npm run lint           # eslint (no corre en build; el build solo hace typecheck
 # Assets de marca (una vez: pip install -r tools/requirements.txt)
 python tools/build_og_image.py    # → public/og-image.jpg
 python tools/build_flyer.py       # → marketing/flyer-astefil.{png,pdf}
+python tools/build_fotos.py       # → variantes WebP (400/800/1440) + src/data/imagenes.ts
+                                  #   Correr tras agregar fotos a public/img/. Idempotente
+                                  #   (--forzar regenera). Las variantes SÍ se commitean:
+                                  #   Vercel buildea sin Python.
 ```
 
 Requiere **Node 20+**. No hay tests: validar con `npm run build` y en el navegador con las

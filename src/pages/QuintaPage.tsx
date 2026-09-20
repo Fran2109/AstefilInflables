@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
 import { DatePicker } from "@/components/ui/date-picker";
 import { VisorFotos } from "@/components/ui/visor-fotos";
+import { FotoResponsive } from "@/components/ui/foto-responsive";
 import { linkConsultaQuinta } from "@/lib/whatsapp";
 import { scrollAId } from "@/lib/scroll";
 import { QUINTA, MOTIVOS_QUINTA } from "@/data/quinta";
@@ -77,11 +78,11 @@ export function QuintaPage() {
                 aria-label="Ver la foto en grande"
                 className="block w-full cursor-zoom-in"
               >
-                <img
+                <FotoResponsive
                   src={QUINTA.portada.src}
                   alt={QUINTA.portada.alt}
-                  width={1400}
-                  height={1050}
+                  prioridad
+                  sizes="(min-width: 768px) 560px, 92vw"
                   className="w-full rounded-lg border-3 border-tinta object-cover"
                 />
               </button>
@@ -114,12 +115,12 @@ export function QuintaPage() {
                     i % 2 === 0 ? "-rotate-1" : "rotate-[1.2deg]"
                   }`}
                 >
-                  <img
-                    src={f.src}
-                    alt={f.alt}
-                    loading="lazy"
-                    className="aspect-[4/3] w-full rounded-md border-2 border-tinta object-cover"
-                  />
+<FotoResponsive
+  src={f.src}
+  alt={f.alt}
+  sizes="(min-width: 768px) 340px, 46vw"
+  className="aspect-[4/3] w-full rounded-md border-2 border-tinta object-cover"
+/>
                 </button>
               ))}
             </div>
@@ -220,10 +221,10 @@ function SeccionInflables() {
                 i % 2 === 0 ? "-rotate-1" : "rotate-[1.4deg]"
               }`}
             >
-              <img
+              <FotoResponsive
                 src={f.src}
                 alt={f.alt}
-                loading="lazy"
+                sizes="(min-width: 768px) 340px, 46vw"
                 className="aspect-[4/3] w-full rounded-md border-2 border-tinta object-cover"
               />
             </button>

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { VisorFotos } from "@/components/ui/visor-fotos";
+import { FotoResponsive } from "@/components/ui/foto-responsive";
 import { scrollAId } from "@/lib/scroll";
 import { linkWhatsApp, MSG_INFLABLES } from "@/lib/whatsapp";
 
@@ -70,13 +71,11 @@ export function Hero() {
               aria-label="Ver la foto en grande"
               className="block w-full cursor-zoom-in"
             >
-              <img
+              <FotoResponsive
                 src={FOTO_HERO.src}
                 alt={FOTO_HERO.alt}
-                width={860}
-                height={1146}
-                fetchPriority="high"
-                decoding="sync"
+                prioridad
+                sizes="(min-width: 768px) 400px, min(88vw, 320px)"
                 className="w-full rounded-lg border-3 border-tinta object-cover"
               />
             </button>

@@ -4,6 +4,7 @@ import { SITIO } from "@/data/site";
 import { useLanding } from "@/context/LandingContext";
 import { useCatalogo } from "@/context/CatalogoContext";
 import { Esqueleto } from "@/components/landing/Esqueleto";
+import { srcsetDeFoto } from "@/lib/fotos";
 
 const MAX_TIRA = 10;
 
@@ -100,9 +101,16 @@ export function Galeria() {
             >
               <img
                 src={m.fotos![0]}
+                srcSet={srcsetDeFoto(m.fotos![0]) ?? undefined}
+                sizes="293px"
                 alt={m.nombre}
                 loading="lazy"
-                className="h-[220px] w-auto rounded-md border-2 border-tinta object-cover"
+                decoding="async"
+                width={293}
+                height={220}
+                /* `w-auto` sin `width` hacía que cada foto saltara al cargar y
+                   arrastrara a las siguientes. 4:3 recortado por object-cover. */
+                className="h-[220px] w-[293px] rounded-md border-2 border-tinta object-cover"
               />
             </button>
           ))}

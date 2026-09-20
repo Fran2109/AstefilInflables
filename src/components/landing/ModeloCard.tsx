@@ -1,6 +1,7 @@
 import { Search } from "lucide-react";
 import type { ModeloPublico } from "@/types/catalogo";
 import { linkWhatsApp } from "@/lib/whatsapp";
+import { srcsetDeFoto } from "@/lib/fotos";
 import { useLanding } from "@/context/LandingContext";
 import { Button } from "@/components/ui/button";
 
@@ -44,7 +45,15 @@ export function ModeloCard({ modelo }: { modelo: ModeloPublico }) {
           }}
           className="group relative aspect-[4/3.2] cursor-zoom-in overflow-hidden border-b-3 border-tinta bg-cielo-osc"
         >
-          <img src={fotos[0]} alt={nombre} loading="lazy" className="h-full w-full object-cover" />
+          <img
+            src={fotos[0]}
+            srcSet={srcsetDeFoto(fotos[0]) ?? undefined}
+            sizes="(min-width: 1024px) 340px, (min-width: 640px) 46vw, 92vw"
+            alt={nombre}
+            loading="lazy"
+            decoding="async"
+            className="h-full w-full object-cover"
+          />
           {medidas && (
             <span className="absolute left-2.5 top-2.5 rounded-full border-3 border-tinta bg-papel px-2.5 py-0.5 font-alt text-[.72rem] font-extrabold shadow-hard-sm">
               📏 {medidas}

@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { VisorFotos } from "@/components/ui/visor-fotos";
+import { FotoResponsive } from "@/components/ui/foto-responsive";
 import { useState } from "react";
 import { QUINTA } from "@/data/quinta";
 
@@ -50,11 +51,10 @@ export function BandaQuinta() {
                   i % 2 === 0 ? "-rotate-2" : "rotate-[1.6deg]"
                 }`}
               >
-                <img
+                <FotoResponsive
                   src={f.src}
                   alt={f.alt}
-                  loading="lazy"
-                  decoding="async"
+                  sizes="(min-width: 768px) 220px, 44vw"
                   className="aspect-[4/3] w-full rounded-md border-2 border-tinta object-cover"
                 />
               </button>

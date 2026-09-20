@@ -196,8 +196,22 @@ export function urlFoto(path: string): string {
  * Comprime una imagen a JPEG (~1280px lado mayor) antes de subirla, para que
  * las fotos del cel no pesen de más. Devuelve un Blob JPEG.
  */
-async function comprimir(file: File, maxLado = 1280, calidad = 0.75): Promise<Blob> {
-  const bitmap = await createImageBitmap(file);
+/** Anchos que se suben por cada foto, de mayor a menor. */
+const ANCHOS_FOTO = [1280, 640, 400] as const;
+
+/**
+ * Redimensiona a WebP en el cliente antes de subir.
+ *
+ * Antes se subía un único JPEG de 1280px, que la landing después servía igual
+ * como miniatura de ~300px. Ahora se suben tres anchos y el navegador elige,
+ * igual que con las fotos de `public/img/` — solo que estas no pueden pasar
+ * por `tools/build_fotos.py` porque las sube Francisco desde el panel.
+ *
+ * `imageOrientation: "from-image"` no es opcional: sin eso, varias fotos
+ * sacadas con el celular se suben rotadas, porque el canvas ignora el EXIF.
+ */
+async function comprimir(file: File, maxLado: number, calidad = 0.8): Promise<Blob> {
+  const bitmap = await createImageBitmap(file, { imageOrientation: "from-image" });
   const escala = Math.min(1, maxLado / Math.max(bitmap.width, bitmap.height));
   const w = Math.round(bitmap.width * escala);
   const h = Math.round(bitmap.height * escala);
@@ -207,25 +221,40 @@ async function comprimir(file: File, maxLado = 1280, calidad = 0.75): Promise<Bl
   canvas.getContext("2d")!.drawImage(bitmap, 0, 0, w, h);
   bitmap.close();
   return new Promise((resolve, reject) =>
-    canvas.toBlob((b) => (b ? resolve(b) : reject(new Error("no blob"))), "image/jpeg", calidad)
+    canvas.toBlob((b) => (b ? resolve(b) : reject(new Error("no blob"))), "image/webp", calidad)
   );
 }
 
-/** Sube una foto al bucket y devuelve su path. Comprime antes de subir. */
+/**
+ * Sube las tres variantes y devuelve el path de la más grande, que es el único
+ * que se guarda en `Articulo.fotos`. Las hermanas se derivan del nombre
+ * (ver `srcsetDeFoto` en `src/lib/fotos.ts`), así no hace falta migrar el
+ * esquema ni tocar las fotos ya subidas.
+ */
 export async function subirFoto(file: File): Promise<string> {
-  const blob = await comprimir(file);
-  const path = `${crypto.randomUUID()}.jpg`;
-  const { error } = await sb().storage.from(BUCKET).upload(path, blob, {
-    contentType: "image/jpeg",
-    upsert: false,
-  });
-  if (error) throw error;
-  return path;
+  const id = crypto.randomUUID();
+  const paths = await Promise.all(
+    ANCHOS_FOTO.map(async (ancho) => {
+      const blob = await comprimir(file, ancho);
+      const path = `${id}-${ancho}.webp`;
+      const { error } = await sb().storage.from(BUCKET).upload(path, blob, {
+        contentType: "image/webp",
+        upsert: false,
+      });
+      if (error) throw error;
+      return path;
+    })
+  );
+  return paths[0];
 }
 
 /** Borra una foto del bucket por su path. */
 export async function borrarFoto(path: string): Promise<void> {
-  const { error } = await sb().storage.from(BUCKET).remove([path]);
+  // De una foto nueva hay que borrar las tres variantes, no solo la que quedó
+  // guardada. Una foto vieja (`<uuid>.jpg`) sigue siendo un solo archivo.
+  const m = path.match(/^(.+)-(\d+)\.webp$/);
+  const aBorrar = m ? ANCHOS_FOTO.map((a) => `${m[1]}-${a}.webp`) : [path];
+  const { error } = await sb().storage.from(BUCKET).remove(aBorrar);
   if (error) throw error;
 }
 
