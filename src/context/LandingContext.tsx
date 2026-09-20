@@ -17,8 +17,14 @@ export interface VisorConfig {
   desc: string;
   /** Claves de placeholder, o URLs/paths reales (fotos subidas de un inflable). */
   fotos: string[];
-  /** Si viene, el visor muestra el botón "¡Lo quiero!" que precarga el cotizador. */
-  inflableId?: string;
+  /**
+   * Si viene, el visor muestra el botón "¡Lo quiero!" que precarga el cotizador.
+   * Es el **texto** que va a aparecer en el select y en el mensaje de WhatsApp —
+   * no un id. Se llamaba `inflableId` y ese nombre invitaba a pasarle
+   * `producto.id`, con lo que el mensaje terminaba diciendo "Me interesa:
+   * castillos" (el slug). El nombre nuevo hace obvio qué se espera.
+   */
+  valorCotizador?: string;
   /** Foto por la que arranca (índice dentro de `fotos`). */
   indiceInicial?: number;
   /** Modelos reales de esta categoría (nombre + medidas), para listar en el detalle. */
@@ -44,10 +50,30 @@ export function LandingProvider({ children }: { children: ReactNode }) {
   const precargar = useCallback((valor: string) => {
     setInflableSeleccionado(valor);
     scrollAId("cotizar");
-    // Enfoca la fecha una vez que terminó el scroll suave.
-    window.setTimeout(() => {
-      document.getElementById("f-fecha")?.focus({ preventScroll: true });
-    }, 600);
+
+    // Enfocar la fecha recién cuando el scroll terminó de verdad. Antes esto
+    // era un setTimeout(600) fijo: con reduced-motion el scroll es instantáneo
+    // y se esperaban 600ms al pedo, y en un scroll largo el foco llegaba antes
+    // de tiempo. `scrollend` avisa el momento exacto; el timeout queda solo de
+    // red de seguridad por si el evento no llega (o el scroll nunca arranca,
+    // que pasa cuando el cotizador ya estaba en pantalla).
+    const enfocar = () => document.getElementById("f-fecha")?.focus({ preventScroll: true });
+    // El `in` sobre `window` directo lo estrecha a `never` (TS no conoce
+    // `onscrollend`); el cast a object deja hacer la detección sin romper.
+    const soportaScrollend = "onscrollend" in (window as object);
+    if (soportaScrollend) {
+      const red = window.setTimeout(enfocar, 800);
+      window.addEventListener(
+        "scrollend",
+        () => {
+          window.clearTimeout(red);
+          enfocar();
+        },
+        { once: true }
+      );
+    } else {
+      window.setTimeout(enfocar, 600);
+    }
   }, []);
 
   const abrirVisor = useCallback((cfg: VisorConfig) => {

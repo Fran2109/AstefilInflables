@@ -24,7 +24,14 @@ export function Zonas() {
                     {z}
                   </span>
                 ))}
-                <span className="chip !bg-rojo !text-white">¿Otra? ¡Preguntá!</span>
+                <a
+                  href={linkWhatsApp("¡Hola Astefil! Mi localidad no está en la lista, ¿llegan hasta mi zona? 🎈")}
+                  target="_blank"
+                  rel="noopener"
+                  className="chip !bg-rojo !text-white transition-transform hover:-translate-y-0.5 active:translate-x-[3px] active:translate-y-[3px] active:!shadow-none"
+                >
+                  ¿Otra? ¡Preguntá!
+                </a>
               </div>
             </>
           ) : (

@@ -16,7 +16,7 @@ export function CtaFinal() {
             Contanos fecha y zona, y te confirmamos disponibilidad hoy mismo. Los mejores cumples se
             reservan antes.
           </p>
-          <Button asChild size="full" className="max-w-sm">
+          <Button asChild size="full" className="max-w-sm" data-cta-conversion>
             <a
               href={linkWhatsApp("¡Hola Astefil! Quiero reservar un inflable 🎈")}
               target="_blank"

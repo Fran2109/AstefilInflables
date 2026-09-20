@@ -22,8 +22,11 @@ export function ProductoCard({ producto }: { producto: Producto }) {
       titulo: producto.titulo,
       tag: producto.tag,
       desc: producto.descLarga,
-      fotos: producto.fotos,
-      inflableId: producto.id,
+      // Sin fotos reales va la clave del placeholder, así la card ilustrada
+      // también abre el visor: ahí adentro está la lista de modelos reales de
+      // la categoría, que es información útil aunque todavía no haya fotos.
+      fotos: tieneFotos ? producto.fotos : [producto.id],
+      valorCotizador: producto.titulo,
       modelos: modelosCat,
     });
 
@@ -54,7 +57,17 @@ export function ProductoCard({ producto }: { producto: Producto }) {
         </div>
       ) : (
         <div
-          className="flex aspect-[4/3.4] items-center justify-center border-b-3 border-tinta"
+          role="button"
+          tabIndex={0}
+          aria-label={`Ver ${producto.titulo}`}
+          onClick={abrir}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              abrir();
+            }
+          }}
+          className="flex aspect-[4/3.4] cursor-zoom-in items-center justify-center border-b-3 border-tinta"
           style={{ background: producto.ilustracionId ? ILUSTRACIONES[producto.ilustracionId].fondo : undefined }}
         >
           {producto.ilustracionId && ILUSTRACIONES[producto.ilustracionId].svg}
@@ -64,7 +77,7 @@ export function ProductoCard({ producto }: { producto: Producto }) {
       <div className="flex flex-1 flex-col gap-2.5 p-[18px]">
         <h3 className="text-[1.35rem] font-extrabold leading-[1.1]">{producto.titulo}</h3>
         <p className="flex-1 text-[.95rem] leading-[1.5] text-[#3c2f28]">{producto.descCorta}</p>
-        <Button variant="rojo" size="chico" className="self-start" onClick={() => precargar(producto.id)}>
+        <Button variant="rojo" size="chico" className="self-start" onClick={() => precargar(producto.titulo)}>
           ¡Lo quiero!
         </Button>
       </div>

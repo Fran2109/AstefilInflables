@@ -1,8 +1,11 @@
+import { useLocation } from "react-router-dom";
 import { Logo } from "@/components/layout/Logo";
 import { SITIO } from "@/data/site";
-import { linkWhatsApp } from "@/lib/whatsapp";
+import { linkWhatsApp, mensajeConsulta } from "@/lib/whatsapp";
 
 export function Footer() {
+  const { pathname } = useLocation();
+
   return (
     <footer className="mt-[70px] bg-tinta pb-[30px] pt-11 text-papel">
       <div className="container">
@@ -22,7 +25,7 @@ export function Footer() {
                 <li key={t.wa}>
                   📱{" "}
                   <a
-                    href={linkWhatsApp(undefined, t.wa)}
+                    href={linkWhatsApp(mensajeConsulta(pathname), t.wa)}
                     target="_blank"
                     rel="noopener"
                     className="hover:text-amarillo hover:underline"

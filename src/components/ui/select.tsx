@@ -1,7 +1,8 @@
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { createPortal } from "react-dom";
 import { ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { usePanelFlotante } from "@/components/ui/use-panel-flotante";
 
 interface Props {
   value: string;
@@ -20,43 +21,20 @@ interface Props {
  */
 export function Select({ value, onChange, options, id, placeholder, triggerClassName }: Props) {
   const [open, setOpen] = useState(false);
-  const [rect, setRect] = useState<DOMRect | null>(null);
-  const btnRef = useRef<HTMLButtonElement>(null);
-  const panelRef = useRef<HTMLUListElement>(null);
-
-  const toggle = () => {
-    if (btnRef.current) setRect(btnRef.current.getBoundingClientRect());
-    setOpen((o) => !o);
-  };
-
-  useEffect(() => {
-    if (!open) return;
-    const cerrar = (e: Event) => {
-      // Scrollear la lista misma (para ver más opciones) no debe cerrarla.
-      if (panelRef.current?.contains(e.target as Node)) return;
-      setOpen(false);
-    };
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
-    // Al scrollear la página/resize se cierra para no dejar la lista descolocada.
-    window.addEventListener("scroll", cerrar, true);
-    window.addEventListener("resize", cerrar);
-    window.addEventListener("keydown", onKey);
-    return () => {
-      window.removeEventListener("scroll", cerrar, true);
-      window.removeEventListener("resize", cerrar);
-      window.removeEventListener("keydown", onKey);
-    };
-  }, [open]);
+  const { refTrigger, refPanel, estilo } = usePanelFlotante<HTMLUListElement>({
+    abierto: open,
+    cerrar: () => setOpen(false),
+  });
 
   return (
     <>
       <button
-        ref={btnRef}
+        ref={refTrigger}
         id={id}
         type="button"
         aria-haspopup="listbox"
         aria-expanded={open}
-        onClick={toggle}
+        onClick={() => setOpen((o) => !o)}
         className={cn(triggerClassName, "flex items-center justify-between gap-2 text-left")}
       >
         <span className={cn("truncate", !value && "text-gris")}>{value || placeholder || "Elegir…"}</span>
@@ -67,15 +45,14 @@ export function Select({ value, onChange, options, id, placeholder, triggerClass
       </button>
 
       {open &&
-        rect &&
         createPortal(
           <>
-            <div className="fixed inset-0 z-[90]" onClick={() => setOpen(false)} />
+            <div className="fixed inset-0 z-[100]" onClick={() => setOpen(false)} />
             <ul
-              ref={panelRef}
+              ref={refPanel}
               role="listbox"
-              style={{ position: "fixed", left: rect.left, top: rect.bottom + 6, width: rect.width }}
-              className="z-[91] max-h-64 overflow-auto rounded-xl border-3 border-tinta bg-papel p-1.5 shadow-hard-xl"
+              style={estilo}
+              className="z-[101] max-h-64 overflow-auto rounded-xl border-3 border-tinta bg-papel p-1.5 shadow-hard-xl"
             >
               {options.map((o) => (
                 <li key={o}>

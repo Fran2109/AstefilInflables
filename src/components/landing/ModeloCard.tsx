@@ -18,7 +18,7 @@ const COLOR_CAT: Record<string, string> = {
  * Con foto: portada real + galería en el visor. Sin foto: banda de color por categoría.
  */
 export function ModeloCard({ modelo }: { modelo: ModeloPublico }) {
-  const { abrirVisor } = useLanding();
+  const { abrirVisor, precargar } = useLanding();
   const { nombre, cat, descripcion, ancho, largo, alto, fotos = [] } = modelo;
   const tieneFotos = fotos.length > 0;
   const tieneMedidas = ancho != null && largo != null;
@@ -26,7 +26,7 @@ export function ModeloCard({ modelo }: { modelo: ModeloPublico }) {
   const wa = linkWhatsApp(`¡Hola Astefil! Quiero consultar por ${nombre} (${cat}) 🎈`);
 
   const abrir = () =>
-    abrirVisor({ titulo: nombre, tag: cat, desc: descripcion ?? "", fotos });
+    abrirVisor({ titulo: nombre, tag: cat, desc: descripcion ?? "", fotos, valorCotizador: nombre });
 
   return (
     <article className="flex flex-col overflow-hidden rounded-lg border-3 border-tinta bg-papel shadow-hard-sm transition-transform duration-150 hover:-translate-y-1 hover:shadow-hard">
@@ -74,11 +74,16 @@ export function ModeloCard({ modelo }: { modelo: ModeloPublico }) {
         {descripcion && (
           <p className="flex-1 text-[.9rem] leading-[1.45] text-[#3c2f28]">{descripcion}</p>
         )}
-        <Button asChild variant="verde" size="chico" className="self-start">
-          <a href={wa} target="_blank" rel="noopener">
-            Consultar
-          </a>
-        </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button variant="rojo" size="chico" onClick={() => precargar(nombre)}>
+            ¡Lo quiero!
+          </Button>
+          <Button asChild variant="blanco" size="chico">
+            <a href={wa} target="_blank" rel="noopener">
+              Consultar
+            </a>
+          </Button>
+        </div>
       </div>
     </article>
   );

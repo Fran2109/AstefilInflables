@@ -1,7 +1,8 @@
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { createPortal } from "react-dom";
 import { Calendar, ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { usePanelFlotante } from "@/components/ui/use-panel-flotante";
 
 interface Props {
   /** 'YYYY-MM-DD', o "" si no hay fecha elegida. */
@@ -57,13 +58,16 @@ function grilla(vista: Date): Date[] {
  */
 export function DatePicker({ value, onChange, id, placeholder, triggerClassName }: Props) {
   const [open, setOpen] = useState(false);
-  const [rect, setRect] = useState<DOMRect | null>(null);
+  const { refTrigger, refPanel, estilo } = usePanelFlotante({
+    abierto: open,
+    cerrar: () => setOpen(false),
+    ancho: 300,
+  });
   const [vista, setVista] = useState(() => deISO(value) ?? new Date());
-  const btnRef = useRef<HTMLButtonElement>(null);
-  const panelRef = useRef<HTMLDivElement>(null);
 
   const toggle = () => {
-    if (btnRef.current) setRect(btnRef.current.getBoundingClientRect());
+    // Al reabrir, volver al mes de la fecha ya elegida. La posición del panel
+    // la resuelve `usePanelFlotante`.
     setVista(deISO(value) ?? new Date());
     setOpen((o) => !o);
   };
@@ -73,22 +77,6 @@ export function DatePicker({ value, onChange, id, placeholder, triggerClassName 
     setOpen(false);
   };
 
-  useEffect(() => {
-    if (!open) return;
-    const cerrar = (e: Event) => {
-      if (panelRef.current?.contains(e.target as Node)) return;
-      setOpen(false);
-    };
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
-    window.addEventListener("scroll", cerrar, true);
-    window.addEventListener("resize", cerrar);
-    window.addEventListener("keydown", onKey);
-    return () => {
-      window.removeEventListener("scroll", cerrar, true);
-      window.removeEventListener("resize", cerrar);
-      window.removeEventListener("keydown", onKey);
-    };
-  }, [open]);
 
   const hoy = new Date();
   const hoyISO = aISO(hoy);
@@ -96,7 +84,7 @@ export function DatePicker({ value, onChange, id, placeholder, triggerClassName 
   return (
     <>
       <button
-        ref={btnRef}
+        ref={refTrigger}
         id={id}
         type="button"
         aria-haspopup="dialog"
@@ -111,16 +99,15 @@ export function DatePicker({ value, onChange, id, placeholder, triggerClassName 
       </button>
 
       {open &&
-        rect &&
         createPortal(
           <>
-            <div className="fixed inset-0 z-[90]" onClick={() => setOpen(false)} />
+            <div className="fixed inset-0 z-[100]" onClick={() => setOpen(false)} />
             <div
-              ref={panelRef}
+              ref={refPanel}
               role="dialog"
               aria-label="Elegir fecha"
-              style={{ position: "fixed", left: rect.left, top: rect.bottom + 6 }}
-              className="z-[91] w-[300px] rounded-xl border-3 border-tinta bg-papel p-3.5 shadow-hard-xl"
+              style={estilo}
+              className="z-[101] w-[300px] rounded-xl border-3 border-tinta bg-papel p-3.5 shadow-hard-xl"
             >
               {/* Header: mes/año + navegación */}
               <div className="mb-2.5 flex items-center justify-between">

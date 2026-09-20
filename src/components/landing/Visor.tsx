@@ -196,13 +196,13 @@ export function Visor({ cfg, onCerrar, onPrecargar }: VisorProps) {
             ))}
           </ul>
           <div className="mt-auto flex flex-col gap-2.5 pt-2">
-            {cfg.inflableId && (
+            {cfg.valorCotizador && (
               <Button
                 variant="rojo"
                 onClick={() => {
-                  const id = cfg.inflableId!;
+                  const valor = cfg.valorCotizador!;
                   onCerrar();
-                  onPrecargar(id);
+                  onPrecargar(valor);
                 }}
               >
                 ¡Lo quiero!

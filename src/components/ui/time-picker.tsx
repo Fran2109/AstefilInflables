@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { usePanelFlotante } from "@/components/ui/use-panel-flotante";
 
 interface Props {
   /** 'HH:MM', o "" si no hay horario elegido. */
@@ -24,52 +25,37 @@ const MINUTOS = Array.from({ length: 12 }, (_, i) => String(i * 5).padStart(2, "
  */
 export function TimePicker({ value, onChange, id, ariaLabel, placeholder, triggerClassName }: Props) {
   const [open, setOpen] = useState(false);
-  const [rect, setRect] = useState<DOMRect | null>(null);
-  const btnRef = useRef<HTMLButtonElement>(null);
-  const panelRef = useRef<HTMLDivElement>(null);
+  const { refTrigger, refPanel, estilo } = usePanelFlotante({
+    abierto: open,
+    cerrar: () => setOpen(false),
+    ancho: 190,
+  });
   const horaRef = useRef<HTMLButtonElement>(null);
   const minRef = useRef<HTMLButtonElement>(null);
 
   const [hora, min] = value ? value.split(":") : ["", ""];
 
-  const toggle = () => {
-    if (btnRef.current) setRect(btnRef.current.getBoundingClientRect());
-    setOpen((o) => !o);
-  };
 
   const elegirHora = (h: string) => onChange(h + ":" + (min || "00"));
   const elegirMin = (m: string) => onChange((hora || "00") + ":" + m);
 
+  // Al abrir, centrar la hora y el minuto ya elegidos.
   useEffect(() => {
     if (!open) return;
     horaRef.current?.scrollIntoView({ block: "center" });
     minRef.current?.scrollIntoView({ block: "center" });
-    const cerrar = (e: Event) => {
-      // Scrollear las columnas de horas/minutos no debe cerrar el panel.
-      if (panelRef.current?.contains(e.target as Node)) return;
-      setOpen(false);
-    };
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
-    window.addEventListener("scroll", cerrar, true);
-    window.addEventListener("resize", cerrar);
-    window.addEventListener("keydown", onKey);
-    return () => {
-      window.removeEventListener("scroll", cerrar, true);
-      window.removeEventListener("resize", cerrar);
-      window.removeEventListener("keydown", onKey);
-    };
   }, [open]);
 
   return (
     <>
       <button
-        ref={btnRef}
+        ref={refTrigger}
         id={id}
         type="button"
         aria-label={ariaLabel}
         aria-haspopup="dialog"
         aria-expanded={open}
-        onClick={toggle}
+        onClick={() => setOpen((o) => !o)}
         className={cn(triggerClassName, "flex items-center justify-between gap-2 text-left")}
       >
         <span className={cn("truncate tabular-nums", !value && "text-gris")}>
@@ -79,16 +65,15 @@ export function TimePicker({ value, onChange, id, ariaLabel, placeholder, trigge
       </button>
 
       {open &&
-        rect &&
         createPortal(
           <>
-            <div className="fixed inset-0 z-[90]" onClick={() => setOpen(false)} />
+            <div className="fixed inset-0 z-[100]" onClick={() => setOpen(false)} />
             <div
-              ref={panelRef}
+              ref={refPanel}
               role="dialog"
               aria-label="Elegir horario"
-              style={{ position: "fixed", left: rect.left, top: rect.bottom + 6 }}
-              className="z-[91] w-[190px] rounded-xl border-3 border-tinta bg-papel p-3 shadow-hard-xl"
+              style={estilo}
+              className="z-[101] w-[190px] rounded-xl border-3 border-tinta bg-papel p-3 shadow-hard-xl"
             >
               <div className="grid grid-cols-2 gap-2">
                 <div className="max-h-[190px] overflow-y-auto rounded-lg border-2 border-tinta bg-white">

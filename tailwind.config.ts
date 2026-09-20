@@ -94,19 +94,14 @@ const config: Config = {
           from: { transform: "translateX(0)" },
           to: { transform: "translateX(-50%)" },
         },
-        menuPop: {
-          from: { transform: "translateY(-8px)", opacity: "0" },
-          to: { transform: "translateY(0)", opacity: "1" },
-        },
       },
       animation: {
         flota: "flota 5.5s ease-in-out infinite",
         rodar: "rodar 22s linear infinite",
-        menuPop: "menuPop .18s ease both",
       },
     },
   },
-  plugins: [require("tailwindcss-animate")],
+  plugins: [],
 };
 
 export default config;
