@@ -91,4 +91,3 @@ export const BULLETS_VISOR = [
   "Te confirmamos medidas exactas y precio por WhatsApp.",
 ];
 
-export const TESTIMONIOS: { texto: string; quien: string; color: "azul" | "rojo" | "amarillo" }[] = [];

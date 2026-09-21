@@ -8,7 +8,17 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import type { Articulo, Categoria, Config, Requisito, Reserva, Rol, Zona } from "@/admin/types";
+import type {
+  Articulo,
+  Categoria,
+  Config,
+  EstadoTestimonio,
+  Requisito,
+  Reserva,
+  Rol,
+  Testimonio,
+  Zona,
+} from "@/admin/types";
 import { ESTADOS } from "@/admin/types";
 import { store, K, modoStorage } from "@/admin/lib/store";
 import { seedArticulos, reservasEjemplo, COLORES, CATEGORIAS, ZONAS } from "@/admin/lib/seed";
@@ -75,6 +85,12 @@ interface AdminContextValue {
   categorias: Categoria[];
   /** Zonas de cobertura (de la DB si hay Supabase; si no, las locales), por `orden`. */
   zonas: Zona[];
+  /**
+   * Comentarios de la landing, del más reciente al más viejo, en TODOS los
+   * estados (la RLS solo se lo permite a un admin). Sin Supabase queda vacío:
+   * el alta es pública y vive en la base, no tiene equivalente offline.
+   */
+  testimonios: Testimonio[];
   modo: string;
   toast: Toast | null;
   mostrarToast: (msg: string, tipo?: "ok" | "error") => void;
@@ -100,6 +116,10 @@ interface AdminContextValue {
   toggleZona: (id: string) => void;
   eliminarZona: (id: string) => void;
   moverZona: (id: string, dir: -1 | 1) => void;
+
+  /** Moderación de comentarios. */
+  moderarTestimonio: (id: string, estado: EstadoTestimonio) => void;
+  eliminarTestimonio: (id: string) => void;
 
   setNombre: (nombre: string) => void;
   setPin: (pin: string) => void;
@@ -134,6 +154,9 @@ export function AdminProvider({ children }: { children: ReactNode }) {
   // mentir. El estado vacío real lo maneja cada vista (Vacio en Categorías/Zonas).
   const [categorias, setCategorias] = useState<Categoria[]>(online ? [] : CATEGORIAS_INICIALES);
   const [zonas, setZonas] = useState<Zona[]>(online ? [] : ZONAS_INICIALES);
+  // Sin seed local: el alta es pública y vive en la base. En modo offline no
+  // hay comentarios que moderar, y la vista lo dice en vez de fingir una lista.
+  const [testimonios, setTestimonios] = useState<Testimonio[]>([]);
   const [modo, setModo] = useState<string>(online ? "supabase" : "navegador");
   const [toast, setToast] = useState<Toast | null>(null);
 
@@ -172,6 +195,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
       // si la tabla no existe o está vacía, para no mostrar datos "fantasma".
       setCategorias(d.categorias);
       setZonas(d.zonas);
+      setTestimonios(d.testimonios);
     } catch {
       mostrarToast("No pudimos cargar los datos", "error");
     } finally {
@@ -536,6 +560,43 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     [online, mostrarToast, escribir]
   );
 
+  // ---- Testimonios (moderación) ----
+  // No hay alta desde el panel a propósito: los comentarios los escriben los
+  // visitantes desde la landing. Acá solo se resuelven.
+  const moderarTestimonio = useCallback(
+    async (id: string, estado: EstadoTestimonio) => {
+      if (!online) return mostrarToast("Necesitás conexión para moderar", "error");
+      try {
+        await escribir(() => db.moderarTestimonio(id, estado));
+      } catch {
+        return mostrarToast("Error al moderar el comentario", "error");
+      }
+      setTestimonios((prev) => prev.map((t) => (t.id === id ? { ...t, estado } : t)));
+      mostrarToast(
+        estado === "aprobado"
+          ? "Comentario publicado ✓"
+          : estado === "rechazado"
+            ? "Comentario rechazado"
+            : "Comentario vuelto a pendiente"
+      );
+    },
+    [online, mostrarToast, escribir]
+  );
+
+  const eliminarTestimonio = useCallback(
+    async (id: string) => {
+      if (!online) return mostrarToast("Necesitás conexión para borrar", "error");
+      try {
+        await escribir(() => db.borrarTestimonio(id));
+      } catch {
+        return mostrarToast("Error al eliminar", "error");
+      }
+      setTestimonios((prev) => prev.filter((t) => t.id !== id));
+      mostrarToast("Comentario eliminado");
+    },
+    [online, mostrarToast, escribir]
+  );
+
   // ---- Config ----
   const setNombre = useCallback(
     async (nombre: string) => {
@@ -612,21 +673,23 @@ export function AdminProvider({ children }: { children: ReactNode }) {
   const value = useMemo<AdminContextValue>(
     () => ({
       cargando, guardando: escrituras > 0, online, sesion, emailUsuario, rol, esAdmin, cerrarSesion,
-      articulos, reservas, config, categorias, zonas, modo, toast, mostrarToast,
+      articulos, reservas, config, categorias, zonas, testimonios, modo, toast, mostrarToast,
       guardarReserva, eliminarReserva, avanzarEstado,
       guardarArticulo, eliminarArticulo,
       guardarCategoria, toggleCategoria, eliminarCategoria, moverCategoria,
       guardarZona, toggleZona, eliminarZona, moverZona,
+      moderarTestimonio, eliminarTestimonio,
       setNombre, setPin: guardarPin, definirPin: guardarPin,
       cargarEjemplos, borrarTodo, importarBackup,
     }),
     [
       cargando, escrituras, online, sesion, emailUsuario, rol, esAdmin, cerrarSesion,
-      articulos, reservas, config, categorias, zonas, modo, toast, mostrarToast,
+      articulos, reservas, config, categorias, zonas, testimonios, modo, toast, mostrarToast,
       guardarReserva, eliminarReserva, avanzarEstado,
       guardarArticulo, eliminarArticulo,
       guardarCategoria, toggleCategoria, eliminarCategoria, moverCategoria,
       guardarZona, toggleZona, eliminarZona, moverZona,
+      moderarTestimonio, eliminarTestimonio,
       setNombre, guardarPin, cargarEjemplos, borrarTodo, importarBackup,
     ]
   );

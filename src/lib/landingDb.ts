@@ -1,5 +1,5 @@
 import { supabase } from "@/lib/supabase";
-import type { ModeloPublico } from "@/types/catalogo";
+import type { ModeloPublico, TestimonioPublico } from "@/types/catalogo";
 
 /**
  * Carga del catálogo público de la landing desde Supabase (lectura sin sesión,
@@ -67,4 +67,48 @@ export async function cargarCatalogo(): Promise<CatalogoData | null> {
     : (zon.data as { nombre: string }[]).map((z) => z.nombre);
 
   return { modelos, categorias, zonas };
+}
+
+// ---- Comentarios de la landing ----
+
+/** Límites que la base también valida con CHECK (ver `testimonios-moderacion.sql`). */
+export const LIMITES_COMENTARIO = { texto: 600, quien: 60 } as const;
+
+/**
+ * Los comentarios aprobados, del más reciente al más antiguo.
+ *
+ * No hace falta filtrar por estado acá: la política de RLS solo expone
+ * `estado = 'aprobado'` a quien consulta sin sesión de admin. Pedirlo igual
+ * sería duplicar la regla en un lugar donde podría quedar desincronizada.
+ */
+export async function cargarTestimonios(): Promise<TestimonioPublico[]> {
+  if (!supabase) return [];
+  const { data, error } = await supabase
+    .from("testimonios")
+    .select("id, texto, quien, creado")
+    .order("creado", { ascending: false });
+  if (error) throw error;
+  return data as TestimonioPublico[];
+}
+
+/**
+ * Deja un comentario nuevo. Entra como `pendiente` y no se ve en la web hasta
+ * que un admin lo apruebe.
+ *
+ * ⚠️ El insert NO puede pedir la fila de vuelta (nada de `.select()` acá): la
+ * fila recién creada está en `pendiente`, la política de lectura pública solo
+ * matchea `aprobado`, y PostgREST fallaría al intentar devolverla. El alta
+ * funciona igual; lo que el visitante ve enseguida lo sostiene el componente
+ * con su propio estado.
+ *
+ * Tampoco se manda `estado`: lo pone el default de la tabla y el `with check`
+ * de la política lo clava en `pendiente`. Mandarlo desde el cliente sugeriría
+ * que es el cliente quien decide, y no lo es.
+ */
+export async function enviarTestimonio(quien: string, texto: string): Promise<void> {
+  if (!supabase) throw new Error("Supabase no está configurado");
+  const { error } = await supabase
+    .from("testimonios")
+    .insert({ quien: quien.trim(), texto: texto.trim() });
+  if (error) throw error;
 }

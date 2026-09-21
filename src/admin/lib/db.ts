@@ -1,5 +1,16 @@
 import { supabase } from "@/lib/supabase";
-import type { Articulo, Categoria, Config, Perfil, Requisito, Reserva, Rol, Zona } from "@/admin/types";
+import type {
+  Articulo,
+  Categoria,
+  Config,
+  EstadoTestimonio,
+  Perfil,
+  Requisito,
+  Reserva,
+  Rol,
+  Testimonio,
+  Zona,
+} from "@/admin/types";
 
 /**
  * Capa de acceso a datos del panel contra Supabase (Postgres relacional).
@@ -265,8 +276,9 @@ export async function cargarTodo(): Promise<{
   config: Config;
   categorias: Categoria[];
   zonas: Zona[];
+  testimonios: Testimonio[];
 }> {
-  const [art, res, cfg, cats, zon] = await Promise.all([
+  const [art, res, cfg, cats, zon, tes] = await Promise.all([
     sb().from("articulos").select("*").order("nombre"),
     sb().from("reservas").select("*").order("fecha"),
     sb().from("config").select("*").eq("id", 1).maybeSingle(),
@@ -274,6 +286,8 @@ export async function cargarTodo(): Promise<{
     sb().from("categorias").select("*").order("orden"),
     // Puede no existir todavía (base sin la tabla `zonas`) → se ignora el error.
     sb().from("zonas").select("*").order("orden"),
+    // Base sin la migración de moderación (sin `estado`/`creado`) → se ignora.
+    sb().from("testimonios").select("*").order("creado", { ascending: false }),
   ]);
   if (art.error) throw art.error;
   if (res.error) throw res.error;
@@ -286,6 +300,7 @@ export async function cargarTodo(): Promise<{
       : { nombre: "", pin: null },
     categorias: cats.error ? [] : (cats.data as CategoriaRow[]).map(categoriaDesde),
     zonas: zon.error ? [] : (zon.data as Zona[]),
+    testimonios: tes.error ? [] : (tes.data as Testimonio[]),
   };
 }
 
@@ -360,6 +375,31 @@ export async function actualizarZona(
 
 export async function borrarZona(id: string): Promise<void> {
   const { error } = await sb().from("zonas").delete().eq("id", id);
+  if (error) throw error;
+}
+
+// ---- Testimonios (moderación) ----
+/**
+ * Trae TODOS los testimonios, sin importar el estado — la RLS solo se lo
+ * permite a un admin (la política pública filtra por `estado = 'aprobado'`).
+ * Los pendientes primero: son la cola de trabajo del panel.
+ */
+export async function cargarTestimonios(): Promise<Testimonio[]> {
+  const { data, error } = await sb()
+    .from("testimonios")
+    .select("*")
+    .order("creado", { ascending: false });
+  if (error) throw error;
+  return data as Testimonio[];
+}
+
+export async function moderarTestimonio(id: string, estado: EstadoTestimonio): Promise<void> {
+  const { error } = await sb().from("testimonios").update({ estado }).eq("id", id);
+  if (error) throw error;
+}
+
+export async function borrarTestimonio(id: string): Promise<void> {
+  const { error } = await sb().from("testimonios").delete().eq("id", id);
   if (error) throw error;
 }
 

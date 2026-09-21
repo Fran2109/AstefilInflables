@@ -25,8 +25,11 @@
 --     NO se toca: seguís entrando con el mismo email y contraseña.
 --
 -- Modelo de seguridad (RLS):
---   • Público (lectura): categorias, zonas, testimonios + vista
---     catalogo_articulos. Escritura solo con sesión iniciada.
+--   • Público (lectura): categorias, zonas + vista catalogo_articulos.
+--     Escritura solo con sesión iniciada.
+--   • Público (lectura Y ALTA): testimonios — única tabla donde alguien sin
+--     sesión puede escribir. Entra siempre como 'pendiente' (lo fuerza el
+--     `with check`) y solo se lee lo 'aprobado'. Moderar es solo admin.
 --   • Privado (solo con sesión): articulos, reservas, config.
 --   • La RLS es la única compuerta real, así que los grants amplios que
 --     Supabase da por defecto a anon/authenticated están bien EN TABLAS. En
@@ -83,15 +86,28 @@ create table public.zonas (
   activo boolean not null default true
 );
 
--- Testimonios de la landing (seed = placeholders con activo=false).
+-- Testimonios de la landing, con circuito de moderación: cualquiera deja uno
+-- (entra 'pendiente'), un admin lo aprueba o lo rechaza, y solo lo aprobado se
+-- publica — del más reciente al más antiguo. El estado es reversible.
+--
+-- No hay `orden` ni `activo` (los reemplazan `creado` y `estado`) ni `color`:
+-- el color y la rotación de cada tarjeta se derivan de la posición al
+-- renderizar, así no hay que elegirlos a mano en cada moderación.
+--
+-- Los CHECK de longitud no son cosméticos: el INSERT es público (ver RLS más
+-- abajo), así que son la cota contra el comentario vacío y el de megabytes.
 create table public.testimonios (
   id     uuid primary key default gen_random_uuid(),
-  texto  text not null,
-  quien  text not null,
-  color  text not null default 'azul',
-  orden  integer not null default 0,
-  activo boolean not null default true
+  texto  text not null check (char_length(btrim(texto)) between 3 and 600),
+  quien  text not null check (char_length(btrim(quien)) between 2 and 60),
+  estado text not null default 'pendiente'
+         check (estado in ('pendiente', 'aprobado', 'rechazado')),
+  creado timestamptz not null default now()
 );
+
+-- La consulta pública es siempre "aprobados, del más nuevo al más viejo".
+create index testimonios_publicos_idx
+  on public.testimonios (creado desc) where estado = 'aprobado';
 
 -- Inventario. precio 0 = sin definir. Dimensiones en metros (ancho × largo × alto).
 -- `cat` referencia categorias.nombre (se actualiza en cascada si se renombra).
@@ -191,12 +207,30 @@ alter table public.perfiles    enable row level security;
 do $$
 declare t text;
 begin
-  foreach t in array array['categorias','zonas','testimonios']
+  foreach t in array array['categorias','zonas']
   loop
     execute format('create policy "lectura publica" on public.%I for select using (true)', t);
     execute format('create policy "escritura admin" on public.%I for all to authenticated using (public.es_admin()) with check (public.es_admin())', t);
   end loop;
 end $$;
+
+-- Testimonios: van aparte del loop porque son la única tabla con ALTA PÚBLICA.
+-- Solo lo aprobado sale a la luz: un pendiente o un rechazado son invisibles
+-- para cualquiera que no sea admin.
+create policy "lectura publica aprobados" on public.testimonios
+  for select using (estado = 'aprobado');
+
+-- Cualquiera deja un comentario, pero SIEMPRE como pendiente. El `with check`
+-- es lo que clava el estado: aunque alguien arme el request a mano con la anon
+-- key (que es pública y está para eso), no puede darse de alta ya aprobado.
+create policy "alta publica" on public.testimonios
+  for insert to anon, authenticated
+  with check (estado = 'pendiente');
+
+-- Ver todo, aprobar, rechazar y borrar: solo admin.
+create policy "moderacion admin" on public.testimonios
+  for all to authenticated
+  using (public.es_admin()) with check (public.es_admin());
 
 -- Inventario y config: lectura de cualquier logueado, escritura SOLO admin.
 do $$

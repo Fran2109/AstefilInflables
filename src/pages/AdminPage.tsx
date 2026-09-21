@@ -17,6 +17,7 @@ import { ReservasView } from "@/admin/views/ReservasView";
 import { InventarioView } from "@/admin/views/InventarioView";
 import { CategoriasView } from "@/admin/views/CategoriasView";
 import { ZonasView } from "@/admin/views/ZonasView";
+import { TestimoniosView } from "@/admin/views/TestimoniosView";
 import { EquipoView } from "@/admin/views/EquipoView";
 import { AjustesView } from "@/admin/views/AjustesView";
 
@@ -36,7 +37,11 @@ function AdminInner() {
   const [vista, setVista] = useState<Vista>("inicio");
   // Vistas solo para admin: si un empleado cae en una, se muestra Inicio.
   const adminOnly =
-    vista === "categorias" || vista === "zonas" || vista === "equipo" || vista === "ajustes";
+    vista === "categorias" ||
+    vista === "zonas" ||
+    vista === "testimonios" ||
+    vista === "equipo" ||
+    vista === "ajustes";
   const vistaActual: Vista = adminOnly && !esAdmin ? "inicio" : vista;
 
   // Diálogos
@@ -108,6 +113,7 @@ function AdminInner() {
           {vistaActual === "inventario" && <InventarioView onAbrirArticulo={abrirArticulo} />}
           {vistaActual === "categorias" && <CategoriasView onAbrirCategoria={abrirCategoria} />}
           {vistaActual === "zonas" && <ZonasView onAbrirZona={abrirZona} />}
+          {vistaActual === "testimonios" && <TestimoniosView />}
           {vistaActual === "equipo" && <EquipoView />}
           {vistaActual === "ajustes" && <AjustesView />}
         </main>

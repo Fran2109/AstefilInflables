@@ -102,8 +102,9 @@ convenciones y el detalle de la arquitectura.
 La regla del proyecto es **no fingir contenido real que no existe**. Donde falta un dato, la
 UI lo dice o usa un placeholder visualmente obvio.
 
-- **Testimonios** (`TESTIMONIOS` en `src/data/site.ts` y tabla `testimonios`): **vacíos a
-  propósito**. La sección no se renderiza hasta que haya reseñas reales. No inventar.
+- **Comentarios** (tabla `testimonios`): los deja el público desde la landing y se publican
+  recién cuando Francisco los aprueba en el panel (Comentarios). Si no hay ninguno aprobado,
+  la sección lo dice y deja el formulario — nunca reseñas de relleno.
 - **Catálogo**: se deriva del inventario. La vista "Todos" arma una card por categoría con
   artículos cargados; si no hay ninguno, muestra un estado vacío con CTA en vez de cards de
   relleno. No hay tabla `productos`: cargar un artículo en Inventario ya lo publica.

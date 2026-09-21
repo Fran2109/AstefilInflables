@@ -52,6 +52,30 @@ export interface Articulo {
   notasInternas?: string;
 }
 
+/** Estados de moderación de un testimonio. Solo `aprobado` se publica. */
+export const ESTADOS_TESTIMONIO = ["pendiente", "aprobado", "rechazado"] as const;
+
+export type EstadoTestimonio = (typeof ESTADOS_TESTIMONIO)[number];
+
+/**
+ * Un comentario dejado por un visitante desde la landing.
+ *
+ * Nace siempre `pendiente` (lo fuerza la RLS, no la app) y no se ve en la web
+ * hasta que un admin lo aprueba. El estado es reversible: un aprobado se puede
+ * volver a pendiente o rechazar sin borrarlo.
+ *
+ * No tiene color ni orden manual: se ordena por `creado` (más reciente
+ * primero) y la paleta de cada tarjeta se deriva de su posición al renderizar.
+ */
+export interface Testimonio {
+  id: string;
+  texto: string;
+  quien: string;
+  estado: EstadoTestimonio;
+  /** ISO. Ordena la lista pública, del más nuevo al más viejo. */
+  creado: string;
+}
+
 /** Rol de un usuario del panel. `admin` = todo; `empleado` = solo operativo (reservas). */
 export type Rol = "admin" | "empleado";
 

@@ -62,15 +62,16 @@ puerto 5173). El screenshot a veces se cuelga en `/admin`; ahí inspeccionar el 
   (⚠ borra reservas; NO toca `auth.users`). El resto de los `.sql` en `supabase/` son
   migraciones puntuales/aditivas ya fusionadas en `init.sql` (roles, storage de fotos, medidas
   con turbina, zonas, `articulos-rename.sql`, `notas-internas.sql`, `eliminar_tabla_fotos.sql`,
-  `eliminar_tabla_productos.sql`, `revocar_escritura_catalogo.sql`)
+  `eliminar_tabla_productos.sql`, `revocar_escritura_catalogo.sql`,
+  `testimonios-moderacion.sql`)
   para aplicar a una base ya viva sin perder datos, más `reset.sql` (borra todo, sin
   reconstruir — usar antes de un `init.sql` limpio). Se corren a mano en Supabase → SQL
   Editor. Al cambiar el esquema, actualizar `init.sql` para que la reconstrucción siga fiel.
 - **Nombres**: la DB usa **snake_case**; la app usa **camelCase**. El mapeo vive en
   `src/admin/lib/db.ts` (admin) y `src/lib/landingDb.ts` (landing). Mantenerlos en sync.
 - **Tablas**: `reservas`, `articulos`, `config`, `categorias`, `zonas`, `perfiles`
-  (privadas/mixtas); `testimonios` (catálogo público, **vacía por defecto** — sin ABM propio
-  todavía, se carga a mano vía SQL o `db.ts`); vista `catalogo_articulos`
+  (privadas/mixtas); `testimonios` (comentarios del público, con moderación — ver abajo);
+  vista `catalogo_articulos`
   (columnas seguras de `articulos` activos — **NO expone precio** — para que la landing liste
   modelos). `categorias` y `zonas` sí traen seed real (5 categorías, 8 zonas) porque son
   estructurales, no contenido de marketing. `articulos` reemplazó a la vieja `inflables`: el
@@ -84,6 +85,16 @@ puerto 5173). El screenshot a veces se cuelga en `/admin`; ahí inspeccionar el 
 - **RLS por rol** (ver "Roles"): catálogo → lectura pública, escritura solo admin; inventario
   y config → lectura de cualquier logueado, escritura solo admin; reservas → cualquier
   logueado; perfiles → cada uno el suyo, admin todos.
+- **⚠️ `testimonios` es la única tabla con ALTA PÚBLICA.** Cualquiera deja un comentario desde
+  la landing sin sesión; entra `pendiente` y no se ve hasta que un admin lo aprueba. Tres
+  reglas que **no se tocan** (`supabase/testimonios-moderacion.sql`): el `with check
+  (estado = 'pendiente')` del INSERT —es lo que impide darse de alta ya aprobado armando el
+  request a mano con la anon key, que es pública—, el SELECT público limitado a
+  `estado = 'aprobado'`, y los CHECK de longitud (3–600 / 2–60) como cota de abuso. El
+  formulario suma un honeypot; contra spam en serio el paso siguiente sería un captcha.
+  **Al insertar desde el cliente no encadenar `.select()`**: la fila nace `pendiente`, la
+  política de lectura pública no la matchea y PostgREST falla al devolverla (ver
+  `enviarTestimonio` en `lib/landingDb.ts`).
 - **⚠️ Las vistas no las protege la RLS de la tabla de abajo.** `catalogo_articulos` corre con
   los permisos de su dueño (no es `security_invoker`) para poder exponer los artículos activos
   sin sesión y sin el precio. Como es un `select` de una sola tabla, Postgres la considera
@@ -148,6 +159,11 @@ puerto 5173). El screenshot a veces se cuelga en `/admin`; ahí inspeccionar el 
     "¿Llegamos a tu zona?" de la landing y el `<datalist>` del campo zona/localidad en
     `ReservaDialog` (ahí `zona` sigue siendo texto libre, no FK — borrar una zona no toca
     reservas existentes).
+  - `Testimonio`: `{id, texto, quien, estado, creado}` — comentario dejado por un visitante.
+    `estado` es `pendiente | aprobado | rechazado` y es **reversible** (un aprobado se puede
+    despublicar sin borrarlo). No tiene color ni orden manual: ordena por `creado` (más
+    reciente primero) y la paleta/rotación de cada tarjeta se derivan de la posición al
+    renderizar, para que nadie tenga que elegirlas al moderar.
   - `Perfil`: `{id (=auth uid), email, rol}` · `Config`: `{nombre, pin}`
 - **Estados** (flujo): Consulta → Reservado → Señado → Entregado → Finalizado; Cancelado
   aparte. Consulta y Cancelado no bloquean inventario. Avanzar estado es un solo paso.
@@ -155,7 +171,10 @@ puerto 5173). El screenshot a veces se cuelga en `/admin`; ahí inspeccionar el 
   `articuloIds` entre reservas bloqueantes ⇒ aviso en el formulario y tarjeta en rojo.
 - **Vistas** (`views/`): Inicio (KPIs), Calendario, Reservas, Inventario, **Categorías** (ABM
   con reordenar/activar/borrar-bloqueado-si-en-uso), **Zonas** (mismo ABM pattern, sin bloqueo
-  al borrar porque `Reserva.zona` es texto libre, no FK), **Equipo** (roles, solo admin),
+  al borrar porque `Reserva.zona` es texto libre, no FK), **Comentarios**
+  (`TestimoniosView`: moderación, solo admin — **sin alta**, los comentarios los escribe la
+  gente desde la landing; filtra por estado y arranca en "Pendientes", que es la cola de
+  trabajo), **Equipo** (roles, solo admin),
   **Ajustes** (nombre/PIN, cerrar sesión, backup: exportar JSON + reservas CSV, importar JSON,
   cargar ejemplos, borrar todo — todo lo destructivo pasa por `useConfirmar()`).
 - **WhatsApp al cliente** (`admin/lib/whatsapp.ts` → `linkWaCliente`): arma el mensaje desde una
@@ -208,6 +227,12 @@ puerto 5173). El screenshot a veces se cuelga en `/admin`; ahí inspeccionar el 
   si ninguno tiene foto todavía, muestra un estado vacío honesto en vez de la tira.
 - **"¿Llegamos a tu zona?"** (`Zonas.tsx`): chips con `useCatalogo().zonas` (DB o fallback
   estático, ver arriba) — mismo ABM que gestiona el admin.
+- **Comentarios** (`Testimonios.tsx`, sección `#comentarios`): la pared de aprobados (más
+  reciente primero) más el formulario de alta. Tras enviar, el comentario propio se muestra
+  **una sola vez** con el cartel "Esperando aprobación", sostenido por el estado del
+  componente: nunca se vuelve a leer de la base, porque un pendiente es invisible para quien
+  no es admin. Sin comentarios publicados la sección lo dice y deja el formulario, en vez de
+  esconderse o rellenar con reseñas inventadas.
 - **Visor**: lightbox con flechas/teclado/swipe/miniaturas + lista de modelos por categoría.
 - **Página `/quinta`** (`pages/QuintaPage.tsx` + `data/quinta.ts`): la quinta "El Esfuerzo",
   que se alquila por día. Contenido **estático a propósito** (sin ABM ni tabla en Supabase:
@@ -318,11 +343,9 @@ Filosofía: **nunca fingir contenido real que no existe todavía**. Donde falta 
 UI lo dice explícitamente (texto honesto + CTA a WhatsApp) o usa un placeholder *visualmente*
 obvio (`fotoPlaceholder`) — nunca texto o fotos inventadas presentadas como reales.
 
-- **Testimonios** (`data/site.ts` `TESTIMONIOS` y tabla `testimonios`): **vacíos por
-  defecto**, a propósito — no hay ABM para cargarlos desde el admin todavía (sí lo tienen
-  Categorías, Zonas e Inventario). `Testimonios.tsx` directamente no renderiza nada si está
-  vacío (no hay link de nav a `#testimonios`, así que ocultar la sección entera es seguro).
-  Cargar contenido real a mano (SQL o `db.ts`), no inventarlo.
+- **Comentarios** (tabla `testimonios`): ya no hay lista estática — los escribe la gente y
+  los aprueba Francisco. Si todavía no hay ninguno aprobado, la sección lo dice ("Todavía no
+  hay comentarios publicados… sos el primero") y deja el formulario. Nunca reseñas de relleno.
 - **Catálogo**: sale entero del inventario. Si no hay artículos cargados, `Catalogo.tsx`
   muestra un estado vacío con CTA — nunca cards de relleno.
 - **Zonas** (tabla `zonas`, ABM completo): misma regla — **sin fallback estático**. Si la tabla
@@ -341,10 +364,9 @@ obvio (`fotoPlaceholder`) — nunca texto o fotos inventadas presentadas como re
 ## Pendientes
 
 Ver `docs/BACKLOG.md` (actualizado al estado real; `README.md` también). Destacados
-actuales: ABM de Testimonios en el admin (hoy Categorías, Zonas e Inventario lo tienen;
-Testimonios no), cargar fotos reales por
-modelo (la feature de subida ya existe, faltan las fotos), testimonios reales, precios/fichas,
-y afinar los claims de servicio con Francisco.
+actuales: cargar fotos reales por modelo (la feature de subida ya existe, faltan las fotos),
+cargar el inventario (hoy `articulos` está vacío, así que la landing no tiene catálogo),
+precios/fichas, y afinar los claims de servicio con Francisco.
 
 ## graphify
 

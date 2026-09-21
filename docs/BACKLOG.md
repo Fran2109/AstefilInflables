@@ -4,12 +4,14 @@ Priorizado. Antes de tocar nada: leer `CLAUDE.md` (sistema de diseño, convencio
 verdad vs. placeholder).
 
 ## P1 — Contenido real (bloquea promoción seria del sitio)
-- [ ] **Testimonios reales**: `TESTIMONIOS` (`src/data/site.ts`) y la tabla `testimonios`
-      están vacíos a propósito y la sección no se renderiza. Cargar reseñas verdaderas de
-      IG/Facebook (texto + nombre + localidad). No inventar.
-- [ ] **ABM de Testimonios en el admin**: hoy Categorías, Zonas e Inventario tienen ABM;
-      testimonios no, así que hay que cargarlos a mano por SQL. Es el bloqueo real del punto
-      de arriba.
+- [x] **Comentarios con moderación**: la gente los deja desde la landing y se publican al
+      aprobarlos en el panel (Comentarios). Reemplazó al `TESTIMONIOS` estático.
+- [ ] **Cargar el inventario**: `articulos` está vacío en la base, así que la landing no
+      tiene catálogo — ni cards en "Todos", ni modelos en los chips, ni opciones en el
+      cotizador. Es lo único que separa al sitio de tener catálogo real.
+- [ ] **Anti-spam de comentarios**: hoy hay honeypot + CHECK de longitud. Si empieza a
+      llegar spam, sumar un captcha (Turnstile/hCaptcha): no se puede limitar por IP desde
+      la RLS.
 - [x] **Cards-categoría del catálogo**: resuelto sacando la tabla `productos` en vez de
       construirle un ABM. El overview "Todos" se deriva de Categorías + Inventario, así que
       cargar un artículo alcanza para publicarlo.

@@ -19,6 +19,20 @@ export interface ModeloPublico {
 }
 
 /**
+ * Un comentario ya aprobado, como lo ve un visitante.
+ *
+ * No trae `estado` porque del lado público solo existe lo aprobado: la RLS
+ * filtra el resto antes de que salga de la base. Se ordena por `creado`, del
+ * más reciente al más antiguo.
+ */
+export interface TestimonioPublico {
+  id: string;
+  texto: string;
+  quien: string;
+  creado: string;
+}
+
+/**
  * Una categoría del catálogo con los modelos reales que tiene cargados.
  *
  * No hay tabla ni ABM detrás: se deriva de `categorias` + el inventario
