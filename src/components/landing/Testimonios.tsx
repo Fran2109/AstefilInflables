@@ -148,9 +148,16 @@ export function Testimonios() {
           </div>
         ) : (
           /* Todavía no hay comentarios publicados. Se dice, no se disimula
-             con reseñas de relleno. */
+             con reseñas de relleno.
+
+             El "sos el primero 👇" solo si abajo hay de verdad un formulario:
+             sin Supabase configurado `FormularioComentario` no se renderiza, y
+             la flecha quedaba apuntando a la nada. Pasa si en Vercel faltan las
+             `VITE_SUPABASE_*`. */
           <p className="mx-auto mt-9 max-w-[34rem] text-center text-[1.02rem] text-[#3c2f28]">
-            Todavía no hay comentarios publicados. Si ya alquilaste con nosotros, sos el primero 👇
+            {haySupabase
+              ? "Todavía no hay comentarios publicados. Si ya alquilaste con nosotros, sos el primero 👇"
+              : "Todavía no hay comentarios publicados."}
           </p>
         )}
 
