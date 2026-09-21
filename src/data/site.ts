@@ -24,16 +24,6 @@ export const MARQUEE = [
 ];
 
 /** Opciones del select del cotizador. "" = sin elegir. */
-export const OPCIONES_INFLABLE = [
-  "Castillo",
-  "Castillo con rampa",
-  "Carrera de obstáculos",
-  "Inflable acuático",
-  "Inflable deportivo",
-  "Living para chicos",
-  "Juegos de salón",
-];
-
 export const OPCIONES_LUGAR = [
   "Casa con patio o jardín",
   "Salón de fiestas",

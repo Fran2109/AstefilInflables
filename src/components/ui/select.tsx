@@ -20,6 +20,8 @@ interface Props {
    */
   ariaLabelledBy?: string;
   placeholder?: string;
+  /** Texto a mostrar cuando `options` viene vacío. */
+  vacio?: string;
   /** Clases del botón disparador (define el estilo del "campo" en cada contexto). */
   triggerClassName: string;
 }
@@ -36,6 +38,7 @@ export function Select({
   id,
   ariaLabelledBy,
   placeholder,
+  vacio,
   triggerClassName,
 }: Props) {
   const [open, setOpen] = useState(false);
@@ -73,6 +76,12 @@ export function Select({
               style={estilo}
               className="z-[101] max-h-64 overflow-auto rounded-xl border-3 border-tinta bg-papel p-1.5 shadow-hard-xl"
             >
+              {/* Las opciones pueden salir de la base (el catálogo real), así que
+                  la lista puede venir vacía. Sin esto el panel se abría en
+                  blanco y parecía roto. */}
+              {options.length === 0 && (
+                <li className="px-3 py-2 font-body text-[.9rem] text-gris">{vacio ?? "Sin opciones"}</li>
+              )}
               {options.map((o) => (
                 <li key={o}>
                   <button

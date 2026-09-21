@@ -23,13 +23,9 @@ verdad vs. placeholder).
       cobertura — confirmar con Francisco que reflejan el servicio real.
 
 ## P2 — Conversión
-- [ ] **Opciones del cotizador vs. catálogo real**: `OPCIONES_INFLABLE` (`src/data/site.ts`)
-      es una lista escrita a mano ("Castillo con rampa", "Inflable deportivo", "Living para
-      chicos") que no coincide con las categorías ni con el inventario. Antes casi no se
-      notaba; ahora el botón "¡Lo quiero!" del overview precarga el nombre de la categoría
-      real ("Castillos") y el select muestra ese valor arriba de opciones de otro vocabulario.
-      Decidir con Francisco si el select lista categorías, modelos reales o ambos — y
-      derivarlo de `useCatalogo()` en vez de tenerlo hardcodeado.
+- [x] **Opciones del cotizador**: eran `OPCIONES_INFLABLE`, una lista escrita a mano que no
+      coincidía con el inventario. Ahora el select lista los modelos reales, ordenados por
+      categoría (Francisco eligió modelos, no categorías).
 - [ ] Quiz "¿Cuál me conviene?": 3 preguntas (edad, casa/salón, invitados) → recomienda
       categoría → botón que llama a `precargar()`.
 - [ ] Cotizador v2: que el `DatePicker` no deje elegir fechas pasadas (hoy resalta el día

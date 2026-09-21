@@ -184,6 +184,12 @@ puerto 5173). El screenshot a veces se cuelga en `/admin`; ahí inspeccionar el 
 - **Cotizador**: formulario controlado (`DatosCotizacion` en `lib/whatsapp.ts` → `linkCotizacion`
   arma el mensaje/link en vivo); incluye horario tentativo como rango (`horarioDesde`/
   `horarioHasta`, opcionales) y dirección. No hay backend de envío: **WhatsApp ES el funnel**.
+  El select "¿Qué te interesa?" lista los **modelos reales del inventario**
+  (`nombresDeModelos`, en `Cotizador.tsx`: los de `useCatalogo().modelos`, ordenados por el
+  orden de categoría y después por nombre). No hay lista hardcodeada de opciones: si el
+  inventario está vacío el select lo dice (prop `vacio` del `Select`, distinguiendo "cargando"
+  de "no hay modelos") en vez de abrir un panel en blanco. Si precargan un valor que no es un modelo —"¡Lo quiero!" del overview manda el
+  nombre de la **categoría**— se antepone a la lista para que se pueda ver y elegir.
 - **Galería "Astefil en acción"** (`Galeria.tsx`): hasta 10 inflables al azar (mezcla
   Fisher–Yates recalculada solo cuando cambian los modelos) que ya tengan foto real subida;
   si ninguno tiene foto todavía, muestra un estado vacío honesto en vez de la tira.
