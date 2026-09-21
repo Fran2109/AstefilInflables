@@ -72,14 +72,15 @@ export async function cargarCatalogo(): Promise<CatalogoData | null> {
 // ---- Comentarios de la landing ----
 
 /** Límites que la base también valida con CHECK (ver los .sql de `testimonios`). */
-export const LIMITES_COMENTARIO = { texto: 600, quien: 60, localidad: 60, articulo: 80 } as const;
+export const LIMITES_COMENTARIO = { texto: 600, quien: 60, localidad: 60, articulos: 10 } as const;
 
 /** Los datos que puede mandar un visitante. Solo `quien` y `texto` son obligatorios. */
 export interface ComentarioNuevo {
   quien: string;
   texto: string;
   puntaje?: number;
-  articulo?: string;
+  /** Puede haber alquilado varias cosas. */
+  articulos?: string[];
   localidad?: string;
   /** 'YYYY-MM-DD'. */
   fechaEvento?: string;
@@ -96,7 +97,7 @@ export async function cargarTestimonios(): Promise<TestimonioPublico[]> {
   if (!supabase) return [];
   const { data, error } = await supabase
     .from("testimonios")
-    .select("id, texto, quien, creado, puntaje, articulo, localidad, fecha_evento")
+    .select("id, texto, quien, creado, puntaje, articulos, localidad, fecha_evento")
     .order("creado", { ascending: false });
   if (error) throw error;
   // `fecha_evento` es la única columna con nombre distinto entre DB y app.
@@ -131,7 +132,8 @@ export async function enviarTestimonio(c: ComentarioNuevo): Promise<void> {
     quien: c.quien.trim(),
     texto: c.texto.trim(),
     puntaje: c.puntaje ?? null,
-    articulo: limpio(c.articulo),
+    // Array vacío, no null: la columna es NOT NULL con default '{}'.
+    articulos: c.articulos?.length ? c.articulos : [],
     localidad: limpio(c.localidad),
     fecha_evento: limpio(c.fechaEvento),
   });

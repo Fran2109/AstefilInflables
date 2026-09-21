@@ -163,13 +163,16 @@ export function TestimoniosView() {
 
                     {/* Los datos opcionales que haya completado. Se muestran solo
                         si están: un comentario sin ninguno es igual de válido. */}
-                    {(t.articulo || t.localidad || t.fechaEvento) && (
+                    {(t.articulos?.length || t.localidad || t.fechaEvento) && (
                       <div className="mt-2.5 flex flex-wrap gap-1.5">
-                        {t.articulo && (
-                          <span className="rounded-full border-2 border-tinta bg-cielo px-2.5 py-0.5 font-alt text-[.74rem] font-extrabold">
-                            🎈 {t.articulo}
+                        {t.articulos?.map((a) => (
+                          <span
+                            key={a}
+                            className="rounded-full border-2 border-tinta bg-cielo px-2.5 py-0.5 font-alt text-[.74rem] font-extrabold"
+                          >
+                            🎈 {a}
                           </span>
-                        )}
+                        ))}
                         {t.localidad && (
                           <span className="rounded-full border-2 border-tinta bg-white px-2.5 py-0.5 font-alt text-[.74rem] font-extrabold">
                             📍 {t.localidad}

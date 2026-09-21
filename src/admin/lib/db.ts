@@ -386,7 +386,7 @@ type TestimonioRow = {
   estado: EstadoTestimonio;
   creado: string;
   puntaje: number | null;
-  articulo: string | null;
+  articulos: string[] | null;
   localidad: string | null;
   fecha_evento: string | null;
 };
@@ -399,7 +399,7 @@ function testimonioDesde(t: TestimonioRow): Testimonio {
     estado: t.estado,
     creado: t.creado,
     puntaje: t.puntaje,
-    articulo: t.articulo,
+    articulos: t.articulos ?? [],
     localidad: t.localidad,
     // Única columna del modelo con nombre distinto entre DB y app.
     fechaEvento: t.fecha_evento,

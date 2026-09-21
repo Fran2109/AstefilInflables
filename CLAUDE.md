@@ -64,7 +64,7 @@ puerto 5173). El screenshot a veces se cuelga en `/admin`; ahí inspeccionar el 
   con turbina, zonas, `articulos-rename.sql`, `notas-internas.sql`, `eliminar_tabla_fotos.sql`,
   `eliminar_tabla_productos.sql`, `revocar_escritura_catalogo.sql`,
   `testimonios-moderacion.sql`,
-  `testimonios-campos-opcionales.sql`)
+  `testimonios-campos-opcionales.sql`, `testimonios-articulos-lista.sql`)
   para aplicar a una base ya viva sin perder datos, más `reset.sql` (borra todo, sin
   reconstruir — usar antes de un `init.sql` limpio). Se corren a mano en Supabase → SQL
   Editor. Al cambiar el esquema, actualizar `init.sql` para que la reconstrucción siga fiel.
@@ -92,7 +92,10 @@ puerto 5173). El screenshot a veces se cuelga en `/admin`; ahí inspeccionar el 
   (estado = 'pendiente')` del INSERT —es lo que impide darse de alta ya aprobado armando el
   request a mano con la anon key, que es pública—, el SELECT público limitado a
   `estado = 'aprobado'`, y **un CHECK por columna** como cota de abuso (texto 3–600, nombre
-  2–60, puntaje 1–5, artículo ≤80, localidad 2–60, fecha en un rango de cordura). Al sumar un
+  2–60, puntaje 1–5, localidad 2–60, fecha en un rango de cordura; y `articulos`, que al ser
+  un array se acota **por cantidad Y por largo total** —si no, se abusa con miles de elementos
+  o con pocos pero gigantes—, porque un CHECK no admite subconsultas y no se puede acotar
+  elemento por elemento). Al sumar un
   campo nuevo al formulario, **sumarle su CHECK**: la lista desplegable del formulario no
   protege nada, porque cualquiera puede armar el request a mano con la anon key. El
   formulario suma un honeypot; contra spam en serio el paso siguiente sería un captcha.
@@ -164,7 +167,8 @@ puerto 5173). El screenshot a veces se cuelga en `/admin`; ahí inspeccionar el 
     `ReservaDialog` (ahí `zona` sigue siendo texto libre, no FK — borrar una zona no toca
     reservas existentes).
   - `Testimonio`: `{id, texto, quien, estado, creado}` + los opcionales `{puntaje, articulo,
-    localidad, fechaEvento}` — comentario dejado por un visitante.
+    localidad, fechaEvento}` — comentario dejado por un visitante. `articulos` es una **lista**:
+    una fiesta puede llevar el castillo Y el metegol.
     `estado` es `pendiente | aprobado | rechazado` y es **reversible** (un aprobado se puede
     despublicar sin borrarlo). No tiene color ni orden manual: ordena por `creado` (más
     reciente primero) y la paleta/rotación de cada tarjeta se derivan de la posición al
@@ -242,9 +246,11 @@ puerto 5173). El screenshot a veces se cuelga en `/admin`; ahí inspeccionar el 
   de aprobados (más reciente primero) más el formulario de alta. Solo nombre y texto son
   obligatorios; abajo de una línea punteada van cuatro opcionales (puntaje en estrellas, qué
   alquiló, localidad y fecha de la fiesta) separados y dichos como tales, para que nadie sienta
-  que tiene que llenar un formulario largo para dejar dos líneas. Los selects de artículo y
-  localidad salen del inventario y las zonas reales, y **se ocultan si esas listas están
-  vacías** (un select sin opciones es un callejón). La tarjeta muestra cada dato solo si está:
+  que tiene que llenar un formulario largo para dejar dos líneas. "¿Qué alquilaste?" son
+  **chips con checkbox** (se puede marcar más de uno, tope 10, igual que el CHECK de la base) y
+  no un desplegable — mismo patrón que el `ReservaDialog` del panel. Las listas de artículos y
+  localidades salen del inventario y las zonas reales, y **se ocultan si están vacías** (una
+  lista sin opciones es un callejón). La tarjeta muestra cada dato solo si está:
   un comentario sin ningún opcional se ve bien igual. Tras enviar, el comentario propio se muestra
   **una sola vez** con el cartel "Esperando aprobación", sostenido por el estado del
   componente: nunca se vuelve a leer de la base, porque un pendiente es invisible para quien

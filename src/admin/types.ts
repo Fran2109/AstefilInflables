@@ -78,13 +78,14 @@ export interface Testimonio {
   /**
    * Datos opcionales que el visitante completa o no.
    *
-   * `articulo` y `localidad` son texto libre, no FK, aunque el formulario los
+   * `articulos` y `localidad` son texto libre, no FK, aunque el formulario los
    * ofrezca como lista armada con el inventario y las zonas reales: un
    * comentario es un testimonio histórico y tiene que seguir diciendo lo que
    * esa persona alquiló, aunque después se renombre o se borre el artículo.
    */
   puntaje?: number | null;
-  articulo?: string | null;
+  /** Puede haber alquilado varias cosas. Vacío = no lo dijo. */
+  articulos?: string[];
   localidad?: string | null;
   /** 'YYYY-MM-DD' — cuándo fue la fiesta (siempre pasada). */
   fechaEvento?: string | null;

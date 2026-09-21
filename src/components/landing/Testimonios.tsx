@@ -111,10 +111,17 @@ export function Testimonios() {
                   {t.texto}
                 </p>
 
-                {t.articulo && (
-                  <span className="mt-3 self-start rounded-full border-2 border-tinta bg-cielo px-2.5 py-0.5 font-alt text-[.76rem] font-extrabold">
-                    🎈 {t.articulo}
-                  </span>
+                {t.articulos && t.articulos.length > 0 && (
+                  <div className="mt-3 flex flex-wrap gap-1.5">
+                    {t.articulos.map((a) => (
+                      <span
+                        key={a}
+                        className="rounded-full border-2 border-tinta bg-cielo px-2.5 py-0.5 font-alt text-[.76rem] font-extrabold"
+                      >
+                        🎈 {a}
+                      </span>
+                    ))}
+                  </div>
                 )}
 
                 <div className="mt-3.5 flex items-center gap-2 font-alt text-[.92rem] font-extrabold">
@@ -172,7 +179,7 @@ function FormularioComentario() {
   const [quien, setQuien] = useState("");
   const [texto, setTexto] = useState("");
   const [puntaje, setPuntaje] = useState(0);
-  const [articulo, setArticulo] = useState("");
+  const [articulos, setArticulos] = useState<string[]>([]);
   const [localidad, setLocalidad] = useState("");
   const [fechaEvento, setFechaEvento] = useState("");
   // Honeypot: un bot completa todos los campos; una persona no ve este.
@@ -206,7 +213,7 @@ function FormularioComentario() {
       quien,
       texto,
       puntaje: puntaje || undefined,
-      articulo: articulo || undefined,
+      articulos: articulos.length ? articulos : undefined,
       localidad: localidad || undefined,
       fechaEvento: fechaEvento || undefined,
     };
@@ -223,7 +230,7 @@ function FormularioComentario() {
       setQuien("");
       setTexto("");
       setPuntaje(0);
-      setArticulo("");
+      setArticulos([]);
       setLocalidad("");
       setFechaEvento("");
     } catch {
@@ -248,10 +255,17 @@ function FormularioComentario() {
           <p className={cn("whitespace-pre-wrap text-[.96rem] leading-[1.55] text-[#3c2f28]", enviado.puntaje && "mt-2")}>
             {enviado.texto}
           </p>
-          {enviado.articulo && (
-            <span className="mt-3 inline-block rounded-full border-2 border-tinta bg-cielo px-2.5 py-0.5 font-alt text-[.76rem] font-extrabold">
-              🎈 {enviado.articulo}
-            </span>
+          {enviado.articulos && enviado.articulos.length > 0 && (
+            <div className="mt-3 flex flex-wrap gap-1.5">
+              {enviado.articulos.map((a) => (
+                <span
+                  key={a}
+                  className="rounded-full border-2 border-tinta bg-cielo px-2.5 py-0.5 font-alt text-[.76rem] font-extrabold"
+                >
+                  🎈 {a}
+                </span>
+              ))}
+            </div>
           )}
           <div className="mt-3 font-alt text-[.9rem] font-extrabold">
             {enviado.quien}
@@ -321,22 +335,47 @@ function FormularioComentario() {
           <div className="mt-3.5 flex flex-col gap-4">
             <EstrellasElegibles valor={puntaje} onChange={setPuntaje} />
 
-            {/* Solo si hay inventario cargado: un select vacío es un callejón. */}
+            {/* Solo si hay inventario cargado: una lista vacía es un callejón.
+                Va con chips y no con un desplegable porque una fiesta puede
+                llevar varias cosas — mismo patrón que el `ReservaDialog` del
+                panel para elegir artículos. */}
             {nombresModelos.length > 0 && (
-              <div>
-                <label id="c-articulo-label" htmlFor="c-articulo" className={labelCls}>
-                  ¿Qué alquilaste?
-                </label>
-                <Select
-                  id="c-articulo"
-                  ariaLabelledBy="c-articulo-label"
-                  value={articulo}
-                  onChange={setArticulo}
-                  options={nombresModelos}
-                  placeholder="Elegí el inflable o juego"
-                  triggerClassName={inputCls}
-                />
-              </div>
+              <fieldset>
+                <legend className={labelCls}>¿Qué alquilaste?</legend>
+                <div className="flex flex-wrap gap-2">
+                  {nombresModelos.map((n) => {
+                    const elegido = articulos.includes(n);
+                    // El tope lo exige también la base (CHECK de cardinalidad).
+                    const tope = articulos.length >= LIMITES_COMENTARIO.articulos;
+                    return (
+                      <label
+                        key={n}
+                        className={cn(
+                          "inline-flex items-center gap-1.5 rounded-full border-3 border-tinta px-3 py-1.5 font-alt text-[.85rem] font-bold",
+                          elegido ? "bg-amarillo shadow-hard-sm" : "bg-white",
+                          !elegido && tope ? "cursor-not-allowed opacity-50" : "cursor-pointer"
+                        )}
+                      >
+                        <input
+                          type="checkbox"
+                          className="h-4 w-4 accent-rojo"
+                          checked={elegido}
+                          disabled={!elegido && tope}
+                          onChange={() =>
+                            setArticulos((prev) =>
+                              prev.includes(n) ? prev.filter((x) => x !== n) : [...prev, n]
+                            )
+                          }
+                        />
+                        {n}
+                      </label>
+                    );
+                  })}
+                </div>
+                <p className="mt-1.5 text-[.8rem] text-[#5a4a41]">
+                  Podés marcar más de uno.
+                </p>
+              </fieldset>
             )}
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">

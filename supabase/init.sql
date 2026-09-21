@@ -104,14 +104,21 @@ create table public.testimonios (
          check (estado in ('pendiente', 'aprobado', 'rechazado')),
   creado timestamptz not null default now(),
 
-  -- Opcionales: el visitante los completa o no. `articulo` y `localidad` son
+  -- Opcionales: el visitante los completa o no. `articulos` y `localidad` son
   -- TEXTO LIBRE y no FK aunque el formulario los ofrezca como lista armada con
   -- el inventario y las zonas reales — mismo criterio que `reservas.zona`: si
   -- mañana se renombra o se borra un artículo, el comentario tiene que seguir
   -- diciendo lo que esa persona alquiló. Cada uno lleva su CHECK porque el
   -- INSERT es público y la lista del formulario no protege nada.
   puntaje      smallint check (puntaje is null or puntaje between 1 and 5),
-  articulo     text     check (articulo is null or char_length(btrim(articulo)) between 1 and 80),
+  -- Una fiesta puede llevar varias cosas (el castillo Y el metegol). El array
+  -- se acota por cantidad Y por largo total: si no, se abusa con miles de
+  -- elementos o con pocos pero gigantes. Un CHECK no admite subconsultas, así
+  -- que no se puede acotar elemento por elemento.
+  articulos    text[] not null default '{}'
+               check (cardinality(articulos) <= 10
+                      and '' <> all(articulos)
+                      and char_length(array_to_string(articulos, ',')) <= 800),
   localidad    text     check (localidad is null or char_length(btrim(localidad)) between 2 and 60),
   -- Cota de cordura nada más: que sea pasada lo exige el formulario, no se
   -- puede expresar acá (`now()` no es inmutable y Postgres la rechaza).

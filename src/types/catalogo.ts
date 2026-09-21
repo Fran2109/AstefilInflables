@@ -32,7 +32,8 @@ export interface TestimonioPublico {
   creado: string;
   /** Opcionales: el visitante los completa o no al dejar el comentario. */
   puntaje?: number | null;
-  articulo?: string | null;
+  /** Puede haber alquilado varias cosas. Vacío = no lo dijo. */
+  articulos?: string[];
   localidad?: string | null;
   /** 'YYYY-MM-DD' — cuándo fue la fiesta. */
   fechaEvento?: string | null;
