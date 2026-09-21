@@ -347,6 +347,16 @@ Patrones no negociables:
   ocurren *dentro* del propio panel (`panelRef.current?.contains(e.target)` antes de cerrar) —
   si no, scrollear una lista larga de opciones (p. ej. las horas del `TimePicker`) cierra el
   panel antes de poder elegir algo.
+  **⚠️ Dentro de un `<dialog>` el portal NO puede ir a `document.body`**: un `<dialog>` abierto
+  con `showModal()` se pinta en el **top layer**, que va por encima de todo sin importar el
+  `z-index`, así que el panel quedaba detrás del diálogo y de su backdrop casi opaco — el
+  desplegable se abría (el chevron giraba) pero no se veía nada. `usePanelFlotante` devuelve
+  `contenedor`: el `<dialog>` más cercano al disparador, o `document.body`. Que siga andando
+  el `position: fixed` depende de que `dialog.visor` sea `fixed; inset: 0` a pantalla completa
+  (`index.css`); si deja de ocupar todo el viewport, los paneles se desalinean.
+  **Y Escape**: con un panel abierto el hook lo captura, lo frena (`preventDefault` +
+  `stopPropagation` en fase de captura) y cierra solo el panel. Sin eso, el `Modal` —que
+  también escucha Escape en `window`— cerraba el formulario entero y se perdía lo cargado.
 - **Imágenes ampliables**: toda imagen de contenido es clickeable — las individuales (heros,
   portadas) se **maximizan** en un lightbox, y los grupos de imágenes se ven como **carrousel**.
   Para fotos "sueltas" o galerías simples usar `VisorFotos` (`components/ui/visor-fotos.tsx`):

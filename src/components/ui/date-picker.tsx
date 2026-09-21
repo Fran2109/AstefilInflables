@@ -82,7 +82,7 @@ export function DatePicker({
   triggerClassName,
 }: Props) {
   const [open, setOpen] = useState(false);
-  const { refTrigger, refPanel, estilo } = usePanelFlotante({
+  const { refTrigger, refPanel, estilo, contenedor } = usePanelFlotante({
     abierto: open,
     cerrar: () => setOpen(false),
     ancho: 300,
@@ -219,7 +219,7 @@ export function DatePicker({
               </div>
             </div>
           </>,
-          document.body
+          contenedor
         )}
     </>
   );

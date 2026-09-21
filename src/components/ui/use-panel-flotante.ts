@@ -46,6 +46,37 @@ export function usePanelFlotante<P extends HTMLElement = HTMLDivElement>({
   const refTrigger = useRef<HTMLButtonElement>(null);
   const refPanel = useRef<P>(null);
   const [pos, setPos] = useState<Posicion | null>(null);
+  const [contenedor, setContenedor] = useState<HTMLElement | null>(null);
+
+  /*
+   * Dónde portalear el panel.
+   *
+   * Normalmente `document.body`, pero si el disparador está dentro de un
+   * `<dialog>` abierto con `showModal()` —todos los diálogos del panel admin—
+   * hay que portalear ADENTRO de ese `<dialog>`.
+   *
+   * El motivo: un `<dialog>` modal se pinta en el **top layer** del navegador,
+   * que va por encima de todo el contenido normal sin importar el `z-index`.
+   * Un panel en `document.body` queda debajo del diálogo y de su backdrop
+   * (que es casi opaco), así que el desplegable se abría de verdad —el
+   * chevron giraba— pero no se veía nada.
+   *
+   * Que siga funcionando el `position: fixed` depende de que `dialog.visor`
+   * sea `fixed; inset: 0` a pantalla completa (ver `index.css`): la animación
+   * `inflar` le deja un `transform` en identidad, que igual alcanza para que
+   * el diálogo sea el bloque contenedor de sus descendientes fijos. Como su
+   * caja coincide con el viewport, las coordenadas de `getBoundingClientRect`
+   * siguen dando bien. **Si algún día `.visor` deja de ocupar toda la
+   * pantalla, los paneles se desalinean** y hay que posicionarlos relativos
+   * al diálogo.
+   *
+   * Se calcula en un layout effect (corre antes del pintado, así que no hay
+   * parpadeo) y no durante el render, que leería una ref todavía vacía.
+   */
+  useLayoutEffect(() => {
+    if (!abierto) return;
+    setContenedor(refTrigger.current?.closest("dialog") ?? document.body);
+  }, [abierto]);
 
   // `cerrar` suele venir como lambda inline y cambiaría de identidad en cada
   // render; guardarla en una ref evita reinstalar los listeners todo el tiempo.
@@ -98,15 +129,30 @@ export function usePanelFlotante<P extends HTMLElement = HTMLDivElement>({
       if (refPanel.current?.contains(e.target as Node)) return;
       calcular();
     };
-    const alTeclear = (e: KeyboardEvent) => e.key === "Escape" && refCerrar.current();
+    /*
+     * Con un panel abierto, Escape significa "cerrá el panel" y nada más.
+     *
+     * Va en fase de CAPTURA y frena el evento a propósito: el `Modal` del
+     * admin también escucha Escape en `window` (y el `<dialog>` nativo cierra
+     * solo), así que sin esto un Escape para descartar el desplegable cerraba
+     * además el formulario entero y se perdía todo lo cargado. Capturar llega
+     * antes que los listeners en burbuja; `preventDefault` es para el cierre
+     * nativo del `<dialog>`.
+     */
+    const alTeclear = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      e.preventDefault();
+      e.stopPropagation();
+      refCerrar.current();
+    };
 
     window.addEventListener("scroll", alScrollear, true);
     window.addEventListener("resize", calcular);
-    window.addEventListener("keydown", alTeclear);
+    window.addEventListener("keydown", alTeclear, true);
     return () => {
       window.removeEventListener("scroll", alScrollear, true);
       window.removeEventListener("resize", calcular);
-      window.removeEventListener("keydown", alTeclear);
+      window.removeEventListener("keydown", alTeclear, true);
     };
   }, [abierto, calcular]);
 
@@ -115,5 +161,5 @@ export function usePanelFlotante<P extends HTMLElement = HTMLDivElement>({
     ? ({ position: "fixed", left: pos.left, top: pos.top, width: pos.width } as const)
     : ({ position: "fixed", visibility: "hidden" } as const);
 
-  return { refTrigger, refPanel, estilo };
+  return { refTrigger, refPanel, estilo, contenedor: contenedor ?? document.body };
 }

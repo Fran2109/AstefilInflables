@@ -38,6 +38,13 @@ verdad vs. placeholder).
 - [ ] Countdown honesto en la CTA final: "Quedan N sábados de <mes>" calculado real.
 
 ## P3 — Pulido
+- [ ] **`ReservaDialog` usa selectores nativos**: es el único formulario que quedó con
+      `<input type="date">`, `<input type="time">` (×2) y `<select>` nativos, que `CLAUDE.md`
+      prohíbe — sus popups usan el estilo del sistema operativo y no se pueden restylear.
+      Migrarlo a `DatePicker`, `TimePicker` y `Select` de `components/ui/`. Salió a la luz al
+      arreglar los desplegables dentro de diálogos: no estaban rotos, simplemente nunca se
+      migraron.
+
 - [x] Lightbox / visor de detalle por producto con galería.
 - [x] Visor de fotos genérico (`VisorFotos`) para heros y galerías de la quinta.
 - [ ] Scrollspy en el nav + header compacto al scrollear (el header ya es sticky).

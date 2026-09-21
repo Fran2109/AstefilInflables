@@ -42,7 +42,7 @@ export function Select({
   triggerClassName,
 }: Props) {
   const [open, setOpen] = useState(false);
-  const { refTrigger, refPanel, estilo } = usePanelFlotante<HTMLUListElement>({
+  const { refTrigger, refPanel, estilo, contenedor } = usePanelFlotante<HTMLUListElement>({
     abierto: open,
     cerrar: () => setOpen(false),
   });
@@ -103,7 +103,7 @@ export function Select({
               ))}
             </ul>
           </>,
-          document.body
+          contenedor
         )}
     </>
   );

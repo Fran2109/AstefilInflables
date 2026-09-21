@@ -25,7 +25,7 @@ const MINUTOS = Array.from({ length: 12 }, (_, i) => String(i * 5).padStart(2, "
  */
 export function TimePicker({ value, onChange, id, ariaLabel, placeholder, triggerClassName }: Props) {
   const [open, setOpen] = useState(false);
-  const { refTrigger, refPanel, estilo } = usePanelFlotante({
+  const { refTrigger, refPanel, estilo, contenedor } = usePanelFlotante({
     abierto: open,
     cerrar: () => setOpen(false),
     ancho: 190,
@@ -133,7 +133,7 @@ export function TimePicker({ value, onChange, id, ariaLabel, placeholder, trigge
               </div>
             </div>
           </>,
-          document.body
+          contenedor
         )}
     </>
   );
