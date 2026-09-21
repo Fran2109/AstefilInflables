@@ -5,6 +5,7 @@ import { Logo } from "@/components/layout/Logo";
 import { Button } from "@/components/ui/button";
 import { scrollAId } from "@/lib/scroll";
 import { linkWhatsApp, mensajeConsulta } from "@/lib/whatsapp";
+import { cn } from "@/lib/utils";
 
 /**
  * Un link del nav: o scrollea a una sección de la página, o navega a otra
@@ -18,6 +19,7 @@ type LinkNav =
 const LINKS_LANDING: LinkNav[] = [
   { id: "catalogo", label: "Catálogo" },
   { id: "fotos", label: "Fotos" },
+  { id: "comentarios", label: "Comentarios" },
   { id: "cotizar", label: "Cotizá" },
   { id: "zonas", label: "Zonas" },
   { id: "faq", label: "Preguntas" },
@@ -42,14 +44,25 @@ export function Header() {
   // por frames porque el montaje puede tardar más de uno).
   const irSeccion = (id: string) => {
     setAbierto(false);
-    if (document.getElementById(id)) return scrollAId(id);
-    navigate("/");
-    let intentos = 0;
-    const intentar = () => {
+
+    const scrollear = () => {
       if (document.getElementById(id)) return scrollAId(id);
-      if (++intentos < 60) requestAnimationFrame(intentar);
+      navigate("/");
+      let intentos = 0;
+      const intentar = () => {
+        if (document.getElementById(id)) return scrollAId(id);
+        if (++intentos < 60) requestAnimationFrame(intentar);
+      };
+      requestAnimationFrame(intentar);
     };
-    requestAnimationFrame(intentar);
+
+    // Doble rAF antes de medir: el menú desplegable ocupa alto real, y
+    // scrollear en el mismo tick calcula el destino con el menú TODAVÍA
+    // abierto. Cuando React lo desmonta, la página se corre hacia arriba esa
+    // misma altura y la sección termina fuera de pantalla — medido a 820px,
+    // el scroll se pasaba 482px y caías después de la sección. Un frame
+    // aplica el re-render y el otro deja el layout ya asentado.
+    requestAnimationFrame(() => requestAnimationFrame(scrollear));
   };
 
   const irRuta = (ruta: string) => {
@@ -62,6 +75,24 @@ export function Header() {
   };
 
   const ir = (l: LinkNav) => (l.ruta !== undefined ? irRuta(l.ruta) : irSeccion(l.id));
+
+  /*
+   * A partir de qué ancho se muestra la fila de chips en vez de la
+   * hamburguesa, según cuántos links tenga el nav de esta ruta.
+   *
+   * El de la landing son 7 y, con el logo y el botón de WhatsApp en la misma
+   * fila, no entran a lo ancho de una tablet: medido, desborda abajo de 1024px
+   * — y ya desbordaba entre 768 y 900px ANTES de sumar "Comentarios", metiendo
+   * scroll horizontal en toda la página. Ahí abajo va la hamburguesa, que para
+   * esos anchos es mejor que una fila rota. El de /quinta son 3 y entran
+   * cómodos desde `md`, así que no tiene por qué pagar el mismo precio.
+   *
+   * Las clases van completas y no armadas por concatenación: Tailwind no ve
+   * las que se construyen en runtime y las purgaría del build.
+   * Al sumar o sacar un link, volver a medir.
+   */
+  const navLargo = links.length > 4;
+  const ocultarEnNav = navLargo ? "lg:hidden" : "md:hidden";
 
   return (
     <header className="sticky top-0 z-[60] border-b-3 border-tinta bg-papel">
@@ -79,29 +110,44 @@ export function Header() {
           onClick={() => setAbierto((v) => !v)}
           aria-label="Abrir menú"
           aria-expanded={abierto}
-          className="rounded-xl border-3 border-tinta bg-amarillo p-2 shadow-hard-sm md:hidden"
+          className={cn("rounded-xl border-3 border-tinta bg-amarillo p-2 shadow-hard-sm", ocultarEnNav)}
         >
           <Menu strokeWidth={3} />
         </button>
 
-        {/* Links desktop */}
-        <nav className="hidden items-center gap-1.5 md:flex">
+        {/* Links desktop (ver `navLargo` arriba para el porqué del breakpoint) */}
+        <nav
+          className={cn(
+            "hidden items-center",
+            navLargo ? "gap-1 lg:flex xl:gap-1.5" : "gap-1.5 md:flex"
+          )}
+        >
           {links.map((l) => (
             <button
               key={l.label}
               onClick={() => ir(l)}
-              className={`whitespace-nowrap rounded-full border-3 px-3.5 py-2 font-alt text-[.98rem] font-bold transition ${
+              className={cn(
+                "whitespace-nowrap rounded-full border-3 py-2 font-alt font-bold transition",
+                // El nav largo entra apretado hasta `xl`; el corto no lo necesita.
+                navLargo
+                  ? "px-2 text-[.86rem] xl:px-3.5 xl:text-[.98rem]"
+                  : "px-3.5 text-[.98rem]",
                 l.destacado
                   ? "border-tinta bg-amarillo shadow-hard-sm hover:-translate-y-0.5 hover:bg-rosa"
                   : "border-transparent transition-colors hover:border-tinta hover:bg-amarillo"
-              }`}
+              )}
             >
               {l.label}
             </button>
           ))}
         </nav>
 
-        <Button asChild variant="verde" size="chico" className="hidden md:inline-flex">
+        <Button
+          asChild
+          variant="verde"
+          size="chico"
+          className={cn("hidden", navLargo ? "lg:inline-flex" : "md:inline-flex")}
+        >
           <a href={linkWhatsApp(mensajeConsulta(pathname))} target="_blank" rel="noopener">
             WhatsApp
           </a>
@@ -110,7 +156,7 @@ export function Header() {
 
       {/* Menú mobile desplegable */}
       {abierto && (
-        <div className="flex flex-col gap-3 border-b-3 border-tinta bg-papel px-[18px] pb-5 pt-4 md:hidden">
+        <div className={cn("flex flex-col gap-3 border-b-3 border-tinta bg-papel px-[18px] pb-5 pt-4", ocultarEnNav)}>
           {links.map((l) => (
             <button
               key={l.label}
