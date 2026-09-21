@@ -61,7 +61,8 @@ puerto 5173). El screenshot a veces se cuelga en `/admin`; ahí inspeccionar el 
   + Storage + seed mínimo) y es el "molde" canónico — para resetear una base sucia, correrlo
   (⚠ borra reservas; NO toca `auth.users`). El resto de los `.sql` en `supabase/` son
   migraciones puntuales/aditivas ya fusionadas en `init.sql` (roles, storage de fotos, medidas
-  con turbina, zonas, `articulos-rename.sql`, `notas-internas.sql`, `eliminar_tabla_fotos.sql`)
+  con turbina, zonas, `articulos-rename.sql`, `notas-internas.sql`, `eliminar_tabla_fotos.sql`,
+  `eliminar_tabla_productos.sql`, `revocar_escritura_catalogo.sql`)
   para aplicar a una base ya viva sin perder datos, más `reset.sql` (borra todo, sin
   reconstruir — usar antes de un `init.sql` limpio). Se corren a mano en Supabase → SQL
   Editor. Al cambiar el esquema, actualizar `init.sql` para que la reconstrucción siga fiel.
@@ -83,6 +84,18 @@ puerto 5173). El screenshot a veces se cuelga en `/admin`; ahí inspeccionar el 
 - **RLS por rol** (ver "Roles"): catálogo → lectura pública, escritura solo admin; inventario
   y config → lectura de cualquier logueado, escritura solo admin; reservas → cualquier
   logueado; perfiles → cada uno el suyo, admin todos.
+- **⚠️ Las vistas no las protege la RLS de la tabla de abajo.** `catalogo_articulos` corre con
+  los permisos de su dueño (no es `security_invoker`) para poder exponer los artículos activos
+  sin sesión y sin el precio. Como es un `select` de una sola tabla, Postgres la considera
+  **auto-actualizable**, así que aceptaba INSERT/UPDATE/DELETE y los aplicaba a `articulos`
+  **sin pasar por la RLS** — con la anon key pública, que es justamente pública. Se cierra con
+  un `revoke` explícito (está en `init.sql` sección 4 y en `revocar_escritura_catalogo.sql`),
+  que **no es redundante** con el `grant select`: los default privileges de Supabase ya le
+  dieron todo a `anon`/`authenticated` al crear la vista. Al agregar una vista nueva sobre una
+  tabla con RLS, revocarle la escritura. Chequear con el linter (`get_advisors` type=security).
+  Ese linter igual va a seguir marcando `security_definer_view` en ERROR y **es esperable**:
+  marca la propiedad, no si se puede explotar. **No “arreglarlo” con `security_invoker = on`**,
+  que deja la landing sin catálogo.
 
 ## Arquitectura — admin (`src/admin/`)
 

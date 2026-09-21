@@ -28,6 +28,11 @@
 --   • Público (lectura): categorias, zonas, testimonios + vista
 --     catalogo_articulos. Escritura solo con sesión iniciada.
 --   • Privado (solo con sesión): articulos, reservas, config.
+--   • La RLS es la única compuerta real, así que los grants amplios que
+--     Supabase da por defecto a anon/authenticated están bien EN TABLAS. En
+--     una VISTA no: la RLS de la tabla de abajo no la frena si la vista corre
+--     como su dueño. Por eso `catalogo_articulos` lleva un revoke explícito
+--     (sección 4) — sin él, la anon key podía escribir en `articulos`.
 --
 -- Nombres: columnas en snake_case (convención Postgres); la app mapea a camelCase.
 -- ============================================================================
@@ -257,6 +262,24 @@ create view public.catalogo_articulos as
   where activo = true;
 
 grant select on public.catalogo_articulos to anon, authenticated;
+
+-- ⚠️ El revoke NO es redundante con el grant de arriba: Supabase tiene default
+-- privileges sobre el esquema `public` que le dan TODOS los privilegios a
+-- `anon` y `authenticated` apenas se crea la vista. El `grant select` suma
+-- sobre eso, no reemplaza.
+--
+-- Y esta vista no es un simple lector: al ser `select` de una sola tabla es
+-- **auto-actualizable**, y al no ser `security_invoker` corre con los permisos
+-- de su dueño (`postgres`). Las dos cosas juntas dejaban a cualquiera con la
+-- anon key pública insertar, editar y BORRAR en `articulos` a través de ella,
+-- salteándose la política "escritura admin". Verificado contra la base real.
+--
+-- La vista es de solo lectura por diseño (el panel escribe directo contra
+-- `articulos`), así que le sacamos la escritura y queda el SELECT, que es su
+-- razón de ser. No se puede arreglar con `security_invoker = on`: ahí la
+-- lectura pública se rompe, porque `articulos` solo la permite con sesión —
+-- que es justamente el motivo por el que esta vista existe.
+revoke insert, update, delete, truncate on public.catalogo_articulos from anon, authenticated;
 
 -- ----------------------------------------------------------------------------
 -- 5. STORAGE — fotos por modelo (bucket público `inflables`; el nombre queda

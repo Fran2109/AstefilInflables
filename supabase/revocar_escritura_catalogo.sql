@@ -1,0 +1,46 @@
+-- ============================================================================
+-- Astefil — Cerrar la escritura anónima a través de `catalogo_articulos`
+-- ============================================================================
+-- Corré esto en Supabase → SQL Editor → New query → Run.
+-- Ya aplicado en el proyecto `AstefilInflables`; queda acá para cualquier otra
+-- base creada con un `init.sql` anterior a este arreglo.
+--
+-- EL PROBLEMA
+-- `catalogo_articulos` es la ventana pública al inventario: expone las columnas
+-- seguras de los artículos activos (sin `precio`) para que la landing liste
+-- modelos sin sesión. Para eso corre con los permisos de su dueño (`postgres`),
+-- porque `articulos` solo permite lectura a usuarios logueados.
+--
+-- El detalle: al ser un `select` de una sola tabla, la vista es
+-- **auto-actualizable** — Postgres acepta INSERT/UPDATE/DELETE sobre ella y los
+-- traduce a la tabla de abajo. Y como corre como su dueño, esas escrituras NO
+-- pasan por la RLS de `articulos`. Sumado a los default privileges de Supabase
+-- (que le dan todos los privilegios a `anon` y `authenticated` apenas se crea
+-- la vista), cualquiera con la anon key pública podía insertar, editar y borrar
+-- artículos, salteándose la política "escritura admin".
+--
+-- Verificado contra la base real antes y después de este arreglo.
+--
+-- POR QUÉ NO SE ARREGLA CON security_invoker
+-- `alter view ... set (security_invoker = on)` haría que la vista corra con los
+-- permisos de quien consulta, y ahí un visitante anónimo dejaría de poder leer
+-- el catálogo: es exactamente lo que la vista viene a resolver. Además, una
+-- política de lectura pública sobre `articulos` no sirve de reemplazo, porque
+-- la RLS filtra filas, no columnas, y expondría el precio.
+--
+-- LA SOLUCIÓN
+-- La vista es de solo lectura por diseño: el panel escribe directo contra
+-- `articulos`. Le sacamos la escritura y queda el SELECT.
+--
+-- No afecta al admin (escribe contra la tabla, no contra la vista) ni a la
+-- landing (solo lee). `service_role` conserva todos sus privilegios: es la key
+-- de servidor y saltea RLS por diseño.
+--
+-- OJO: el linter de Supabase va a SEGUIR marcando `security_definer_view` en
+-- nivel ERROR después de esto, y está bien. Marca la propiedad, no si se puede
+-- explotar: la vista sigue corriendo como su dueño, que es lo que queremos. No
+-- "arreglar" esa advertencia poniendo `security_invoker = on` — eso deja la
+-- landing sin catálogo (ver arriba). Lo que se cierra acá es la escritura.
+-- ============================================================================
+
+revoke insert, update, delete, truncate on public.catalogo_articulos from anon, authenticated;
