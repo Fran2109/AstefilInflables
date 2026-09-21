@@ -117,6 +117,15 @@ puerto 5173). El screenshot a veces se cuelga en `/admin`; ahí inspeccionar el 
 
 ## Arquitectura — admin (`src/admin/`)
 
+- **⚠️ El fondo de la página en `/admin`**: `body` lleva el fondo de la **landing** (celeste +
+  tres círculos blancos, en `index.css`) y eso pinta el lienzo entero del documento. El panel
+  es un `div` con `bg-papel`: solo pinta SU caja, así que cualquier franja que no llegue a
+  cubrir dejaba ver el celeste asomando abajo (el "óvalo" que aparecía era el gradiente
+  `circle at 40% 90%`). `AdminPage` pone `data-panel` en el `body` mientras está montado y
+  `body[data-panel]` lo pasa a papel sin gradientes — así no depende de que las alturas den
+  exactas. **No resolverlo estirando alturas**: el problema reaparece con otro zoom, otra
+  barra de scroll o el rebote del scroll. Si se agrega otra ruta de "app" (no landing),
+  darle el mismo tratamiento.
 - **Data layer** (`lib/db.ts`): capa relacional contra Supabase (mappers + CRUD por entidad).
   Reemplaza al adaptador `store` cuando `haySupabase`. Asume sesión iniciada (RLS).
 - **Estado** (`store/AdminContext.tsx`): mantiene reservas/inventario/config/categorías/zonas/rol.

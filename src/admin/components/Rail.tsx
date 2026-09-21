@@ -54,7 +54,11 @@ export function Rail({ activa, onCambiar }: RailProps) {
   };
 
   return (
-    <nav className="sticky top-0 flex h-screen flex-col gap-2 border-r-3 border-tinta bg-papel px-3.5 py-[18px] max-md:fixed max-md:inset-x-0 max-md:bottom-0 max-md:top-auto max-md:z-50 max-md:h-auto max-md:flex-row max-md:justify-around max-md:border-r-0 max-md:border-t-3 max-md:px-2.5 max-md:py-2">
+    /* `overflow-y-auto`: la caja es `h-screen`, pero su contenido (logo + 8
+       pestañas + cerrar sesión + chip) pasa los 590px. En una ventana baja
+       eso dejaba las últimas pestañas fuera de la caja; ahora el propio rail
+       scrollea. En una ventana normal no se nota. */
+    <nav className="sticky top-0 flex h-screen flex-col gap-2 overflow-y-auto border-r-3 border-tinta bg-papel px-3.5 py-[18px] max-md:fixed max-md:inset-x-0 max-md:bottom-0 max-md:top-auto max-md:z-50 max-md:h-auto max-md:flex-row max-md:justify-around max-md:overflow-visible max-md:border-r-0 max-md:border-t-3 max-md:px-2.5 max-md:py-2">
       <div className="flex items-center gap-2.5 px-1.5 pb-4 pt-1 max-md:hidden">
         <MarcaSvg />
         <div>

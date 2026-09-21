@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { Articulo, Categoria, Reserva, Zona } from "@/admin/types";
 import { AdminProvider, useAdmin } from "@/admin/store/AdminContext";
 import { Rail, type Vista } from "@/admin/components/Rail";
@@ -22,6 +22,28 @@ import { EquipoView } from "@/admin/views/EquipoView";
 import { AjustesView } from "@/admin/views/AjustesView";
 
 export function AdminPage() {
+  /*
+   * El panel se adueña del fondo de la página mientras está montado.
+   *
+   * `body` lleva el fondo de la LANDING (celeste + tres círculos blancos, ver
+   * `index.css`), y eso pinta el lienzo entero del documento. El panel es un
+   * `div` con `bg-papel`, así que solo pinta SU caja: cualquier franja de
+   * documento que no llegue a cubrir —por redondeo de `100dvh`, por la barra
+   * de scroll, por el rebote del scroll, por zoom del navegador— deja ver el
+   * celeste y uno de esos círculos asomando abajo. Que el `body` mismo sea
+   * papel en esta ruta vuelve el problema imposible, sin depender de que las
+   * alturas den exactas.
+   *
+   * Va acá y no en `AdminInner` para que cubra también el login, el gate de
+   * PIN y la pantalla de carga, que se renderizan antes.
+   */
+  useEffect(() => {
+    document.body.dataset.panel = "";
+    return () => {
+      delete document.body.dataset.panel;
+    };
+  }, []);
+
   return (
     <AdminProvider>
       <ConfirmProvider>

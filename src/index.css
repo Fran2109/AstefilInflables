@@ -97,6 +97,17 @@
     overflow-x: hidden;
   }
 
+  /*
+   * En /admin el fondo del documento es papel, no el celeste de la landing.
+   * Lo activa `AdminPage` poniendo `data-panel` en el body mientras está
+   * montado. Sin esto, cualquier franja que el panel no llegue a cubrir deja
+   * ver el celeste y los círculos blancos de arriba.
+   */
+  body[data-panel] {
+    background: var(--papel);
+    background-image: none;
+  }
+
   img {
     display: block;
     max-width: 100%;
