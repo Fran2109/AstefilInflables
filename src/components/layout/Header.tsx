@@ -19,10 +19,10 @@ type LinkNav =
 const LINKS_LANDING: LinkNav[] = [
   { id: "catalogo", label: "Catálogo" },
   { id: "fotos", label: "Fotos" },
-  { id: "comentarios", label: "Comentarios" },
+  { id: "comentarios", label: "Opiniones" },
   { id: "cotizar", label: "Cotizá" },
   { id: "zonas", label: "Zonas" },
-  { id: "faq", label: "Preguntas" },
+  { id: "faq", label: "FAQ" },
   { ruta: "/quinta", label: "Quinta 🌳", destacado: true },
 ];
 
@@ -77,26 +77,26 @@ export function Header() {
   const ir = (l: LinkNav) => (l.ruta !== undefined ? irRuta(l.ruta) : irSeccion(l.id));
 
   /*
-   * A partir de qué ancho se muestra la fila de chips en vez de la
-   * hamburguesa, según cuántos links tenga el nav de esta ruta.
+   * El nav de la landing son 7 chips y el de /quinta 3: el largo entra en una
+   * tablet sólo si se lo aprieta.
    *
-   * El de la landing son 7 y, con el logo y el botón de WhatsApp en la misma
-   * fila, no entran a lo ancho de una tablet: medido, desborda abajo de 1024px
-   * — y ya desbordaba entre 768 y 900px ANTES de sumar "Comentarios", metiendo
-   * scroll horizontal en toda la página. Ahí abajo va la hamburguesa, que para
-   * esos anchos es mejor que una fila rota. El de /quinta son 3 y entran
-   * cómodos desde `md`, así que no tiene por qué pagar el mismo precio.
+   * El presupuesto, medido a 768px: el contenedor útil es 728px y el logo se
+   * lleva 171px, así que entre el nav y el botón de WhatsApp queda poco. De
+   * ahí las tres decisiones de abajo, que juntas hacen entrar la fila: chips
+   * chicos hasta `xl`, etiquetas cortas (FAQ, Opiniones) y el botón de
+   * WhatsApp reducido a su ícono hasta `lg`.
    *
    * Las clases van completas y no armadas por concatenación: Tailwind no ve
    * las que se construyen en runtime y las purgaría del build.
-   * Al sumar o sacar un link, volver a medir.
+   *
+   * ⚠️ Al sumar o sacar un link, volver a medir el desborde de la fila a
+   * 768px — es el ancho donde aparece y el que menos margen tiene.
    */
   const navLargo = links.length > 4;
-  const ocultarEnNav = navLargo ? "lg:hidden" : "md:hidden";
 
   return (
     <header className="sticky top-0 z-[60] border-b-3 border-tinta bg-papel">
-      <div className="container flex items-center justify-between gap-4 py-2.5">
+      <div className="container flex items-center justify-between gap-2 py-2.5 lg:gap-4">
         <button
           onClick={() => irSeccion("inicio")}
           aria-label="Astefil Inflables — inicio"
@@ -110,7 +110,7 @@ export function Header() {
           onClick={() => setAbierto((v) => !v)}
           aria-label="Abrir menú"
           aria-expanded={abierto}
-          className={cn("rounded-xl border-3 border-tinta bg-amarillo p-2 shadow-hard-sm", ocultarEnNav)}
+          className="rounded-xl border-3 border-tinta bg-amarillo p-2 shadow-hard-sm md:hidden"
         >
           <Menu strokeWidth={3} />
         </button>
@@ -119,7 +119,7 @@ export function Header() {
         <nav
           className={cn(
             "hidden items-center",
-            navLargo ? "gap-1 lg:flex xl:gap-1.5" : "gap-1.5 md:flex"
+            navLargo ? "gap-1 md:flex xl:gap-1.5" : "gap-1.5 md:flex"
           )}
         >
           {links.map((l) => (
@@ -130,7 +130,7 @@ export function Header() {
                 "whitespace-nowrap rounded-full border-3 py-2 font-alt font-bold transition",
                 // El nav largo entra apretado hasta `xl`; el corto no lo necesita.
                 navLargo
-                  ? "px-2 text-[.86rem] xl:px-3.5 xl:text-[.98rem]"
+                  ? "px-1.5 text-[.82rem] lg:px-2 lg:text-[.86rem] xl:px-3.5 xl:text-[.98rem]"
                   : "px-3.5 text-[.98rem]",
                 l.destacado
                   ? "border-tinta bg-amarillo shadow-hard-sm hover:-translate-y-0.5 hover:bg-rosa"
@@ -142,21 +142,31 @@ export function Header() {
           ))}
         </nav>
 
-        <Button
-          asChild
-          variant="verde"
-          size="chico"
-          className={cn("hidden", navLargo ? "lg:inline-flex" : "md:inline-flex")}
-        >
-          <a href={linkWhatsApp(mensajeConsulta(pathname))} target="_blank" rel="noopener">
-            WhatsApp
+        {/* Con el nav largo el botón se reduce a su ícono hasta `lg`: con la
+            palabra entera ocupa 115px y la fila no entra en una tablet. El
+            `aria-label` mantiene el nombre accesible cuando el texto no está. */}
+        <Button asChild variant="verde" size="chico" className="hidden md:inline-flex">
+          <a
+            href={linkWhatsApp(mensajeConsulta(pathname))}
+            target="_blank"
+            rel="noopener"
+            aria-label="Escribinos por WhatsApp"
+          >
+            {navLargo ? (
+              <>
+                <MessageCircle className="h-[18px] w-[18px] lg:hidden" />
+                <span className="hidden lg:inline">WhatsApp</span>
+              </>
+            ) : (
+              "WhatsApp"
+            )}
           </a>
         </Button>
       </div>
 
       {/* Menú mobile desplegable */}
       {abierto && (
-        <div className={cn("flex flex-col gap-3 border-b-3 border-tinta bg-papel px-[18px] pb-5 pt-4", ocultarEnNav)}>
+        <div className="flex flex-col gap-3 border-b-3 border-tinta bg-papel px-[18px] pb-5 pt-4 md:hidden">
           {links.map((l) => (
             <button
               key={l.label}

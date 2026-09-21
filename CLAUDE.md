@@ -253,13 +253,19 @@ puerto 5173). El screenshot a veces se cuelga en `/admin`; ahí inspeccionar el 
   muestra un nav distinto por ruta (landing: sus secciones + "Quinta 🌳" al final como chip
   destacado en amarillo; `/quinta`: Catálogo/Fotos/Consultá). Un link de sección scrollea
   en la página actual si el id existe; si no, vuelve a `/` y scrollea al montarse.
-  **Dos cosas medidas que no hay que romper**: (1) el breakpoint de la fila de chips sale de
-  `links.length` (`navLargo`) — el nav de la landing son 7 y no entran arriba de una tablet,
-  así que aparece en `lg` y los chips van apretados hasta `xl`; el de `/quinta` son 3 y entra
-  desde `md`. Al sumar o sacar un link, **volver a medir el desborde** de la fila. (2) el
-  scroll va detrás de un doble `requestAnimationFrame`: el menú desplegable ocupa alto real y
-  scrollear en el mismo tick calcula el destino con el menú abierto, dejando la sección fuera
-  de pantalla (estuvo roto en mobile para todos los links, ~415px de más). El logo
+  **Dos cosas medidas que no hay que romper**:
+  (1) **La fila entra justo a 768px**, que es donde aparecen los chips y el ancho con menos
+  margen. El presupuesto ahí es 728px de contenedor, de los cuales el logo se lleva 171px.
+  Que los 7 chips de la landing entren depende de tres cosas juntas (`navLargo` en
+  `Header.tsx`): chips apretados hasta `xl`, etiquetas cortas (**"Opiniones"** y **"FAQ"**, no
+  "Comentarios" ni "Preguntas" — el nav es el único lugar donde se acortan; el panel y la
+  sección siguen diciendo Comentarios) y el botón de WhatsApp reducido a su ícono hasta `lg`
+  (con `aria-label`, que es lo que le da nombre accesible sin texto). El nav de `/quinta` son
+  3 links y no necesita nada de eso. **Al sumar, sacar o renombrar un link, volver a medir el
+  desborde de la fila a 768px** — alcanzaba con sumar uno para romperlo.
+  (2) El scroll va detrás de un doble `requestAnimationFrame`: el menú desplegable ocupa alto
+  real y scrollear en el mismo tick calcula el destino con el menú abierto, dejando la sección
+  fuera de pantalla (estuvo roto en mobile para todos los links, ~415px de más). El logo
   scrollea al tope de la página actual (ambas tienen `id="inicio"` en su `<main>`).
 - **Placeholders de foto** (`lib/placeholder.ts` → `fotoPlaceholder`): SVG on-brand generado en
   el cliente (sin red), determinístico por clave, para cualquier card sin foto real todavía.
