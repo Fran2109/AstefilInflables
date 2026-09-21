@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Check, Clock, Trash2, X } from "lucide-react";
+import { Check, Clock, Star, Trash2, X } from "lucide-react";
 import type { EstadoTestimonio, Testimonio } from "@/admin/types";
 import { useAdmin } from "@/admin/store/AdminContext";
 import { useConfirmar } from "@/admin/components/Confirm";
@@ -138,9 +138,50 @@ export function TestimoniosView() {
                       </span>
                     </div>
 
+                    {t.puntaje ? (
+                      <div
+                        className="mb-1.5 flex gap-0.5"
+                        aria-label={`${t.puntaje} de 5 estrellas`}
+                      >
+                        {[1, 2, 3, 4, 5].map((n) => (
+                          <Star
+                            key={n}
+                            aria-hidden="true"
+                            strokeWidth={2.5}
+                            className={cn(
+                              "h-4 w-4",
+                              n <= t.puntaje! ? "fill-amarillo text-tinta" : "fill-none text-gris"
+                            )}
+                          />
+                        ))}
+                      </div>
+                    ) : null}
+
                     <p className="whitespace-pre-wrap text-[.95rem] leading-[1.5] text-[#3c2f28]">
                       {t.texto}
                     </p>
+
+                    {/* Los datos opcionales que haya completado. Se muestran solo
+                        si están: un comentario sin ninguno es igual de válido. */}
+                    {(t.articulo || t.localidad || t.fechaEvento) && (
+                      <div className="mt-2.5 flex flex-wrap gap-1.5">
+                        {t.articulo && (
+                          <span className="rounded-full border-2 border-tinta bg-cielo px-2.5 py-0.5 font-alt text-[.74rem] font-extrabold">
+                            🎈 {t.articulo}
+                          </span>
+                        )}
+                        {t.localidad && (
+                          <span className="rounded-full border-2 border-tinta bg-white px-2.5 py-0.5 font-alt text-[.74rem] font-extrabold">
+                            📍 {t.localidad}
+                          </span>
+                        )}
+                        {t.fechaEvento && (
+                          <span className="rounded-full border-2 border-tinta bg-white px-2.5 py-0.5 font-alt text-[.74rem] font-extrabold">
+                            📅 {t.fechaEvento.split("-").reverse().join("/")}
+                          </span>
+                        )}
+                      </div>
+                    )}
 
                     <div className="mt-3.5 flex flex-wrap gap-2">
                       {t.estado !== "aprobado" && (

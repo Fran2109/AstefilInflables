@@ -71,8 +71,19 @@ export async function cargarCatalogo(): Promise<CatalogoData | null> {
 
 // ---- Comentarios de la landing ----
 
-/** Límites que la base también valida con CHECK (ver `testimonios-moderacion.sql`). */
-export const LIMITES_COMENTARIO = { texto: 600, quien: 60 } as const;
+/** Límites que la base también valida con CHECK (ver los .sql de `testimonios`). */
+export const LIMITES_COMENTARIO = { texto: 600, quien: 60, localidad: 60, articulo: 80 } as const;
+
+/** Los datos que puede mandar un visitante. Solo `quien` y `texto` son obligatorios. */
+export interface ComentarioNuevo {
+  quien: string;
+  texto: string;
+  puntaje?: number;
+  articulo?: string;
+  localidad?: string;
+  /** 'YYYY-MM-DD'. */
+  fechaEvento?: string;
+}
 
 /**
  * Los comentarios aprobados, del más reciente al más antiguo.
@@ -85,10 +96,13 @@ export async function cargarTestimonios(): Promise<TestimonioPublico[]> {
   if (!supabase) return [];
   const { data, error } = await supabase
     .from("testimonios")
-    .select("id, texto, quien, creado")
+    .select("id, texto, quien, creado, puntaje, articulo, localidad, fecha_evento")
     .order("creado", { ascending: false });
   if (error) throw error;
-  return data as TestimonioPublico[];
+  // `fecha_evento` es la única columna con nombre distinto entre DB y app.
+  return (data as (Omit<TestimonioPublico, "fechaEvento"> & { fecha_evento: string | null })[]).map(
+    ({ fecha_evento, ...resto }) => ({ ...resto, fechaEvento: fecha_evento })
+  );
 }
 
 /**
@@ -105,10 +119,21 @@ export async function cargarTestimonios(): Promise<TestimonioPublico[]> {
  * de la política lo clava en `pendiente`. Mandarlo desde el cliente sugeriría
  * que es el cliente quien decide, y no lo es.
  */
-export async function enviarTestimonio(quien: string, texto: string): Promise<void> {
+export async function enviarTestimonio(c: ComentarioNuevo): Promise<void> {
   if (!supabase) throw new Error("Supabase no está configurado");
-  const { error } = await supabase
-    .from("testimonios")
-    .insert({ quien: quien.trim(), texto: texto.trim() });
+  // Los opcionales vacíos van como `null`, no como "": un string vacío
+  // reventaría contra el CHECK de longitud de la base.
+  const limpio = (v?: string) => {
+    const t = v?.trim();
+    return t ? t : null;
+  };
+  const { error } = await supabase.from("testimonios").insert({
+    quien: c.quien.trim(),
+    texto: c.texto.trim(),
+    puntaje: c.puntaje ?? null,
+    articulo: limpio(c.articulo),
+    localidad: limpio(c.localidad),
+    fecha_evento: limpio(c.fechaEvento),
+  });
   if (error) throw error;
 }

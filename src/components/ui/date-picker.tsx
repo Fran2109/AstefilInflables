@@ -20,6 +20,12 @@ interface Props {
    */
   ariaLabelledBy?: string;
   placeholder?: string;
+  /**
+   * Fecha máxima elegible, 'YYYY-MM-DD'. Los días posteriores quedan
+   * deshabilitados. Lo usa el formulario de comentarios: una opinión habla de
+   * una fiesta que ya pasó, así que no tiene sentido ofrecer fechas futuras.
+   */
+  max?: string;
   /** Clases del botón disparador (define el estilo del "campo" en cada contexto). */
   triggerClassName: string;
 }
@@ -72,6 +78,7 @@ export function DatePicker({
   id,
   ariaLabelledBy,
   placeholder,
+  max,
   triggerClassName,
 }: Props) {
   const [open, setOpen] = useState(false);
@@ -164,16 +171,21 @@ export function DatePicker({
                   const delMes = d.getMonth() === vista.getMonth();
                   const esHoy = iso === hoyISO;
                   const esElegido = iso === value;
+                  // Comparar los ISO como texto alcanza: 'YYYY-MM-DD' ordena
+                  // igual lexicográfica que cronológicamente.
+                  const bloqueado = !!max && iso > max;
                   return (
                     <button
                       key={iso}
                       type="button"
                       onClick={() => elegir(d)}
+                      disabled={bloqueado}
                       aria-label={iso}
                       aria-current={esHoy ? "date" : undefined}
                       aria-selected={esElegido}
                       className={cn(
-                        "flex h-8 w-8 items-center justify-center rounded-lg text-[.85rem] font-body hover:bg-cielo",
+                        "flex h-8 w-8 items-center justify-center rounded-lg text-[.85rem] font-body enabled:hover:bg-cielo",
+                        bloqueado && "cursor-not-allowed text-gris opacity-30",
                         !delMes && "text-gris opacity-50",
                         esHoy && !esElegido && "border-2 border-azul font-extrabold",
                         esElegido && "border-2 border-tinta bg-amarillo font-extrabold"

@@ -63,7 +63,8 @@ puerto 5173). El screenshot a veces se cuelga en `/admin`; ahí inspeccionar el 
   migraciones puntuales/aditivas ya fusionadas en `init.sql` (roles, storage de fotos, medidas
   con turbina, zonas, `articulos-rename.sql`, `notas-internas.sql`, `eliminar_tabla_fotos.sql`,
   `eliminar_tabla_productos.sql`, `revocar_escritura_catalogo.sql`,
-  `testimonios-moderacion.sql`)
+  `testimonios-moderacion.sql`,
+  `testimonios-campos-opcionales.sql`)
   para aplicar a una base ya viva sin perder datos, más `reset.sql` (borra todo, sin
   reconstruir — usar antes de un `init.sql` limpio). Se corren a mano en Supabase → SQL
   Editor. Al cambiar el esquema, actualizar `init.sql` para que la reconstrucción siga fiel.
@@ -90,7 +91,10 @@ puerto 5173). El screenshot a veces se cuelga en `/admin`; ahí inspeccionar el 
   reglas que **no se tocan** (`supabase/testimonios-moderacion.sql`): el `with check
   (estado = 'pendiente')` del INSERT —es lo que impide darse de alta ya aprobado armando el
   request a mano con la anon key, que es pública—, el SELECT público limitado a
-  `estado = 'aprobado'`, y los CHECK de longitud (3–600 / 2–60) como cota de abuso. El
+  `estado = 'aprobado'`, y **un CHECK por columna** como cota de abuso (texto 3–600, nombre
+  2–60, puntaje 1–5, artículo ≤80, localidad 2–60, fecha en un rango de cordura). Al sumar un
+  campo nuevo al formulario, **sumarle su CHECK**: la lista desplegable del formulario no
+  protege nada, porque cualquiera puede armar el request a mano con la anon key. El
   formulario suma un honeypot; contra spam en serio el paso siguiente sería un captcha.
   **Al insertar desde el cliente no encadenar `.select()`**: la fila nace `pendiente`, la
   política de lectura pública no la matchea y PostgREST falla al devolverla (ver
@@ -159,11 +163,18 @@ puerto 5173). El screenshot a veces se cuelga en `/admin`; ahí inspeccionar el 
     "¿Llegamos a tu zona?" de la landing y el `<datalist>` del campo zona/localidad en
     `ReservaDialog` (ahí `zona` sigue siendo texto libre, no FK — borrar una zona no toca
     reservas existentes).
-  - `Testimonio`: `{id, texto, quien, estado, creado}` — comentario dejado por un visitante.
+  - `Testimonio`: `{id, texto, quien, estado, creado}` + los opcionales `{puntaje, articulo,
+    localidad, fechaEvento}` — comentario dejado por un visitante.
     `estado` es `pendiente | aprobado | rechazado` y es **reversible** (un aprobado se puede
     despublicar sin borrarlo). No tiene color ni orden manual: ordena por `creado` (más
     reciente primero) y la paleta/rotación de cada tarjeta se derivan de la posición al
-    renderizar, para que nadie tenga que elegirlas al moderar.
+    renderizar, para que nadie tenga que elegirlas al moderar. Los cuatro opcionales los
+    completa o no el visitante; `articulo` y `localidad` se guardan como **texto libre, no FK**,
+    aunque el formulario los ofrezca como lista armada con el inventario y las zonas reales:
+    un comentario es un testimonio histórico y tiene que seguir diciendo lo que esa persona
+    alquiló, aunque después se renombre o se borre el artículo (mismo criterio que
+    `Reserva.zona`). `fecha_evento` ↔ `fechaEvento` es la única columna del modelo con nombre
+    distinto entre DB y app, así que pasa por un mapper en `db.ts` y otro en `landingDb.ts`.
   - `Perfil`: `{id (=auth uid), email, rol}` · `Config`: `{nombre, pin}`
 - **Estados** (flujo): Consulta → Reservado → Señado → Entregado → Finalizado; Cancelado
   aparte. Consulta y Cancelado no bloquean inventario. Avanzar estado es un solo paso.
@@ -227,8 +238,14 @@ puerto 5173). El screenshot a veces se cuelga en `/admin`; ahí inspeccionar el 
   si ninguno tiene foto todavía, muestra un estado vacío honesto en vez de la tira.
 - **"¿Llegamos a tu zona?"** (`Zonas.tsx`): chips con `useCatalogo().zonas` (DB o fallback
   estático, ver arriba) — mismo ABM que gestiona el admin.
-- **Comentarios** (`Testimonios.tsx`, sección `#comentarios`): la pared de aprobados (más
-  reciente primero) más el formulario de alta. Tras enviar, el comentario propio se muestra
+- **Comentarios** (`Testimonios.tsx`, sección `#comentarios`, "Opiniones" en el nav): la pared
+  de aprobados (más reciente primero) más el formulario de alta. Solo nombre y texto son
+  obligatorios; abajo de una línea punteada van cuatro opcionales (puntaje en estrellas, qué
+  alquiló, localidad y fecha de la fiesta) separados y dichos como tales, para que nadie sienta
+  que tiene que llenar un formulario largo para dejar dos líneas. Los selects de artículo y
+  localidad salen del inventario y las zonas reales, y **se ocultan si esas listas están
+  vacías** (un select sin opciones es un callejón). La tarjeta muestra cada dato solo si está:
+  un comentario sin ningún opcional se ve bien igual. Tras enviar, el comentario propio se muestra
   **una sola vez** con el cartel "Esperando aprobación", sostenido por el estado del
   componente: nunca se vuelve a leer de la base, porque un pendiente es invisible para quien
   no es admin. Sin comentarios publicados la sección lo dice y deja el formulario, en vez de

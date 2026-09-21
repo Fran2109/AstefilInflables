@@ -74,6 +74,20 @@ export interface Testimonio {
   estado: EstadoTestimonio;
   /** ISO. Ordena la lista pública, del más nuevo al más viejo. */
   creado: string;
+
+  /**
+   * Datos opcionales que el visitante completa o no.
+   *
+   * `articulo` y `localidad` son texto libre, no FK, aunque el formulario los
+   * ofrezca como lista armada con el inventario y las zonas reales: un
+   * comentario es un testimonio histórico y tiene que seguir diciendo lo que
+   * esa persona alquiló, aunque después se renombre o se borre el artículo.
+   */
+  puntaje?: number | null;
+  articulo?: string | null;
+  localidad?: string | null;
+  /** 'YYYY-MM-DD' — cuándo fue la fiesta (siempre pasada). */
+  fechaEvento?: string | null;
 }
 
 /** Rol de un usuario del panel. `admin` = todo; `empleado` = solo operativo (reservas). */

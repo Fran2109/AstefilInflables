@@ -102,7 +102,20 @@ create table public.testimonios (
   quien  text not null check (char_length(btrim(quien)) between 2 and 60),
   estado text not null default 'pendiente'
          check (estado in ('pendiente', 'aprobado', 'rechazado')),
-  creado timestamptz not null default now()
+  creado timestamptz not null default now(),
+
+  -- Opcionales: el visitante los completa o no. `articulo` y `localidad` son
+  -- TEXTO LIBRE y no FK aunque el formulario los ofrezca como lista armada con
+  -- el inventario y las zonas reales — mismo criterio que `reservas.zona`: si
+  -- mañana se renombra o se borra un artículo, el comentario tiene que seguir
+  -- diciendo lo que esa persona alquiló. Cada uno lleva su CHECK porque el
+  -- INSERT es público y la lista del formulario no protege nada.
+  puntaje      smallint check (puntaje is null or puntaje between 1 and 5),
+  articulo     text     check (articulo is null or char_length(btrim(articulo)) between 1 and 80),
+  localidad    text     check (localidad is null or char_length(btrim(localidad)) between 2 and 60),
+  -- Cota de cordura nada más: que sea pasada lo exige el formulario, no se
+  -- puede expresar acá (`now()` no es inmutable y Postgres la rechaza).
+  fecha_evento date     check (fecha_evento is null or fecha_evento between date '2015-01-01' and date '2100-01-01')
 );
 
 -- La consulta pública es siempre "aprobados, del más nuevo al más viejo".

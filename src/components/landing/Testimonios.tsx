@@ -1,9 +1,18 @@
 import { useEffect, useMemo, useState } from "react";
+import { Star } from "lucide-react";
 import type { TestimonioPublico } from "@/types/catalogo";
 import { TituloSeccion } from "@/components/landing/TituloSeccion";
 import { Button } from "@/components/ui/button";
+import { Select } from "@/components/ui/select";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Esqueleto } from "@/components/landing/Esqueleto";
-import { cargarTestimonios, enviarTestimonio, LIMITES_COMENTARIO } from "@/lib/landingDb";
+import {
+  cargarTestimonios,
+  enviarTestimonio,
+  LIMITES_COMENTARIO,
+  type ComentarioNuevo,
+} from "@/lib/landingDb";
+import { useCatalogo } from "@/context/CatalogoContext";
 import { haySupabase } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
 
@@ -16,6 +25,30 @@ const ROTACION = ["-rotate-[1.2deg]", "rotate-[.9deg]", "-rotate-[.6deg]"];
 const inputCls =
   "w-full rounded-xl border-3 border-tinta bg-white px-3.5 py-3 font-body text-base text-tinta shadow-[inset_3px_3px_0_rgba(27,19,16,.08)] focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-azul";
 const labelCls = "mb-1.5 block font-alt text-[.92rem] font-extrabold";
+
+/** 'YYYY-MM-DD' → "agosto de 2026". El día exacto no aporta y envejece peor. */
+function mesYAno(iso: string): string {
+  const [y, m] = iso.split("-").map(Number);
+  if (!y || !m) return "";
+  const meses = ["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
+  return `${meses[m - 1]} de ${y}`;
+}
+
+/** Las estrellas de un comentario ya publicado (solo lectura). */
+function Estrellas({ puntaje }: { puntaje: number }) {
+  return (
+    <div className="flex gap-0.5" aria-label={`${puntaje} de 5 estrellas`}>
+      {[1, 2, 3, 4, 5].map((n) => (
+        <Star
+          key={n}
+          aria-hidden="true"
+          className={cn("h-4 w-4", n <= puntaje ? "fill-amarillo text-tinta" : "fill-none text-gris")}
+          strokeWidth={2.5}
+        />
+      ))}
+    </div>
+  );
+}
 
 export function Testimonios() {
   const [lista, setLista] = useState<TestimonioPublico[]>([]);
@@ -56,7 +89,7 @@ export function Testimonios() {
               <article
                 key={t.id}
                 className={cn(
-                  "relative rounded-lg border-3 border-tinta bg-papel px-[22px] pb-5 pt-[26px] shadow-hard",
+                  "relative flex flex-col rounded-lg border-3 border-tinta bg-papel px-[22px] pb-5 pt-[26px] shadow-hard",
                   ROTACION[i % ROTACION.length]
                 )}
               >
@@ -66,19 +99,43 @@ export function Testimonios() {
                 >
                   "
                 </span>
-                <p className="whitespace-pre-wrap text-[.98rem] leading-[1.55] text-[#3c2f28]">
+
+                {t.puntaje ? <Estrellas puntaje={t.puntaje} /> : null}
+
+                <p
+                  className={cn(
+                    "whitespace-pre-wrap text-[.98rem] leading-[1.55] text-[#3c2f28]",
+                    t.puntaje && "mt-2"
+                  )}
+                >
                   {t.texto}
                 </p>
+
+                {t.articulo && (
+                  <span className="mt-3 self-start rounded-full border-2 border-tinta bg-cielo px-2.5 py-0.5 font-alt text-[.76rem] font-extrabold">
+                    🎈 {t.articulo}
+                  </span>
+                )}
+
                 <div className="mt-3.5 flex items-center gap-2 font-alt text-[.92rem] font-extrabold">
                   <span
                     aria-hidden="true"
                     className={cn(
-                      "inline-block h-[15px] w-3 rounded-[50%_50%_50%_50%/60%_60%_40%_40%] border-2 border-tinta",
+                      "inline-block h-[15px] w-3 flex-none rounded-[50%_50%_50%_50%/60%_60%_40%_40%] border-2 border-tinta",
                       GLOBITO[i % GLOBITO.length]
                     )}
                   />
-                  {t.quien}
+                  <span>
+                    {t.quien}
+                    {t.localidad && <span className="font-bold">, de {t.localidad}</span>}
+                  </span>
                 </div>
+
+                {t.fechaEvento && (
+                  <div className="mt-1 pl-5 font-alt text-[.78rem] font-bold text-[#5a4a41]">
+                    Fiesta de {mesYAno(t.fechaEvento)}
+                  </div>
+                )}
               </article>
             ))}
           </div>
@@ -104,15 +161,36 @@ export function Testimonios() {
  * muestra acá mismo, una sola vez, con el aviso de que está esperando
  * aprobación: nunca se vuelve a leer de la base, porque un pendiente es
  * invisible para cualquiera que no sea admin.
+ *
+ * Solo el nombre y el texto son obligatorios. Los otros cuatro campos suman
+ * contexto si la persona quiere darlo, y las listas de artículos y localidades
+ * salen del inventario y las zonas reales — pero se guardan como texto, no
+ * como referencia (ver `ComentarioNuevo`).
  */
 function FormularioComentario() {
+  const { modelos, zonas } = useCatalogo();
   const [quien, setQuien] = useState("");
   const [texto, setTexto] = useState("");
+  const [puntaje, setPuntaje] = useState(0);
+  const [articulo, setArticulo] = useState("");
+  const [localidad, setLocalidad] = useState("");
+  const [fechaEvento, setFechaEvento] = useState("");
   // Honeypot: un bot completa todos los campos; una persona no ve este.
   const [apodo, setApodo] = useState("");
   const [enviando, setEnviando] = useState(false);
-  const [enviado, setEnviado] = useState<{ quien: string; texto: string } | null>(null);
+  const [enviado, setEnviado] = useState<ComentarioNuevo | null>(null);
   const [error, setError] = useState("");
+
+  const nombresModelos = useMemo(
+    () => [...new Set(modelos.map((m) => m.nombre))].sort((a, b) => a.localeCompare(b, "es")),
+    [modelos]
+  );
+
+  // Hoy en 'YYYY-MM-DD' local: una opinión habla de una fiesta que ya pasó.
+  const hoy = useMemo(() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  }, []);
 
   const problema = useMemo(() => {
     if (quien.trim().length < 2) return "Poné tu nombre";
@@ -124,18 +202,30 @@ function FormularioComentario() {
 
   const enviar = async () => {
     if (problema) return setError(problema);
+    const datos: ComentarioNuevo = {
+      quien,
+      texto,
+      puntaje: puntaje || undefined,
+      articulo: articulo || undefined,
+      localidad: localidad || undefined,
+      fechaEvento: fechaEvento || undefined,
+    };
     // El bot que completó el honeypot se lleva el mismo "gracias" que una
     // persona, pero no se escribe nada. Decirle que lo detectamos solo le
     // enseña a evitarlo.
-    if (apodo.trim()) return setEnviado({ quien: quien.trim(), texto: texto.trim() });
+    if (apodo.trim()) return setEnviado(datos);
 
     setEnviando(true);
     setError("");
     try {
-      await enviarTestimonio(quien, texto);
-      setEnviado({ quien: quien.trim(), texto: texto.trim() });
+      await enviarTestimonio(datos);
+      setEnviado(datos);
       setQuien("");
       setTexto("");
+      setPuntaje(0);
+      setArticulo("");
+      setLocalidad("");
+      setFechaEvento("");
     } catch {
       setError("No pudimos enviarlo. Probá de nuevo o escribinos por WhatsApp.");
     } finally {
@@ -154,10 +244,24 @@ function FormularioComentario() {
           <span className="absolute -top-3 right-3 rounded-full border-2 border-tinta bg-amarillo px-2.5 py-0.5 font-alt text-[.72rem] font-extrabold">
             Esperando aprobación
           </span>
-          <p className="whitespace-pre-wrap text-[.96rem] leading-[1.55] text-[#3c2f28]">
+          {enviado.puntaje ? <Estrellas puntaje={enviado.puntaje} /> : null}
+          <p className={cn("whitespace-pre-wrap text-[.96rem] leading-[1.55] text-[#3c2f28]", enviado.puntaje && "mt-2")}>
             {enviado.texto}
           </p>
-          <div className="mt-3 font-alt text-[.9rem] font-extrabold">{enviado.quien}</div>
+          {enviado.articulo && (
+            <span className="mt-3 inline-block rounded-full border-2 border-tinta bg-cielo px-2.5 py-0.5 font-alt text-[.76rem] font-extrabold">
+              🎈 {enviado.articulo}
+            </span>
+          )}
+          <div className="mt-3 font-alt text-[.9rem] font-extrabold">
+            {enviado.quien}
+            {enviado.localidad && `, de ${enviado.localidad}`}
+          </div>
+          {enviado.fechaEvento && (
+            <div className="mt-0.5 font-alt text-[.78rem] font-bold text-[#5a4a41]">
+              Fiesta de {mesYAno(enviado.fechaEvento)}
+            </div>
+          )}
         </article>
       </div>
     );
@@ -180,7 +284,7 @@ function FormularioComentario() {
           <input
             id="c-nombre"
             type="text"
-            placeholder="Ej: Caro, de Grand Bourg"
+            placeholder="Ej: Caro"
             maxLength={LIMITES_COMENTARIO.quien}
             className={inputCls}
             value={quien}
@@ -204,6 +308,71 @@ function FormularioComentario() {
           <p className="mt-1 text-right font-alt text-[.78rem] font-bold text-[#5a4a41]">
             {texto.length}/{LIMITES_COMENTARIO.texto}
           </p>
+        </div>
+
+        {/* De acá para abajo es todo opcional. Va separado y dicho con todas
+            las letras para que nadie sienta que tiene que completar un
+            formulario largo para dejar dos líneas. */}
+        <div className="border-t-3 border-dashed border-[#e5d9cd] pt-4">
+          <p className="font-alt text-[.92rem] font-extrabold">
+            ¿Nos contás un poco más? <span className="font-bold text-[#5a4a41]">(opcional)</span>
+          </p>
+
+          <div className="mt-3.5 flex flex-col gap-4">
+            <EstrellasElegibles valor={puntaje} onChange={setPuntaje} />
+
+            {/* Solo si hay inventario cargado: un select vacío es un callejón. */}
+            {nombresModelos.length > 0 && (
+              <div>
+                <label id="c-articulo-label" htmlFor="c-articulo" className={labelCls}>
+                  ¿Qué alquilaste?
+                </label>
+                <Select
+                  id="c-articulo"
+                  ariaLabelledBy="c-articulo-label"
+                  value={articulo}
+                  onChange={setArticulo}
+                  options={nombresModelos}
+                  placeholder="Elegí el inflable o juego"
+                  triggerClassName={inputCls}
+                />
+              </div>
+            )}
+
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              {zonas.length > 0 && (
+                <div>
+                  <label id="c-localidad-label" htmlFor="c-localidad" className={labelCls}>
+                    ¿De qué zona sos?
+                  </label>
+                  <Select
+                    id="c-localidad"
+                    ariaLabelledBy="c-localidad-label"
+                    value={localidad}
+                    onChange={setLocalidad}
+                    options={zonas}
+                    placeholder="Elegí tu localidad"
+                    triggerClassName={inputCls}
+                  />
+                </div>
+              )}
+
+              <div>
+                <label id="c-fecha-label" htmlFor="c-fecha" className={labelCls}>
+                  ¿Cuándo fue la fiesta?
+                </label>
+                <DatePicker
+                  id="c-fecha"
+                  ariaLabelledBy="c-fecha-label"
+                  value={fechaEvento}
+                  onChange={setFechaEvento}
+                  max={hoy}
+                  placeholder="dd/mm/aaaa"
+                  triggerClassName={inputCls}
+                />
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Honeypot: invisible y fuera del recorrido de teclado y de lectores
@@ -231,5 +400,59 @@ function FormularioComentario() {
         </Button>
       </div>
     </div>
+  );
+}
+
+/**
+ * Puntaje de 1 a 5 estrellas, opcional.
+ *
+ * Son radios nativos escondidos con `sr-only` en vez de botones: así el
+ * teclado (flechas dentro del grupo) y los lectores de pantalla funcionan
+ * solos, sin reimplementar nada. La estrella visible es el `<label>`.
+ */
+function EstrellasElegibles({ valor, onChange }: { valor: number; onChange: (n: number) => void }) {
+  return (
+    <fieldset>
+      <legend className={labelCls}>¿Qué puntaje nos ponés?</legend>
+      <div className="flex items-center gap-1">
+        {[1, 2, 3, 4, 5].map((n) => (
+          <label
+            key={n}
+            className="group cursor-pointer p-0.5"
+            title={`${n} ${n === 1 ? "estrella" : "estrellas"}`}
+          >
+            <input
+              type="radio"
+              name="puntaje"
+              value={n}
+              checked={valor === n}
+              onChange={() => onChange(n)}
+              className="peer sr-only"
+            />
+            <Star
+              aria-hidden="true"
+              strokeWidth={2.5}
+              className={cn(
+                "h-8 w-8 transition-transform peer-focus-visible:outline peer-focus-visible:outline-4 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-azul group-hover:scale-110",
+                n <= valor ? "fill-amarillo text-tinta" : "fill-white text-gris"
+              )}
+            />
+            <span className="sr-only">
+              {n} {n === 1 ? "estrella" : "estrellas"}
+            </span>
+          </label>
+        ))}
+
+        {valor > 0 && (
+          <button
+            type="button"
+            onClick={() => onChange(0)}
+            className="ml-2 font-alt text-[.8rem] font-extrabold text-rojo hover:underline"
+          >
+            Quitar
+          </button>
+        )}
+      </div>
+    </fieldset>
   );
 }

@@ -30,6 +30,12 @@ export interface TestimonioPublico {
   texto: string;
   quien: string;
   creado: string;
+  /** Opcionales: el visitante los completa o no al dejar el comentario. */
+  puntaje?: number | null;
+  articulo?: string | null;
+  localidad?: string | null;
+  /** 'YYYY-MM-DD' — cuándo fue la fiesta. */
+  fechaEvento?: string | null;
 }
 
 /**

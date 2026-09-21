@@ -300,7 +300,7 @@ export async function cargarTodo(): Promise<{
       : { nombre: "", pin: null },
     categorias: cats.error ? [] : (cats.data as CategoriaRow[]).map(categoriaDesde),
     zonas: zon.error ? [] : (zon.data as Zona[]),
-    testimonios: tes.error ? [] : (tes.data as Testimonio[]),
+    testimonios: tes.error ? [] : (tes.data as TestimonioRow[]).map(testimonioDesde),
   };
 }
 
@@ -378,6 +378,34 @@ export async function borrarZona(id: string): Promise<void> {
   if (error) throw error;
 }
 
+// ---- Mapeos Testimonio ----
+type TestimonioRow = {
+  id: string;
+  texto: string;
+  quien: string;
+  estado: EstadoTestimonio;
+  creado: string;
+  puntaje: number | null;
+  articulo: string | null;
+  localidad: string | null;
+  fecha_evento: string | null;
+};
+
+function testimonioDesde(t: TestimonioRow): Testimonio {
+  return {
+    id: t.id,
+    texto: t.texto,
+    quien: t.quien,
+    estado: t.estado,
+    creado: t.creado,
+    puntaje: t.puntaje,
+    articulo: t.articulo,
+    localidad: t.localidad,
+    // Única columna del modelo con nombre distinto entre DB y app.
+    fechaEvento: t.fecha_evento,
+  };
+}
+
 // ---- Testimonios (moderación) ----
 /**
  * Trae TODOS los testimonios, sin importar el estado — la RLS solo se lo
@@ -390,7 +418,7 @@ export async function cargarTestimonios(): Promise<Testimonio[]> {
     .select("*")
     .order("creado", { ascending: false });
   if (error) throw error;
-  return data as Testimonio[];
+  return (data as TestimonioRow[]).map(testimonioDesde);
 }
 
 export async function moderarTestimonio(id: string, estado: EstadoTestimonio): Promise<void> {
