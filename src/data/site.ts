@@ -95,4 +95,10 @@ export const FAQ = [
  * propósito: se cargan de verdad desde el admin (tabla `testimonios`, vía un
  * ABM a construir). No inventar contenido acá.
  */
+/** Bullets fijos que muestra el visor de detalle del catálogo. */
+export const BULLETS_VISOR = [
+  "Incluye el soplador: solo necesitás un enchufe cerca.",
+  "Te confirmamos medidas exactas y precio por WhatsApp.",
+];
+
 export const TESTIMONIOS: { texto: string; quien: string; color: "azul" | "rojo" | "amarillo" }[] = [];

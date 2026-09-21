@@ -68,8 +68,8 @@ puerto 5173). El screenshot a veces se cuelga en `/admin`; ahí inspeccionar el 
 - **Nombres**: la DB usa **snake_case**; la app usa **camelCase**. El mapeo vive en
   `src/admin/lib/db.ts` (admin) y `src/lib/landingDb.ts` (landing). Mantenerlos en sync.
 - **Tablas**: `reservas`, `articulos`, `config`, `categorias`, `zonas`, `perfiles`
-  (privadas/mixtas); `productos`, `testimonios` (catálogo público, **vacías por defecto** —
-  sin ABM propio todavía, se cargan a mano vía SQL o `db.ts`); vista `catalogo_articulos`
+  (privadas/mixtas); `testimonios` (catálogo público, **vacía por defecto** — sin ABM propio
+  todavía, se carga a mano vía SQL o `db.ts`); vista `catalogo_articulos`
   (columnas seguras de `articulos` activos — **NO expone precio** — para que la landing liste
   modelos). `categorias` y `zonas` sí traen seed real (5 categorías, 8 zonas) porque son
   estructurales, no contenido de marketing. `articulos` reemplazó a la vieja `inflables`: el
@@ -162,18 +162,25 @@ puerto 5173). El screenshot a veces se cuelga en `/admin`; ahí inspeccionar el 
 
 ## Arquitectura — landing (`src/components/landing/`, ensamblada en `pages/LandingPage.tsx`)
 
-- **`CatalogoProvider`** (`context/CatalogoContext.tsx`): arranca con los datos estáticos de
-  `src/data/` (render instantáneo) y, si hay Supabase, los reemplaza por los de la base
-  (`lib/landingDb.ts` → `cargarCatalogo`: productos, categorías, zonas, modelos). Fallback
-  estático ante error de red. Se consume con `useCatalogo()`. `zonas` sigue la misma regla que
-  productos/testimonios (ver "Verdad vs. placeholder"): si la tabla no existe o está vacía, la
-  landing lo refleja tal cual — nada de listas estáticas hardcodeadas como red de seguridad.
+- **`CatalogoProvider`** (`context/CatalogoContext.tsx`): trae de la base lo que la landing
+  muestra (`lib/landingDb.ts` → `cargarCatalogo`: modelos, categorías, zonas) y sostiene
+  `cargando` mientras tanto. Se consume con `useCatalogo()`. No hay contenido estático de
+  respaldo: el catálogo **es** el inventario, así que si no hay datos la landing muestra sus
+  estados vacíos honestos (ver "Verdad vs. placeholder") — nada de listas hardcodeadas como
+  red de seguridad.
 - **`LandingContext`**: `precargar(valor)` (setea el inflable del cotizador, scrollea y enfoca
   la fecha) + `abrirVisor(cfg)`; renderiza el `<Visor>` una sola vez.
-- **Catálogo con filtro** (`Catalogo.tsx`): chips (Todos + categorías). "Todos" muestra las
-  cards-categoría (`ProductoCard`, vacío por defecto — ver "Verdad vs. placeholder"); al elegir
-  una categoría se listan sus **modelos reales** del inventario (`ModeloCard`) leídos de
+- **Catálogo con filtro** (`Catalogo.tsx`): chips (Todos + categorías). "Todos" muestra una
+  `CategoriaCard` por categoría **que tenga al menos un modelo cargado**, derivada en el
+  cliente de `categorias` + los modelos (función `agrupar` del mismo archivo): portada = foto
+  de uno de sus modelos, chip = cuántos hay, cuerpo = sus nombres. Una categoría sin modelos no
+  genera card (sería una card que lleva a una lista vacía), pero su chip sigue estando. Al
+  elegir una categoría se listan sus **modelos reales** del inventario (`ModeloCard`) leídos de
   `catalogo_articulos`, con foto real si el admin la subió o un placeholder on-brand si no.
+  **No hay tabla `productos`**: existió una lista de cards curada a mano que duplicaba lo que
+  el inventario ya sabía y, por estar vacía, dejaba la landing diciendo "estamos armando el
+  catálogo" aunque hubiera artículos. Cargar un artículo en Inventario es lo único que hace
+  falta para publicarlo (`supabase/eliminar_tabla_productos.sql`).
 - **Cotizador**: formulario controlado (`DatosCotizacion` en `lib/whatsapp.ts` → `linkCotizacion`
   arma el mensaje/link en vivo); incluye horario tentativo como rango (`horarioDesde`/
   `horarioHasta`, opcionales) y dirección. No hay backend de envío: **WhatsApp ES el funnel**.
@@ -292,13 +299,13 @@ Filosofía: **nunca fingir contenido real que no existe todavía**. Donde falta 
 UI lo dice explícitamente (texto honesto + CTA a WhatsApp) o usa un placeholder *visualmente*
 obvio (`fotoPlaceholder`) — nunca texto o fotos inventadas presentadas como reales.
 
-- **Productos** (`data/productos.ts` `PRODUCTOS` y tabla `productos`) y **testimonios**
-  (`data/site.ts` `TESTIMONIOS` y tabla `testimonios`): **vacíos por defecto**, a propósito —
-  no hay ABM para cargarlos desde el admin todavía (solo Categorías, Zonas e Inventario lo
-  tienen). `Catalogo.tsx` muestra un estado vacío con CTA cuando no hay productos;
-  `Testimonios.tsx` directamente no renderiza nada si `TESTIMONIOS` está vacío (no hay link de
-  nav a `#testimonios`, así que ocultar la sección entera es seguro). Cargar contenido real a
-  mano (SQL o `db.ts`), no inventarlo.
+- **Testimonios** (`data/site.ts` `TESTIMONIOS` y tabla `testimonios`): **vacíos por
+  defecto**, a propósito — no hay ABM para cargarlos desde el admin todavía (sí lo tienen
+  Categorías, Zonas e Inventario). `Testimonios.tsx` directamente no renderiza nada si está
+  vacío (no hay link de nav a `#testimonios`, así que ocultar la sección entera es seguro).
+  Cargar contenido real a mano (SQL o `db.ts`), no inventarlo.
+- **Catálogo**: sale entero del inventario. Si no hay artículos cargados, `Catalogo.tsx`
+  muestra un estado vacío con CTA — nunca cards de relleno.
 - **Zonas** (tabla `zonas`, ABM completo): misma regla — **sin fallback estático**. Si la tabla
   no existe o está vacía, `Zonas.tsx` muestra un estado honesto ("estamos actualizando
   cobertura" + CTA WhatsApp) en vez de ocultar la sección (sí hay link de nav a `#zonas`, a
@@ -315,8 +322,8 @@ obvio (`fotoPlaceholder`) — nunca texto o fotos inventadas presentadas como re
 ## Pendientes
 
 Ver `docs/BACKLOG.md` (actualizado al estado real; `README.md` también). Destacados
-actuales: ABM de Productos y Testimonios en el admin (hoy Categorías, Zonas e Inventario lo
-tienen; Productos/Testimonios no), cargar fotos reales por
+actuales: ABM de Testimonios en el admin (hoy Categorías, Zonas e Inventario lo tienen;
+Testimonios no), cargar fotos reales por
 modelo (la feature de subida ya existe, faltan las fotos), testimonios reales, precios/fichas,
 y afinar los claims de servicio con Francisco.
 

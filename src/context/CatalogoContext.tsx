@@ -1,11 +1,10 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
-import type { ModeloPublico, Producto } from "@/types/catalogo";
-import { PRODUCTOS } from "@/data/productos";
+import type { ModeloPublico } from "@/types/catalogo";
 import { cargarCatalogo } from "@/lib/landingDb";
 import { haySupabase } from "@/lib/supabase";
 
 interface CatalogoValue {
-  productos: Producto[];
+  /** Modelos reales del inventario. El catálogo entero se deriva de acá. */
   modelos: ModeloPublico[];
   /** Categorías en orden, para el filtro del catálogo. */
   categorias: string[];
@@ -34,18 +33,15 @@ function derivarCategorias(dbCats: string[], modelos: ModeloPublico[]): string[]
 }
 
 /**
- * Provee el catálogo de la landing. Arranca con los datos estáticos de
- * `src/data/` (render instantáneo, sin parpadeo) y, si hay Supabase, los
- * reemplaza con los de la base al terminar de cargar. Ante cualquier error de
- * red se queda con el fallback estático. Las fotos son siempre placeholders
- * on-brand (ver `lib/placeholder.ts`) hasta que se carguen fotos reales.
+ * Provee el catálogo de la landing, que sale entero del inventario cargado en
+ * el admin. Mientras la base responde, `cargando` sostiene los esqueletos; si
+ * falla, quedan los estados vacíos honestos de cada sección.
  *
- * `zonas` sigue la misma regla que productos/testimonios: si la tabla no
- * existe todavía o está vacía, la landing lo refleja tal cual (sin inventar
+ * `zonas` sigue la misma regla que los testimonios: si la tabla no existe
+ * todavía o está vacía, la landing lo refleja tal cual (sin inventar
  * contenido) — ver `Zonas.tsx` para el estado vacío.
  */
 const VACIO: CatalogoValue = {
-  productos: PRODUCTOS,
   modelos: [],
   categorias: [],
   zonas: [],
@@ -64,7 +60,6 @@ export function CatalogoProvider({ children }: { children: ReactNode }) {
         if (!vivo) return;
         if (db)
           setData({
-            productos: db.productos,
             modelos: db.modelos,
             categorias: derivarCategorias(db.categorias, db.modelos),
             zonas: db.zonas,

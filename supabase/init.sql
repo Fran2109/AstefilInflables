@@ -3,9 +3,14 @@
 -- ============================================================================
 -- Este archivo reconstruye TODO el esquema desde cero (tablas, RLS, vista,
 -- Storage), pero solo carga datos de fábrica en **categorías**, **zonas** y
--- **roles** (perfiles). El resto de las tablas (productos, testimonios,
--- articulos, config) quedan creadas pero VACÍAS — se cargan a mano desde el
--- admin (Inventario, Categorías, Zonas, Ajustes) o con un script de carga aparte.
+-- **roles** (perfiles). El resto de las tablas (testimonios, articulos,
+-- config) quedan creadas pero VACÍAS — se cargan a mano desde el admin
+-- (Inventario, Categorías, Zonas, Ajustes) o con un script de carga aparte.
+--
+-- No hay tabla de productos: el catálogo público de la landing se deriva de
+-- `categorias` + la vista `catalogo_articulos`. Una card por categoría con
+-- artículos cargados, armada en el cliente — cargar un artículo en Inventario
+-- es lo único que hace falta para publicarlo.
 --
 -- No hay tabla de fotos: la landing muestra placeholders on-brand generados
 -- en el cliente (`src/lib/placeholder.ts`) hasta que se carguen fotos reales
@@ -20,7 +25,7 @@
 --     NO se toca: seguís entrando con el mismo email y contraseña.
 --
 -- Modelo de seguridad (RLS):
---   • Público (lectura): categorias, zonas, productos, testimonios + vista
+--   • Público (lectura): categorias, zonas, testimonios + vista
 --     catalogo_articulos. Escritura solo con sesión iniciada.
 --   • Privado (solo con sesión): articulos, reservas, config.
 --
@@ -36,7 +41,7 @@ drop view  if exists public.catalogo_articulos cascade;
 drop table if exists public.reservas    cascade;
 drop table if exists public.articulos   cascade;
 drop table if exists public.testimonios cascade;
-drop table if exists public.productos   cascade;
+drop table if exists public.productos   cascade;  -- por si quedó de una versión vieja
 drop table if exists public.fotos       cascade;  -- por si quedó de una versión vieja
 drop table if exists public.categorias  cascade;
 drop table if exists public.zonas       cascade;
@@ -71,21 +76,6 @@ create table public.zonas (
   nombre text not null unique,
   orden  integer not null default 0,
   activo boolean not null default true
-);
-
--- Productos/categorías-card del catálogo público (landing). El id coincide con
--- el select del cotizador. `cats` mapea la card a categorías del inventario.
-create table public.productos (
-  id             text primary key,
-  titulo         text not null,
-  tag            text not null default '',
-  desc_corta     text not null default '',
-  desc_larga     text not null default '',
-  fotos          text[] not null default '{}',
-  ilustracion_id text,
-  cats           text[] not null default '{}',
-  orden          integer not null default 0,
-  activo         boolean not null default true
 );
 
 -- Testimonios de la landing (seed = placeholders con activo=false).
@@ -186,7 +176,6 @@ create trigger on_auth_user_created
 -- ----------------------------------------------------------------------------
 alter table public.categorias  enable row level security;
 alter table public.zonas       enable row level security;
-alter table public.productos   enable row level security;
 alter table public.testimonios enable row level security;
 alter table public.articulos   enable row level security;
 alter table public.reservas    enable row level security;
@@ -197,7 +186,7 @@ alter table public.perfiles    enable row level security;
 do $$
 declare t text;
 begin
-  foreach t in array array['categorias','zonas','productos','testimonios']
+  foreach t in array array['categorias','zonas','testimonios']
   loop
     execute format('create policy "lectura publica" on public.%I for select using (true)', t);
     execute format('create policy "escritura admin" on public.%I for all to authenticated using (public.es_admin()) with check (public.es_admin())', t);
@@ -226,8 +215,8 @@ create policy "admin gestiona perfiles" on public.perfiles
   for update to authenticated using (public.es_admin()) with check (public.es_admin());
 
 -- ----------------------------------------------------------------------------
--- 3. SEED — solo categorías, zonas y roles. El resto de las tablas (productos,
---    testimonios, articulos, config) quedan creadas pero VACÍAS: se cargan a
+-- 3. SEED — solo categorías, zonas y roles. El resto de las tablas
+--    (testimonios, articulos, config) quedan creadas pero VACÍAS: se cargan a
 --    mano desde el admin o con un script de carga aparte.
 -- ----------------------------------------------------------------------------
 

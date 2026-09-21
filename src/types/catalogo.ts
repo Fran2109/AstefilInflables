@@ -5,22 +5,6 @@ export interface Foto {
   alt: string;
 }
 
-/** Un producto/categoría del catálogo con sus fotos asociadas. */
-export interface Producto {
-  /** Valor que usa el cotizador (debe coincidir con una opción del select). */
-  id: string;
-  titulo: string;
-  tag: string;
-  descCorta: string;
-  descLarga: string;
-  /** Claves para generar placeholders. Vacío = card ilustrada (SVG) sin fotos todavía. */
-  fotos: string[];
-  /** Categorías sin foto todavía (Deportivos, Livings): id de la ilustración SVG. */
-  ilustracionId?: "deportivo" | "living";
-  /** Categorías del inventario que agrupa esta card (para listar modelos reales). */
-  cats?: string[];
-}
-
 /** Un modelo real del inventario, expuesto públicamente para el catálogo. */
 export interface ModeloPublico {
   id: string;
@@ -32,4 +16,20 @@ export interface ModeloPublico {
   alto?: number;
   /** URLs públicas de las fotos del modelo (vacío = sin foto todavía). */
   fotos?: string[];
+}
+
+/**
+ * Una categoría del catálogo con los modelos reales que tiene cargados.
+ *
+ * No hay tabla ni ABM detrás: se deriva de `categorias` + el inventario
+ * público. Antes esto era la tabla `productos`, una lista de cards curada a
+ * mano que duplicaba lo que el inventario ya sabía — y que, por estar vacía,
+ * dejaba la vista "Todos" del catálogo en su estado vacío aunque hubiera
+ * artículos cargados.
+ */
+export interface CategoriaConModelos {
+  nombre: string;
+  modelos: ModeloPublico[];
+  /** Fotos reales de sus modelos (portada primero). Vacío = ninguna todavía. */
+  fotos: string[];
 }

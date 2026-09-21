@@ -1,25 +1,13 @@
 import { supabase } from "@/lib/supabase";
-import type { ModeloPublico, Producto } from "@/types/catalogo";
+import type { ModeloPublico } from "@/types/catalogo";
 
 /**
  * Carga del catálogo público de la landing desde Supabase (lectura sin sesión,
  * habilitada por RLS). Mapea snake_case → camelCase manteniendo los tipos de
- * `types/catalogo`. Si no hay Supabase configurado, devuelve null y la app usa
- * los datos estáticos de `src/data/` como fallback.
+ * `types/catalogo`. Sin Supabase configurado devuelve null y la landing
+ * muestra sus estados vacíos: el catálogo es el inventario, así que no hay
+ * contenido estático con el que rellenarlo.
  */
-
-type ProductoRow = {
-  id: string;
-  titulo: string;
-  tag: string;
-  desc_corta: string;
-  desc_larga: string;
-  fotos: string[];
-  ilustracion_id: string | null;
-  cats: string[] | null;
-  orden: number;
-  activo: boolean;
-};
 
 type ModeloRow = {
   id: string;
@@ -38,8 +26,7 @@ function urlPublicaFoto(path: string): string {
 }
 
 export interface CatalogoData {
-  productos: Producto[];
-  /** Modelos reales del inventario (vista pública), para el detalle de cada card. */
+  /** Modelos reales del inventario (vista pública): el catálogo entero sale de acá. */
   modelos: ModeloPublico[];
   /** Nombres de categorías, en orden (tabla `categorias`). Vacío si no existe aún. */
   categorias: string[];
@@ -50,12 +37,7 @@ export interface CatalogoData {
 export async function cargarCatalogo(): Promise<CatalogoData | null> {
   if (!supabase) return null;
 
-  const [prod, mod, cats, zon] = await Promise.all([
-    supabase
-      .from("productos")
-      .select("*")
-      .eq("activo", true)
-      .order("orden"),
+  const [mod, cats, zon] = await Promise.all([
     // Vista pública del inventario (puede no existir todavía → se ignora el error).
     supabase.from("catalogo_articulos").select("*").order("nombre"),
     // Categorías (puede no existir todavía → se ignora el error).
@@ -63,19 +45,6 @@ export async function cargarCatalogo(): Promise<CatalogoData | null> {
     // Zonas (puede no existir todavía → se ignora el error).
     supabase.from("zonas").select("nombre").eq("activo", true).order("orden"),
   ]);
-  if (prod.error) throw prod.error;
-
-  const productos: Producto[] = (prod.data as ProductoRow[]).map((p) => ({
-    id: p.id,
-    titulo: p.titulo,
-    tag: p.tag,
-    descCorta: p.desc_corta,
-    descLarga: p.desc_larga,
-    fotos: p.fotos ?? [],
-    ilustracionId: (p.ilustracion_id as Producto["ilustracionId"]) ?? undefined,
-    cats: p.cats ?? [],
-  }));
-
   const modelos: ModeloPublico[] = mod.error
     ? []
     : (mod.data as ModeloRow[]).map((m) => ({
@@ -97,5 +66,5 @@ export async function cargarCatalogo(): Promise<CatalogoData | null> {
     ? []
     : (zon.data as { nombre: string }[]).map((z) => z.nombre);
 
-  return { productos, modelos, categorias, zonas };
+  return { modelos, categorias, zonas };
 }

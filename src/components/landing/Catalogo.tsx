@@ -1,19 +1,21 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import type { CategoriaConModelos, ModeloPublico } from "@/types/catalogo";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { TituloSeccion } from "@/components/landing/TituloSeccion";
-import { ProductoCard } from "@/components/landing/ProductoCard";
+import { CategoriaCard } from "@/components/landing/CategoriaCard";
 import { ModeloCard } from "@/components/landing/ModeloCard";
 import { Esqueleto, EsqueletoGrilla } from "@/components/landing/Esqueleto";
 import { linkWhatsApp } from "@/lib/whatsapp";
 import { useCatalogo } from "@/context/CatalogoContext";
 
 export function Catalogo() {
-  const { productos, modelos, categorias, cargando } = useCatalogo();
+  const { modelos, categorias, cargando } = useCatalogo();
   // null = "Todos" (overview de categorías con fotos).
   const [filtro, setFiltro] = useState<string | null>(null);
 
   const modelosFiltrados = filtro ? modelos.filter((m) => m.cat === filtro) : [];
+  const conModelos = useMemo(() => agrupar(categorias, modelos), [categorias, modelos]);
 
   return (
     <section id="catalogo" className="py-16">
@@ -52,18 +54,18 @@ export function Catalogo() {
           {cargando
             ? "Cargando el catálogo"
             : filtro === null
-              ? `${productos.length} categorías en el catálogo`
+              ? `${conModelos.length} categorías en el catálogo`
               : `${modelosFiltrados.length} modelos de ${filtro}`}
         </p>
 
         {cargando ? (
           <EsqueletoGrilla />
         ) : filtro === null ? (
-          /* Overview: las categorías con foto */
-          productos.length ? (
+          /* Overview: una card por categoría con modelos cargados */
+          conModelos.length ? (
             <div className="mt-7 grid grid-cols-1 gap-[26px] sm:grid-cols-2 lg:grid-cols-3">
-              {productos.map((p) => (
-                <ProductoCard key={p.id} producto={p} />
+              {conModelos.map((c) => (
+                <CategoriaCard key={c.nombre} categoria={c} />
               ))}
             </div>
           ) : (
@@ -142,4 +144,25 @@ function ChipFiltro({
       {children}
     </button>
   );
+}
+
+/**
+ * Arma el overview "Todos" desde el inventario: una card por categoría que
+ * tenga al menos un modelo cargado, en el orden del ABM de Categorías.
+ *
+ * Una categoría sin modelos no genera card a propósito — sería una card que
+ * lleva a una lista vacía. Su chip de filtro sigue estando, y ahí la vista
+ * filtrada explica que todavía no hay modelos de ese tipo.
+ */
+function agrupar(categorias: string[], modelos: ModeloPublico[]): CategoriaConModelos[] {
+  return categorias
+    .map((nombre) => {
+      const suyos = modelos.filter((m) => m.cat === nombre);
+      return {
+        nombre,
+        modelos: suyos,
+        fotos: suyos.flatMap((m) => m.fotos ?? []),
+      };
+    })
+    .filter((c) => c.modelos.length > 0);
 }

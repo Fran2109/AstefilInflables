@@ -1,16 +1,10 @@
 import { useMemo } from "react";
-import { BULLETS_VISOR } from "@/data/productos";
+import { BULLETS_VISOR } from "@/data/site";
 import { linkWhatsApp } from "@/lib/whatsapp";
-import { fotoPlaceholder } from "@/lib/placeholder";
+import { resolverFoto } from "@/lib/fotos";
 import { Button } from "@/components/ui/button";
 import { VisorFotos } from "@/components/ui/visor-fotos";
 import type { VisorConfig } from "@/context/LandingContext";
-
-/** Una URL/ruta real (foto subida) se muestra tal cual; una clave se resuelve a placeholder. */
-const esUrlReal = (f: string) => /^(https?:|blob:|\/)/.test(f);
-function resolverFoto(f: string, alt?: string) {
-  return esUrlReal(f) ? { src: f, alt: alt ?? "" } : fotoPlaceholder(f, alt);
-}
 
 interface VisorProps {
   cfg: VisorConfig | null;
@@ -47,7 +41,9 @@ export function Visor({ cfg, onCerrar, onPrecargar }: VisorProps) {
         {cfg.tag}
       </span>
       <h2 className="font-display text-2xl leading-[1.05] md:text-[2rem]">{cfg.titulo}</h2>
-      <p className="text-[.98rem] leading-[1.55] text-[#3c2f28]">{cfg.desc}</p>
+      {/* Una categoría no tiene descripción propia: sin esto quedaba un <p>
+          vacío empujando el layout. */}
+      {cfg.desc && <p className="text-[.98rem] leading-[1.55] text-[#3c2f28]">{cfg.desc}</p>}
 
       {cfg.modelos && cfg.modelos.length > 0 && (
         <div className="rounded-xl border-3 border-tinta bg-white p-3">

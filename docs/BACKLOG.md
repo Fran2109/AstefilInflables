@@ -7,9 +7,12 @@ verdad vs. placeholder).
 - [ ] **Testimonios reales**: `TESTIMONIOS` (`src/data/site.ts`) y la tabla `testimonios`
       están vacíos a propósito y la sección no se renderiza. Cargar reseñas verdaderas de
       IG/Facebook (texto + nombre + localidad). No inventar.
-- [ ] **ABM de Productos y Testimonios en el admin**: hoy solo Categorías, Zonas e Inventario
-      tienen ABM. Sin esto, las cards-categoría del catálogo y los testimonios hay que
-      cargarlos a mano por SQL. Es el bloqueo real de los dos puntos de contenido de acá.
+- [ ] **ABM de Testimonios en el admin**: hoy Categorías, Zonas e Inventario tienen ABM;
+      testimonios no, así que hay que cargarlos a mano por SQL. Es el bloqueo real del punto
+      de arriba.
+- [x] **Cards-categoría del catálogo**: resuelto sacando la tabla `productos` en vez de
+      construirle un ABM. El overview "Todos" se deriva de Categorías + Inventario, así que
+      cargar un artículo alcanza para publicarlo.
 - [ ] **Fotos reales por modelo**: la subida ya funciona (Inventario → artículo → fotos →
       Supabase Storage); faltan las fotos. El repo viejo (`Fran2109/Astefil_Inflables`,
       `Frontend/src/assets/inflables/*`) tiene las de los 19 modelos, listas para portar.
@@ -20,6 +23,13 @@ verdad vs. placeholder).
       cobertura — confirmar con Francisco que reflejan el servicio real.
 
 ## P2 — Conversión
+- [ ] **Opciones del cotizador vs. catálogo real**: `OPCIONES_INFLABLE` (`src/data/site.ts`)
+      es una lista escrita a mano ("Castillo con rampa", "Inflable deportivo", "Living para
+      chicos") que no coincide con las categorías ni con el inventario. Antes casi no se
+      notaba; ahora el botón "¡Lo quiero!" del overview precarga el nombre de la categoría
+      real ("Castillos") y el select muestra ese valor arriba de opciones de otro vocabulario.
+      Decidir con Francisco si el select lista categorías, modelos reales o ambos — y
+      derivarlo de `useCatalogo()` en vez de tenerlo hardcodeado.
 - [ ] Quiz "¿Cuál me conviene?": 3 preguntas (edad, casa/salón, invitados) → recomienda
       categoría → botón que llama a `precargar()`.
 - [ ] Cotizador v2: que el `DatePicker` no deje elegir fechas pasadas (hoy resalta el día

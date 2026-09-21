@@ -70,7 +70,7 @@ aplicar sobre una base ya viva sin perder datos.
 │   ├── index.css               # tokens de diseño (CSS vars) + base
 │   ├── lib/                    # supabase, landingDb, whatsapp, placeholder, scroll, utils
 │   ├── types/                  # tipos del catálogo
-│   ├── data/                   # datos estáticos de la landing (productos, site, quinta)
+│   ├── data/                   # datos estáticos de la landing (site, quinta)
 │   ├── context/                # CatalogoContext (datos) + LandingContext (cotizador/visor)
 │   ├── components/
 │   │   ├── ui/                 # primitivos (button, select, date/time picker, visor-fotos)
@@ -104,8 +104,9 @@ UI lo dice o usa un placeholder visualmente obvio.
 
 - **Testimonios** (`TESTIMONIOS` en `src/data/site.ts` y tabla `testimonios`): **vacíos a
   propósito**. La sección no se renderiza hasta que haya reseñas reales. No inventar.
-- **Productos** (cards-categoría del catálogo): también vacíos; todavía no hay ABM para
-  cargarlos desde el admin.
+- **Catálogo**: se deriva del inventario. La vista "Todos" arma una card por categoría con
+  artículos cargados; si no hay ninguno, muestra un estado vacío con CTA en vez de cards de
+  relleno. No hay tabla `productos`: cargar un artículo en Inventario ya lo publica.
 - **Precios**: no se publican a propósito (funnel a "consultá" por WhatsApp). En el admin,
   precio 0 = sin definir.
 - **Fotos por modelo**: se suben de verdad desde el admin (Inventario → artículo → fotos) y
