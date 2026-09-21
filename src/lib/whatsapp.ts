@@ -77,17 +77,14 @@ export function linkConsultaQuinta(d: DatosConsultaQuinta): string {
   return linkWhatsApp(msg);
 }
 
-/** Construye el link de WhatsApp con el mensaje del cotizador armado. */
 /**
- * El texto del mensaje del cotizador. Se expone aparte del link porque el
- * formulario lo muestra en vivo: el visitante ve exactamente qué va a mandar
- * antes de salir a WhatsApp, y así no hay dos versiones del mismo mensaje.
+ * El texto del mensaje del cotizador.
  *
  * Todos los campos son opcionales a propósito ("completá lo que sepas"), así
  * que el texto tiene que leerse bien incluso vacío. Antes arrancaba con
  * "Soy —", que del lado de Francisco se leía como un bug del sitio.
  */
-export function textoCotizacion(datos: DatosCotizacion): string {
+function textoCotizacion(datos: DatosCotizacion): string {
   const { nombre, inflable, fecha, horarioDesde, horarioHasta, zona, lugar, direccion } = datos;
   let msg = "¡Hola Astefil! 🎈\n";
   msg += nombre
@@ -104,6 +101,7 @@ export function textoCotizacion(datos: DatosCotizacion): string {
   return msg;
 }
 
+/** Construye el link de WhatsApp con el mensaje del cotizador armado. */
 export function linkCotizacion(datos: DatosCotizacion): string {
   return linkWhatsApp(textoCotizacion(datos));
 }

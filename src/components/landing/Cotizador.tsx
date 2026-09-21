@@ -6,7 +6,7 @@ import { Select } from "@/components/ui/select";
 import { DatePicker } from "@/components/ui/date-picker";
 import { TimePicker } from "@/components/ui/time-picker";
 import { OPCIONES_INFLABLE, OPCIONES_LUGAR, SITIO } from "@/data/site";
-import { linkCotizacion, textoCotizacion } from "@/lib/whatsapp";
+import { linkCotizacion } from "@/lib/whatsapp";
 import { useLanding } from "@/context/LandingContext";
 
 const inputCls =
@@ -34,9 +34,6 @@ export function Cotizador() {
     direccion,
   };
   const waLink = linkCotizacion(datos);
-  // El mismo texto que va a viajar por WhatsApp, mostrado en vivo: el visitante
-  // ve qué manda antes de salir del sitio, en vez de descubrirlo en el chat.
-  const vistaPrevia = textoCotizacion(datos);
 
   // Si precargaron un valor que no está en la lista base, lo mostramos igual.
   const opciones = OPCIONES_INFLABLE.includes(inflableSeleccionado) || !inflableSeleccionado
@@ -159,15 +156,6 @@ export function Cotizador() {
               />
             </div>
           </div>
-
-          <details className="mb-5 rounded-xl border-3 border-tinta bg-white/70 px-4 py-3">
-            <summary className="cursor-pointer list-none font-alt text-[.92rem] font-extrabold [&::-webkit-details-marker]:hidden">
-              👀 Ver el mensaje que le llega a Astefil
-            </summary>
-            <pre className="mt-3 whitespace-pre-wrap break-words font-body text-[.88rem] leading-[1.5] text-[#3c2f28]">
-              {vistaPrevia}
-            </pre>
-          </details>
 
           <Button asChild variant="verde" size="full" data-cta-conversion>
             <a href={waLink} target="_blank" rel="noopener">
