@@ -6,19 +6,18 @@ verdad vs. placeholder).
 ## P1 — Contenido real (bloquea promoción seria del sitio)
 - [x] **Comentarios con moderación**: la gente los deja desde la landing y se publican al
       aprobarlos en el panel (Comentarios). Reemplazó al `TESTIMONIOS` estático.
-- [ ] **Cargar el inventario**: `articulos` está vacío en la base, así que la landing no
-      tiene catálogo — ni cards en "Todos", ni modelos en los chips, ni opciones en el
-      cotizador. Es lo único que separa al sitio de tener catálogo real.
+- [x] **Cargar el inventario**: los 19 modelos del repo viejo con
+      `tools/importar_inventario.py`. Falta confirmar medidas: cada artículo lo avisa en sus
+      notas internas, y las medidas se ven en la landing.
 - [ ] **Anti-spam de comentarios**: hoy hay honeypot + CHECK de longitud. Si empieza a
       llegar spam, sumar un captcha (Turnstile/hCaptcha): no se puede limitar por IP desde
       la RLS.
 - [x] **Cards-categoría del catálogo**: resuelto sacando la tabla `productos` en vez de
       construirle un ABM. El overview "Todos" se deriva de Categorías + Inventario, así que
       cargar un artículo alcanza para publicarlo.
-- [ ] **Fotos reales por modelo**: la subida ya funciona (Inventario → artículo → fotos →
-      Supabase Storage); faltan las fotos. El repo viejo (`Fran2109/Astefil_Inflables`,
-      `Frontend/src/assets/inflables/*`) tiene las de los 19 modelos, listas para portar.
-      Mientras tanto cada card muestra un placeholder on-brand.
+- [ ] **Fotos de Rampa acuática**: es el único modelo sin fotos. Las 4 del repo viejo
+      parecen capturas de pantalla y no se cargaron hasta confirmar que son del inflable
+      real. Mientras tanto muestra un placeholder on-brand.
 - [ ] **Precios**: Francisco define precios base en el admin (Inventario) y decide si se
       publica "desde $X" por categoría en la landing.
 - [ ] **Verificar claims**: pasos de "Cómo funciona", bullets del visor y zonas de

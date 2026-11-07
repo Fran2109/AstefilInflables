@@ -1,0 +1,138 @@
+[
+  {
+    "nombre": "Hombre Araña",
+    "cat": "Castillos",
+    "carpeta": "hombre_arania",
+    "ancho": 4, "largo": 5, "alto": 2.5,
+    "descripcion": "Castillo inflable con la temática del Hombre Araña, para los fanáticos del superhéroe. Una fiesta llena de saltos y aventura."
+  },
+  {
+    "nombre": "Princesas",
+    "cat": "Castillos",
+    "carpeta": "princesas",
+    "ancho": 3, "largo": 4, "alto": 2.5,
+    "descripcion": "Castillo inflable de princesas, lleno de color, para las reinas de la casa. Ideal para una fiesta de cuento de hadas."
+  },
+  {
+    "nombre": "3x6",
+    "cat": "Castillos",
+    "carpeta": "3x6",
+    "ancho": 3, "largo": 6, "alto": 2.8,
+    "descripcion": "Castillo inflable amplio para saltar y jugar con ganas. Un clásico que no falla en ningún cumple."
+  },
+  {
+    "nombre": "4x5",
+    "cat": "Castillos",
+    "carpeta": "4x5",
+    "ancho": 4, "largo": 5, "alto": 2.5,
+    "descripcion": "Castillo inflable con espacio de sobra para saltar, reírse y pasarla bien. Ideal para festejos en familia o con amigos."
+  },
+  {
+    "nombre": "2x2",
+    "cat": "Castillos",
+    "carpeta": "2x2",
+    "excluir": [1, 4, 6],
+    "ancho": 2, "largo": 2, "alto": 2,
+    "descripcion": "Nuestro castillo más compacto: ocupa poco lugar y es igual de divertido. Pensado para los más chicos."
+  },
+  {
+    "nombre": "Demoledor",
+    "cat": "Gigantes",
+    "carpeta": "demoledor",
+    "excluir": [3],
+    "ancho": 6, "largo": 8, "alto": 3.5,
+    "descripcion": "Un inflable gigante para los más valientes. Si querés que tu evento no se olvide, animate al Demoledor."
+  },
+  {
+    "nombre": "Arcoiris",
+    "cat": "Gigantes",
+    "carpeta": "arcoiris",
+    "ancho": 5, "largo": 7, "alto": 3.2,
+    "descripcion": "Inflable gigante con todos los colores del arcoíris. Le suma alegría y energía a cualquier evento."
+  },
+  {
+    "nombre": "Carrera de obstáculos",
+    "cat": "Gigantes",
+    "carpeta": "carrera_de_obstaculos",
+    "ancho": 6, "largo": 10, "alto": 3.5,
+    "descripcion": "Inflable tipo carrera de obstáculos para competir en cada salto y en cada curva. Ideal para desafíos en grupo."
+  },
+  {
+    "nombre": "Barco Pirata",
+    "cat": "Gigantes",
+    "carpeta": "barco_pirata",
+    "ancho": 4, "largo": 6, "alto": 3,
+    "descripcion": "¡A la aventura! Un barco pirata inflable para surcar mares imaginarios y salir a buscar tesoros escondidos."
+  },
+  {
+    "nombre": "Deslizador",
+    "cat": "Acuáticos",
+    "carpeta": "deslizador",
+    "ancho": 3, "largo": 8, "alto": 2.5,
+    "descripcion": "Inflable acuático para deslizarse y refrescarse en los días de calor. Ideal para las fiestas de verano."
+  },
+  {
+    "nombre": "Rampa acuática arco",
+    "cat": "Acuáticos",
+    "carpeta": "rampa_acuatica_arco",
+    "ancho": 4, "largo": 10, "alto": 3,
+    "descripcion": "Rampa acuática con forma de arco, para deslizarse a toda velocidad. Una atracción que se luce en cualquier fiesta de verano."
+  },
+  {
+    "nombre": "Rampa acuática",
+    "cat": "Acuáticos",
+    "carpeta": "rampa_acuatica",
+    "excluir": [1, 2, 3, 4],
+    "ancho": 3, "largo": 8, "alto": 2.5,
+    "descripcion": "La clásica rampa acuática para los días de sol. Pura diversión y frescura al aire libre."
+  },
+  {
+    "nombre": "Tobogán acuático",
+    "cat": "Acuáticos",
+    "carpeta": "tobogan_acuatico",
+    "ancho": 4, "largo": 9, "alto": 3.2,
+    "descripcion": "El rey de las atracciones de verano: un tobogán acuático con velocidad, emoción y mucha frescura."
+  },
+  {
+    "nombre": "Metegol",
+    "cat": "Juegos",
+    "carpeta": "metegol",
+    "ancho": 1.2, "largo": 2, "alto": 0.9,
+    "descripcion": "El clásico metegol, para chicos y grandes. Armá tu equipo y mostrá lo que sabés."
+  },
+  {
+    "nombre": "Tejo",
+    "cat": "Juegos",
+    "carpeta": "tejo",
+    "ancho": 1.5, "largo": 1.5, "alto": 0.8,
+    "descripcion": "Un juego clásico que nunca pasa de moda. Ideal para desafiar a amigos y familia en cada tiro."
+  },
+  {
+    "nombre": "Sapo",
+    "cat": "Juegos",
+    "carpeta": "sapo",
+    "ancho": 1, "largo": 1.5, "alto": 1,
+    "descripcion": "El tradicional juego del sapo. Probá tu puntería y sumá puntos: diversión para todas las edades."
+  },
+  {
+    "nombre": "Pool",
+    "cat": "Juegos",
+    "carpeta": "pool",
+    "ancho": 2, "largo": 1, "alto": 0.8,
+    "descripcion": "Una mesa de pool para tu evento, ideal para compartir un rato de competencia tranquila con amigos y familia."
+  },
+  {
+    "nombre": "Ping pong",
+    "cat": "Juegos",
+    "carpeta": "ping_pong",
+    "ancho": 2.7, "largo": 1.5, "alto": 0.8,
+    "descripcion": "Velocidad y reflejos en una mesa de ping pong. Un clásico para jugadores de todas las edades."
+  },
+  {
+    "nombre": "Yenga",
+    "cat": "Juegos",
+    "carpeta": "yenga",
+    "ancho": 0.5, "largo": 0.5, "alto": 1.5,
+    "descripcion": "El juego de destreza de la torre de madera: sacá una pieza sin que se caiga. La tensión crece en cada turno."
+  }
+]

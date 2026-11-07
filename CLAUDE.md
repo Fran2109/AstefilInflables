@@ -413,15 +413,15 @@ obvio (`fotoPlaceholder`) — nunca texto o fotos inventadas presentadas como re
   visor): plausibles pero **pendientes de confirmación de Francisco**.
 - **Fotos por modelo**: el admin ya permite subirlas de verdad (`ArticuloDialog` → Storage). Un
   artículo sin fotos cargadas muestra un `fotoPlaceholder` (banda de color + "FOTO de muestra"),
-  nunca una imagen real inventada. El repo viejo (`Fran2109/Astefil_Inflables`,
-  `Frontend/src/assets/inflables/*`) tiene fotos reales de los 19 modelos, listas para portar.
+  nunca una imagen real inventada. Los 19 modelos y sus fotos se cargaron desde el repo viejo
+  (`Fran2109/Astefil_Inflables`) con `tools/importar_inventario.py`; solo Rampa acuática
+  quedó sin fotos, a la espera de confirmar que las de ese repo son reales.
 
 ## Pendientes
 
 Ver `docs/BACKLOG.md` (actualizado al estado real; `README.md` también). Destacados
-actuales: cargar fotos reales por modelo (la feature de subida ya existe, faltan las fotos),
-cargar el inventario (hoy `articulos` está vacío, así que la landing no tiene catálogo),
-precios/fichas, y afinar los claims de servicio con Francisco.
+actuales: confirmar las medidas del inventario y las fotos de Rampa acuática, precios/fichas,
+y afinar los claims de servicio con Francisco.
 
 ## graphify
 
