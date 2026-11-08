@@ -91,7 +91,7 @@ export function Visor({ cfg, onCerrar, onPrecargar }: VisorProps) {
           </Button>
         )}
         <Button asChild variant="verde">
-          <a href={waLink} target="_blank" rel="noopener">
+          <a href={waLink} target="_blank" rel="noopener" data-origen="visor">
             Consultar por WhatsApp
           </a>
         </Button>

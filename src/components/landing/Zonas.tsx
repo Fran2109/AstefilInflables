@@ -36,6 +36,7 @@ export function Zonas() {
                   </span>
                 ))}
                 <a
+                  data-origen="zonas"
                   href={linkWhatsApp("¡Hola Astefil! Mi localidad no está en la lista, ¿llegan hasta mi zona? 🎈")}
                   target="_blank"
                   rel="noopener"
@@ -53,6 +54,7 @@ export function Zonas() {
               </p>
               <Button asChild variant="verde" size="chico">
                 <a
+                  data-origen="zonas"
                   href={linkWhatsApp("¡Hola Astefil! Quiero saber si llegan a mi zona 🎈")}
                   target="_blank"
                   rel="noopener"

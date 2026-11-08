@@ -75,6 +75,7 @@ export function Catalogo() {
               </p>
               <Button asChild variant="verde" size="chico" className="mt-4">
                 <a
+                  data-origen="catalogo"
                   href={linkWhatsApp("¡Hola Astefil! Quiero consultar por los inflables 🎈")}
                   target="_blank"
                   rel="noopener"
@@ -106,6 +107,7 @@ export function Catalogo() {
             </p>
             <Button asChild variant="verde" size="chico" className="mt-4">
               <a
+                data-origen="catalogo"
                 href={linkWhatsApp(`¡Hola Astefil! Quiero consultar por ${filtro} 🎈`)}
                 target="_blank"
                 rel="noopener"

@@ -346,7 +346,7 @@ function FormularioConsulta() {
           </div>
 
           <Button asChild variant="verde" size="full">
-            <a href={waLink} target="_blank" rel="noopener">
+            <a href={waLink} target="_blank" rel="noopener" data-origen="formulario-quinta">
               <MessageCircle className="h-[22px] w-[22px]" />
               Enviar consulta por WhatsApp
             </a>

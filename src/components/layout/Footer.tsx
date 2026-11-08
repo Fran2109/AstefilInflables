@@ -25,6 +25,7 @@ export function Footer() {
                 <li key={t.wa}>
                   📱{" "}
                   <a
+                    data-origen="footer"
                     href={linkWhatsApp(mensajeConsulta(pathname), t.wa)}
                     target="_blank"
                     rel="noopener"

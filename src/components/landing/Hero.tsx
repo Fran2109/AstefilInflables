@@ -44,7 +44,7 @@ export function Hero() {
               "¿cuánto sale y tenés mi fecha?". Solo WhatsApp se la contesta. */}
           <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:gap-3.5">
             <Button asChild variant="verde" className="w-full shadow-hard-lg sm:w-auto">
-              <a href={linkWhatsApp(MSG_INFLABLES)} target="_blank" rel="noopener">
+              <a href={linkWhatsApp(MSG_INFLABLES)} target="_blank" rel="noopener" data-origen="hero">
                 Pedime precio por WhatsApp
               </a>
             </Button>

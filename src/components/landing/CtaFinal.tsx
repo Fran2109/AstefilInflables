@@ -18,6 +18,7 @@ export function CtaFinal() {
           </p>
           <Button asChild size="full" className="max-w-sm" data-cta-conversion>
             <a
+              data-origen="cta-final"
               href={linkWhatsApp("¡Hola Astefil! Quiero reservar un inflable 🎈")}
               target="_blank"
               rel="noopener"

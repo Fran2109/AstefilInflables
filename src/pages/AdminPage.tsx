@@ -19,6 +19,7 @@ import { InventarioView } from "@/admin/views/InventarioView";
 import { CategoriasView } from "@/admin/views/CategoriasView";
 import { ZonasView } from "@/admin/views/ZonasView";
 import { TestimoniosView } from "@/admin/views/TestimoniosView";
+import { MetricasView } from "@/admin/views/MetricasView";
 import { EquipoView } from "@/admin/views/EquipoView";
 import { AjustesView } from "@/admin/views/AjustesView";
 
@@ -63,6 +64,7 @@ function AdminInner() {
     vista === "categorias" ||
     vista === "zonas" ||
     vista === "testimonios" ||
+    vista === "metricas" ||
     vista === "equipo" ||
     vista === "ajustes";
   const vistaActual: Vista = adminOnly && !esAdmin ? "inicio" : vista;
@@ -147,6 +149,7 @@ function AdminInner() {
           {vistaActual === "categorias" && <CategoriasView onAbrirCategoria={abrirCategoria} />}
           {vistaActual === "zonas" && <ZonasView onAbrirZona={abrirZona} />}
           {vistaActual === "testimonios" && <TestimoniosView />}
+          {vistaActual === "metricas" && <MetricasView />}
           {vistaActual === "equipo" && <EquipoView />}
           {vistaActual === "ajustes" && <AjustesView />}
         </main>

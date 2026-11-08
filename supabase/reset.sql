@@ -17,6 +17,8 @@ drop view if exists public.catalogo_inflables cascade;
 drop table if exists public.reservas    cascade;
 drop table if exists public.inflables   cascade;
 drop table if exists public.testimonios cascade;
+drop table if exists public.clics_whatsapp cascade;
+drop function if exists public.resumen_clics(timestamptz) cascade;
 drop table if exists public.productos   cascade;
 drop table if exists public.fotos       cascade;
 drop table if exists public.categorias  cascade;

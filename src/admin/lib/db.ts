@@ -26,6 +26,20 @@ function sb() {
   return supabase;
 }
 
+// ---- Métricas ----
+export interface ResumenClic {
+  origen: string;
+  pagina: string;
+  total: number;
+}
+
+/** Clicks a WhatsApp desde `desde`, agrupados en la base. Solo admin (RLS). */
+export async function resumenClics(desde: string): Promise<ResumenClic[]> {
+  const { data, error } = await sb().rpc("resumen_clics", { desde });
+  if (error) throw error;
+  return data as ResumenClic[];
+}
+
 // ---- Mapeos Reserva ----
 type ReservaRow = {
   id: string;

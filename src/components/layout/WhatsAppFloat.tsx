@@ -60,6 +60,7 @@ export function WhatsAppFloat() {
 
   return (
     <a
+      data-origen="flotante"
       href={linkWhatsApp(mensajeConsulta(pathname))}
       target="_blank"
       rel="noopener"

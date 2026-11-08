@@ -102,6 +102,12 @@ puerto 5173). El screenshot a veces se cuelga en `/admin`; ahí inspeccionar el 
   **Al insertar desde el cliente no encadenar `.select()`**: la fila nace `pendiente`, la
   política de lectura pública no la matchea y PostgREST falla al devolverla (ver
   `enviarTestimonio` en `lib/landingDb.ts`).
+- **`clics_whatsapp` también tiene alta pública, pero solo de contadores** (`supabase/clics-whatsapp.sql`):
+  origen y página son listas cerradas por CHECK, `creado` queda clavado a "ahora", el alta es
+  solo `anon` (con sesión del panel no cuenta) y se lee con `resumen_clics`, solo admin. La
+  mide `lib/metricas.ts`, un listener único y solo en producción: **cada link a WhatsApp lleva
+  `data-origen`**. Un origen nuevo va en el CHECK, en `ORIGENES` y en `ETIQUETAS` de
+  `MetricasView`; si falta, cuenta como "otro".
 - **⚠️ Las vistas no las protege la RLS de la tabla de abajo.** `catalogo_articulos` corre con
   los permisos de su dueño (no es `security_invoker`) para poder exponer los artículos activos
   sin sesión y sin el precio. Como es un `select` de una sola tabla, Postgres la considera
@@ -203,7 +209,7 @@ puerto 5173). El screenshot a veces se cuelga en `/admin`; ahí inspeccionar el 
   al borrar porque `Reserva.zona` es texto libre, no FK), **Comentarios**
   (`TestimoniosView`: moderación, solo admin — **sin alta**, los comentarios los escribe la
   gente desde la landing; filtra por estado y arranca en "Pendientes", que es la cola de
-  trabajo), **Equipo** (roles, solo admin),
+  trabajo), **Métricas** (clicks a WhatsApp por origen, solo admin), **Equipo** (roles, solo admin),
   **Ajustes** (nombre/PIN, cerrar sesión, backup: exportar JSON + reservas CSV, importar JSON —
   todo lo destructivo pasa por `useConfirmar()`). **"Cargar ejemplos" y "Borrar todo" solo
   aparecen en modo local**: online escribirían en la base real (reservas falsas mezcladas con

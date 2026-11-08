@@ -147,6 +147,7 @@ export function Header() {
             `aria-label` mantiene el nombre accesible cuando el texto no está. */}
         <Button asChild variant="verde" size="chico" className="hidden md:inline-flex">
           <a
+            data-origen="header"
             href={linkWhatsApp(mensajeConsulta(pathname))}
             target="_blank"
             rel="noopener"
@@ -179,6 +180,7 @@ export function Header() {
             </button>
           ))}
           <a
+            data-origen="header"
             href={linkWhatsApp(mensajeConsulta(pathname))}
             target="_blank"
             rel="noopener"

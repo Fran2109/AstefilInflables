@@ -181,7 +181,7 @@ export function Cotizador() {
           </div>
 
           <Button asChild variant="verde" size="full" data-cta-conversion>
-            <a href={waLink} target="_blank" rel="noopener">
+            <a href={waLink} target="_blank" rel="noopener" data-origen="cotizador">
               <MessageCircle className="h-[22px] w-[22px]" />
               Enviar consulta por WhatsApp
             </a>

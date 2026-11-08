@@ -59,9 +59,9 @@ verdad vs. placeholder).
       dominio definitivo.
 
 ## P4 — Medición
-- [ ] Analytics liviano (Plausible o GA4) + evento en cada click a WhatsApp
-      (cotizador, cards, visor, flotante, CTA final) para medir conversión por origen.
-      No hay nada instalado todavía.
+- [x] Clicks a WhatsApp por origen: tabla `clics_whatsapp` y vista Métricas del panel.
+- [ ] Visitas y de dónde llega la gente (Plausible o GA4): hoy solo se cuentan los clicks,
+      así que no hay tasa de conversión.
 
 ## P5 — Admin (evolución)
 - [x] Persistencia multi-dispositivo: resuelto con Supabase (Postgres + Auth + RLS).

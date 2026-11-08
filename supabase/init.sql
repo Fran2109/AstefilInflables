@@ -49,6 +49,8 @@ drop view  if exists public.catalogo_articulos cascade;
 drop table if exists public.reservas    cascade;
 drop table if exists public.articulos   cascade;
 drop table if exists public.testimonios cascade;
+drop table if exists public.clics_whatsapp cascade;
+drop function if exists public.resumen_clics(timestamptz) cascade;
 drop table if exists public.productos   cascade;  -- por si quedó de una versión vieja
 drop table if exists public.fotos       cascade;  -- por si quedó de una versión vieja
 drop table if exists public.categorias  cascade;
@@ -128,6 +130,20 @@ create table public.testimonios (
 -- La consulta pública es siempre "aprobados, del más nuevo al más viejo".
 create index testimonios_publicos_idx
   on public.testimonios (creado desc) where estado = 'aprobado';
+
+-- Clicks a los botones de WhatsApp, por origen (ver `clics-whatsapp.sql`). No
+-- guarda quién fue. Alta anónima con listas cerradas; leer es solo admin.
+create table public.clics_whatsapp (
+  id     uuid primary key default gen_random_uuid(),
+  origen text not null check (origen in (
+    'hero', 'cotizador', 'catalogo', 'modelo', 'visor', 'zonas', 'cta-final',
+    'header', 'flotante', 'footer', 'formulario-quinta', 'otro'
+  )),
+  pagina text not null check (pagina in ('landing', 'quinta')),
+  creado timestamptz not null default now()
+);
+
+create index clics_whatsapp_creado_idx on public.clics_whatsapp (creado desc);
 
 -- Inventario. precio 0 = sin definir. Dimensiones en metros (ancho × largo × alto).
 -- `cat` referencia categorias.nombre (se actualiza en cascada si se renombra).
@@ -218,6 +234,7 @@ create trigger on_auth_user_created
 alter table public.categorias  enable row level security;
 alter table public.zonas       enable row level security;
 alter table public.testimonios enable row level security;
+alter table public.clics_whatsapp enable row level security;
 alter table public.articulos   enable row level security;
 alter table public.reservas    enable row level security;
 alter table public.config      enable row level security;
@@ -251,6 +268,33 @@ create policy "alta publica" on public.testimonios
 create policy "moderacion admin" on public.testimonios
   for all to authenticated
   using (public.es_admin()) with check (public.es_admin());
+
+-- Clicks: alta solo sin sesión (los del equipo no son consultas) y con `creado`
+-- clavado a "ahora". Se lee agrupado con `resumen_clics`.
+create policy "alta anonima" on public.clics_whatsapp
+  for insert to anon
+  with check (creado between now() - interval '1 minute' and now() + interval '1 minute');
+
+create policy "lectura admin" on public.clics_whatsapp
+  for select to authenticated
+  using (public.es_admin());
+
+create function public.resumen_clics(desde timestamptz)
+returns table (origen text, pagina text, total integer)
+language sql
+stable
+security invoker
+set search_path = ''
+as $$
+  select c.origen, c.pagina, count(*)::integer
+  from public.clics_whatsapp c
+  where c.creado >= desde
+  group by c.origen, c.pagina
+  order by 3 desc;
+$$;
+
+revoke execute on function public.resumen_clics(timestamptz) from public, anon;
+grant execute on function public.resumen_clics(timestamptz) to authenticated;
 
 -- Inventario y config: lectura de cualquier logueado, escritura SOLO admin.
 do $$

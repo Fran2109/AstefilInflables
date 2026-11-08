@@ -11,6 +11,7 @@ export type Vista =
   | "categorias"
   | "zonas"
   | "testimonios"
+  | "metricas"
   | "equipo"
   | "ajustes";
 
@@ -22,6 +23,7 @@ const TABS: { id: Vista; ico: string; label: string; adminOnly?: boolean }[] = [
   { id: "categorias", ico: "🏷️", label: "Categorías", adminOnly: true },
   { id: "zonas", ico: "📍", label: "Zonas", adminOnly: true },
   { id: "testimonios", ico: "💬", label: "Comentarios", adminOnly: true },
+  { id: "metricas", ico: "📊", label: "Métricas", adminOnly: true },
   { id: "equipo", ico: "👥", label: "Equipo", adminOnly: true },
   { id: "ajustes", ico: "⚙️", label: "Ajustes", adminOnly: true },
 ];

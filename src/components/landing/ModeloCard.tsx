@@ -88,7 +88,7 @@ export function ModeloCard({ modelo }: { modelo: ModeloPublico }) {
             ¡Lo quiero!
           </Button>
           <Button asChild variant="blanco" size="chico">
-            <a href={wa} target="_blank" rel="noopener">
+            <a href={wa} target="_blank" rel="noopener" data-origen="modelo">
               Consultar
             </a>
           </Button>
