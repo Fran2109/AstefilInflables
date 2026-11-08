@@ -18,7 +18,7 @@ const FILTROS: { id: Filtro; label: string }[] = [
 
 const ESTILO_ESTADO: Record<EstadoTestimonio, { txt: string; cls: string }> = {
   pendiente: { txt: "Pendiente", cls: "bg-amarillo" },
-  aprobado: { txt: "Publicado", cls: "bg-verde text-white" },
+  aprobado: { txt: "Publicado", cls: "bg-verde text-tinta" },
   rechazado: { txt: "Rechazado", cls: "bg-tinta text-white" },
 };
 

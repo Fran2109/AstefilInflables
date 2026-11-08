@@ -27,7 +27,7 @@ const config: Config = {
         cielo: { DEFAULT: "#C9E9FF", osc: "#A5D6F7" },
         papel: "#FFFDF6",
         tinta: "#1B1310",
-        gris: "#8D7F76",
+        gris: "#756860",
 
         // Tokens semánticos shadcn/ui (mapeados a CSS vars)
         border: "hsl(var(--border))",

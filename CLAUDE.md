@@ -140,6 +140,9 @@ puerto 5173). El screenshot a veces se cuelga en `/admin`; ahí inspeccionar el 
 - **Auth**: login real Supabase (email/clave) en `components/Login.tsx`. `AdminContext` escucha
   `onAuthStateChange`, carga el rol y los datos al iniciar sesión. Sin sesión → `AdminPage`
   muestra `<Login>`. En modo offline, cae al `<Gate>` de PIN viejo (disuasión casual).
+  "¿Olvidaste tu clave?" manda el mail con `resetPasswordForEmail` (vuelve a `/admin`, esa URL
+  tiene que estar en Supabase → Authentication → URL Configuration); el evento
+  `PASSWORD_RECOVERY` prende `recuperando` y `AdminPage` muestra `<NuevaClave>`.
 - **Confirmación de acciones** (`components/Confirm.tsx`): `ConfirmProvider` + `useConfirmar()`
   proveen un modal de confirmación con el estilo del panel (basado en `<Modal>`, promesa
   `await confirmar({titulo, mensaje, textoConfirmar, peligro})`).
@@ -199,8 +202,15 @@ puerto 5173). El screenshot a veces se cuelga en `/admin`; ahí inspeccionar el 
   (`TestimoniosView`: moderación, solo admin — **sin alta**, los comentarios los escribe la
   gente desde la landing; filtra por estado y arranca en "Pendientes", que es la cola de
   trabajo), **Equipo** (roles, solo admin),
-  **Ajustes** (nombre/PIN, cerrar sesión, backup: exportar JSON + reservas CSV, importar JSON,
-  cargar ejemplos, borrar todo — todo lo destructivo pasa por `useConfirmar()`).
+  **Ajustes** (nombre/PIN, cerrar sesión, backup: exportar JSON + reservas CSV, importar JSON —
+  todo lo destructivo pasa por `useConfirmar()`). **"Cargar ejemplos" y "Borrar todo" solo
+  aparecen en modo local**: online escribirían en la base real (reservas falsas mezcladas con
+  las de verdad, o vaciar reservas y reemplazar el inventario de todos). No volver a mostrarlos
+  online. Importar sí está online y reemplaza todo, por eso pide confirmación con los totales.
+- **Navegación móvil** (`components/Rail.tsx`): la barra inferior muestra solo `EN_BARRA` (Inicio,
+  Calendario, Reservas, Inventario) + **"Más"**, que abre un panel con el resto y con cerrar
+  sesión. Las 9 juntas medían 637px y la barra no scrollea. **Al sumar una vista, ponerla en
+  "Más"**: en la barra entran 5 botones a 320px.
 - **WhatsApp al cliente** (`admin/lib/whatsapp.ts` → `linkWaCliente`): arma el mensaje desde una
   reserva (uno para `Consulta`, otro de confirmación con ítems/fecha/precio/seña). Es distinto
   de `src/lib/whatsapp.ts`, que es el de la landing (cotizador/consulta de quinta) — no mezclarlos.
@@ -239,7 +249,9 @@ puerto 5173). El screenshot a veces se cuelga en `/admin`; ahí inspeccionar el 
   falta para publicarlo (`supabase/eliminar_tabla_productos.sql`).
 - **Cotizador**: formulario controlado (`DatosCotizacion` en `lib/whatsapp.ts` → `linkCotizacion`
   arma el mensaje/link en vivo); incluye horario tentativo como rango (`horarioDesde`/
-  `horarioHasta`, opcionales) y dirección. No hay backend de envío: **WhatsApp ES el funnel**.
+  `horarioHasta`, opcionales) y dirección. No se pueden elegir fechas pasadas (`min` del
+  `DatePicker`). Un horario de fin anterior al de inicio solo avisa, no bloquea: una fiesta de
+  20 a 02 hs es válida. No hay backend de envío: **WhatsApp ES el funnel**.
   El select "¿Qué te interesa?" lista los **modelos reales del inventario**
   (`nombresDeModelos`, en `Cotizador.tsx`: los de `useCatalogo().modelos`, ordenados por el
   orden de categoría y después por nombre). No hay lista hardcodeada de opciones: si el
@@ -252,7 +264,8 @@ puerto 5173). El screenshot a veces se cuelga en `/admin`; ahí inspeccionar el 
 - **"¿Llegamos a tu zona?"** (`Zonas.tsx`): chips con `useCatalogo().zonas` (DB o fallback
   estático, ver arriba) — mismo ABM que gestiona el admin.
 - **Comentarios** (`Testimonios.tsx`, sección `#comentarios`, "Opiniones" en el nav): la pared
-  de aprobados (más reciente primero) más el formulario de alta. Solo nombre y texto son
+  de aprobados (más reciente primero) más el formulario de alta, **cerrado detrás de un botón**:
+  abierto ocupa ~1200px en el celular y empujaba el cotizador. Solo nombre y texto son
   obligatorios; abajo de una línea punteada van cuatro opcionales (puntaje en estrellas, qué
   alquiló, localidad y fecha de la fiesta) separados y dichos como tales, para que nadie sienta
   que tiene que llenar un formulario largo para dejar dos líneas. "¿Qué alquilaste?" son
@@ -313,7 +326,7 @@ Identidad compartida por landing, admin y flyer. Tokens en `tailwind.config.ts` 
 | `rojo` | `#E8352B` | primario, CTAs fuertes |
 | `amarillo` | `#FFC61B` | acentos, hover, chip activo |
 | `azul` | `#1F6FD0` | secundario, links de sección |
-| `verde` | `#23B15D` | todo lo WhatsApp / confirmar |
+| `verde` | `#23B15D` | todo lo WhatsApp / confirmar. **Texto encima: `tinta`, nunca blanco** (blanco da 2,79:1, tinta 6,55:1) |
 | `rosa` | `#FF7AA2` | acento terciario |
 | `cielo` | `#C9E9FF` | fondo landing / login |
 | `papel` | `#FFFDF6` | tarjetas / fondo admin |

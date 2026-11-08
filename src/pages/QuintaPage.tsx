@@ -8,6 +8,7 @@ import { TituloSeccion } from "@/components/landing/TituloSeccion";
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
 import { DatePicker } from "@/components/ui/date-picker";
+import { hoyLocal } from "@/lib/utils";
 import { VisorFotos } from "@/components/ui/visor-fotos";
 import { FotoResponsive } from "@/components/ui/foto-responsive";
 import { linkConsultaQuinta } from "@/lib/whatsapp";
@@ -264,7 +265,7 @@ function FormularioConsulta() {
     <section id="consulta" className="pb-16 pt-12">
       <div className="container">
         <TituloSeccion
-          bandaClassName="bg-verde text-white"
+          bandaClassName="bg-verde text-tinta"
           sub="Completá lo que sepas y te abrimos WhatsApp con el mensaje armado. Te respondemos con precio, disponibilidad y la ubicación exacta."
         >
           Consultá por la quinta
@@ -315,7 +316,7 @@ function FormularioConsulta() {
                   en sm+ van lado a lado, cada uno flex-1 min-w-0 para encoger bien. */}
               <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
                 <div className="w-full sm:min-w-0 sm:flex-1">
-                  <DatePicker id="q-fecha" value={fecha} onChange={setFecha} triggerClassName={inputCls} />
+                  <DatePicker id="q-fecha" value={fecha} onChange={setFecha} min={hoyLocal()} triggerClassName={inputCls} />
                 </div>
                 <span className="font-alt font-bold text-[#5a4a41] sm:shrink-0">al</span>
                 <div className="w-full sm:min-w-0 sm:flex-1">
@@ -323,6 +324,7 @@ function FormularioConsulta() {
                     id="q-fecha-hasta"
                     value={fechaHasta}
                     onChange={setFechaHasta}
+                    min={fecha || hoyLocal()}
                     triggerClassName={inputCls}
                   />
                 </div>

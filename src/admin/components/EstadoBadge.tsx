@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 const ESTADO_CLS: Record<Estado, string> = {
   Consulta: "bg-amarillo text-tinta",
   Reservado: "bg-azul text-white",
-  Señado: "bg-verde text-white",
+  Señado: "bg-verde text-tinta",
   Entregado: "bg-rosa text-tinta",
   Finalizado: "bg-[#ddd] text-tinta",
   Cancelado: "bg-white text-gris line-through",

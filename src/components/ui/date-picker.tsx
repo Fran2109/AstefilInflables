@@ -26,6 +26,12 @@ interface Props {
    * una fiesta que ya pasó, así que no tiene sentido ofrecer fechas futuras.
    */
   max?: string;
+  /**
+   * Fecha mínima elegible, 'YYYY-MM-DD'. Los días anteriores quedan
+   * deshabilitados. Lo usan el cotizador y la quinta: se consulta por un evento
+   * que todavía no pasó.
+   */
+  min?: string;
   /** Clases del botón disparador (define el estilo del "campo" en cada contexto). */
   triggerClassName: string;
 }
@@ -79,6 +85,7 @@ export function DatePicker({
   ariaLabelledBy,
   placeholder,
   max,
+  min,
   triggerClassName,
 }: Props) {
   const [open, setOpen] = useState(false);
@@ -173,7 +180,7 @@ export function DatePicker({
                   const esElegido = iso === value;
                   // Comparar los ISO como texto alcanza: 'YYYY-MM-DD' ordena
                   // igual lexicográfica que cronológicamente.
-                  const bloqueado = !!max && iso > max;
+                  const bloqueado = (!!max && iso > max) || (!!min && iso < min);
                   return (
                     <button
                       key={iso}

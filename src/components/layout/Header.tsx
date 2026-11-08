@@ -183,7 +183,7 @@ export function Header() {
             target="_blank"
             rel="noopener"
             onClick={() => setAbierto(false)}
-            className="flex w-full items-center justify-center gap-2 rounded-full border-3 border-tinta bg-verde px-4 py-3 text-center font-alt text-[1.08rem] font-bold text-white shadow-hard-sm"
+            className="flex w-full items-center justify-center gap-2 rounded-full border-3 border-tinta bg-verde px-4 py-3 text-center font-alt text-[1.08rem] font-bold text-tinta shadow-hard-sm"
           >
             <MessageCircle className="h-5 w-5" /> Escribinos por WhatsApp
           </a>

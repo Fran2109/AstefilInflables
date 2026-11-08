@@ -3,6 +3,12 @@
 @tailwind utilities;
 
 @layer base {
+  /* El gris por defecto de Tailwind da 2,5:1 sobre blanco: no se llega a leer. */
+  input::placeholder,
+  textarea::placeholder {
+    color: theme("colors.gris");
+  }
+
   :root {
     /* ===== Tokens de marca "neo-brutalismo caramelo" ===== */
     --rojo: #e8352b;

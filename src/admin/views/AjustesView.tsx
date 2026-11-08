@@ -56,7 +56,19 @@ export function AjustesView() {
     try {
       const data = JSON.parse(await f.text()) as { reservas?: Reserva[]; articulos?: Articulo[]; config?: { nombre?: string } };
       if (!Array.isArray(data.reservas) || !Array.isArray(data.articulos)) throw new Error("inválido");
-      await importarBackup(data.reservas, data.articulos, data.config?.nombre);
+      const ok = await confirmar({
+        titulo: "Importar copia",
+        mensaje: (
+          <>
+            Vas a reemplazar <strong>TODAS las reservas y el inventario</strong> por los de este
+            archivo ({data.reservas.length} reservas, {data.articulos.length} artículos). Esta acción
+            no se puede deshacer. ¿Seguro?
+          </>
+        ),
+        textoConfirmar: "Sí, reemplazar todo",
+        peligro: true,
+      });
+      if (ok) await importarBackup(data.reservas, data.articulos, data.config?.nombre);
     } catch {
       mostrarToast("Archivo inválido");
     }
@@ -68,6 +80,15 @@ export function AjustesView() {
     if (v === null) return;
     await setPin(v.trim());
     mostrarToast(v.trim() ? "PIN actualizado ✓" : "Acceso sin PIN");
+  };
+
+  const confirmarEjemplos = async () => {
+    const ok = await confirmar({
+      titulo: "Cargar ejemplos",
+      mensaje: 'Se van a sumar 5 reservas de muestra, marcadas como "Ejemplo".',
+      textoConfirmar: "Cargar",
+    });
+    if (ok) await cargarEjemplos();
   };
 
   const confirmarBorrar = async () => {
@@ -134,17 +155,25 @@ export function AjustesView() {
           </div>
         </Fila>
 
-        <Fila titulo="Datos de ejemplo" desc='Cargá reservas de muestra (marcadas como "Ejemplo") para probar el panel.'>
-          <Button variant="blanco" size="mini" onClick={cargarEjemplos}>
-            Cargar ejemplos
-          </Button>
-        </Fila>
+        {/* Solo en modo local. Online escribirían en la base real: "Borrar todo"
+            decía "de este dispositivo" y en realidad vaciaba las reservas y
+            reemplazaba el inventario de todos, y los ejemplos mezclaban
+            reservas falsas con las de verdad. */}
+        {!online && (
+          <>
+            <Fila titulo="Datos de ejemplo" desc='Cargá reservas de muestra (marcadas como "Ejemplo") para probar el panel.'>
+              <Button variant="blanco" size="mini" onClick={confirmarEjemplos}>
+                Cargar ejemplos
+              </Button>
+            </Fila>
 
-        <Fila titulo="Borrar todo" desc="Elimina reservas, inventario y ajustes de este dispositivo. No hay vuelta atrás.">
-          <Button variant="peligro" size="mini" onClick={confirmarBorrar}>
-            🗑 Borrar todo
-          </Button>
-        </Fila>
+            <Fila titulo="Borrar todo" desc="Elimina reservas, inventario y ajustes de este dispositivo. No hay vuelta atrás.">
+              <Button variant="peligro" size="mini" onClick={confirmarBorrar}>
+                🗑 Borrar todo
+              </Button>
+            </Fila>
+          </>
+        )}
       </Panel>
 
       <p className="text-[.82rem] text-[#5a4a41]">

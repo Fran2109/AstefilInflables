@@ -19,7 +19,7 @@ const buttonVariants = cva(
       variant: {
         amarillo: "bg-amarillo text-tinta",
         rojo: "bg-rojo text-white",
-        verde: "bg-verde text-white",
+        verde: "bg-verde text-tinta",
         azul: "bg-azul text-white",
         blanco: "bg-white text-tinta",
         peligro: "bg-white text-rojo",

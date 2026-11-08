@@ -11,7 +11,30 @@ export function Login({ onEntrar }: { onEntrar: () => void }) {
   const [email, setEmail] = useState("");
   const [pass, setPass] = useState("");
   const [error, setError] = useState("");
+  const [aviso, setAviso] = useState("");
   const [cargando, setCargando] = useState(false);
+
+  /** El link del mail vuelve a /admin; ahí `AdminContext` detecta la recuperación. */
+  const olvideClave = async () => {
+    if (!supabase) return;
+    setError("");
+    setAviso("");
+    if (!email.trim()) {
+      setError("Escribí tu email y volvé a tocar acá.");
+      return;
+    }
+    setCargando(true);
+    const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+      redirectTo: window.location.origin + "/admin",
+    });
+    setCargando(false);
+    if (error) {
+      setError("No pudimos mandar el mail. Probá de nuevo en un rato.");
+      return;
+    }
+    // Mismo mensaje exista o no la cuenta: no confirmar qué emails están cargados.
+    setAviso("Si ese email tiene cuenta, te mandamos un link para elegir una clave nueva.");
+  };
 
   const entrar = async () => {
     if (!supabase) return;
@@ -74,11 +97,20 @@ export function Login({ onEntrar }: { onEntrar: () => void }) {
         />
 
         {error && <p className="mb-3 font-alt text-[.9rem] font-bold text-rojo">{error}</p>}
+        {aviso && <p role="status" className="mb-3 font-alt text-[.9rem] font-bold">{aviso}</p>}
 
         <Button variant="rojo" size="full" onClick={entrar} disabled={cargando}>
           {cargando ? "Entrando…" : "Entrar"}
         </Button>
-        <p className="mt-3.5 text-[.78rem] leading-[1.4] text-gris">
+        <button
+          type="button"
+          onClick={olvideClave}
+          disabled={cargando}
+          className="mt-3 min-h-[44px] font-alt text-[.9rem] font-extrabold text-azul hover:underline"
+        >
+          ¿Olvidaste tu clave?
+        </button>
+        <p className="mt-1.5 text-[.78rem] leading-[1.4] text-gris">
           Acceso protegido con Supabase. Tus datos viven en la nube y se sincronizan entre
           dispositivos.
         </p>

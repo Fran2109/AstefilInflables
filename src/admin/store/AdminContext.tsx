@@ -72,6 +72,9 @@ interface AdminContextValue {
   online: boolean;
   /** Estado de sesión (solo relevante online): null = averiguando. */
   sesion: boolean | null;
+  /** Entró por el link de "olvidé mi clave": falta definir la nueva. */
+  recuperando: boolean;
+  terminarRecuperacion: () => void;
   emailUsuario: string;
   /** Rol del usuario logueado (online). En modo local es "admin". */
   rol: Rol;
@@ -140,6 +143,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
   // ejemplo) y un booleano se apagaría al terminar la primera.
   const [escrituras, setEscrituras] = useState(0);
   const [sesion, setSesion] = useState<boolean | null>(online ? null : true);
+  const [recuperando, setRecuperando] = useState(false);
   const [emailUsuario, setEmailUsuario] = useState("");
   // Online arranca en "empleado" (mínimo privilegio) hasta confirmar el rol.
   const [rol, setRol] = useState<Rol>(online ? "empleado" : "admin");
@@ -224,7 +228,8 @@ export function AdminProvider({ children }: { children: ReactNode }) {
 
     // Modo Supabase: la sesión gobierna la carga (onAuthStateChange emite el
     // estado inicial y cada login/logout).
-    const { data: listener } = supabase!.auth.onAuthStateChange((_evento, ses) => {
+    const { data: listener } = supabase!.auth.onAuthStateChange((evento, ses) => {
+      if (evento === "PASSWORD_RECOVERY") setRecuperando(true);
       const activa = !!ses;
       setSesion(activa);
       setEmailUsuario(ses?.user?.email ?? "");
@@ -262,6 +267,8 @@ export function AdminProvider({ children }: { children: ReactNode }) {
   const cerrarSesion = useCallback(() => {
     supabase?.auth.signOut();
   }, []);
+
+  const terminarRecuperacion = useCallback(() => setRecuperando(false), []);
 
   // ---- Reservas ----
   const guardarReserva = useCallback(
@@ -672,7 +679,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
 
   const value = useMemo<AdminContextValue>(
     () => ({
-      cargando, guardando: escrituras > 0, online, sesion, emailUsuario, rol, esAdmin, cerrarSesion,
+      cargando, guardando: escrituras > 0, online, sesion, recuperando, terminarRecuperacion, emailUsuario, rol, esAdmin, cerrarSesion,
       articulos, reservas, config, categorias, zonas, testimonios, modo, toast, mostrarToast,
       guardarReserva, eliminarReserva, avanzarEstado,
       guardarArticulo, eliminarArticulo,
@@ -683,7 +690,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
       cargarEjemplos, borrarTodo, importarBackup,
     }),
     [
-      cargando, escrituras, online, sesion, emailUsuario, rol, esAdmin, cerrarSesion,
+      cargando, escrituras, online, sesion, recuperando, terminarRecuperacion, emailUsuario, rol, esAdmin, cerrarSesion,
       articulos, reservas, config, categorias, zonas, testimonios, modo, toast, mostrarToast,
       guardarReserva, eliminarReserva, avanzarEstado,
       guardarArticulo, eliminarArticulo,

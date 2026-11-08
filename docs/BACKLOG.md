@@ -29,20 +29,26 @@ verdad vs. placeholder).
       categoría (Francisco eligió modelos, no categorías).
 - [ ] Quiz "¿Cuál me conviene?": 3 preguntas (edad, casa/salón, invitados) → recomienda
       categoría → botón que llama a `precargar()`.
-- [ ] Cotizador v2: que el `DatePicker` no deje elegir fechas pasadas (hoy resalta el día
-      de hoy pero no tiene mínimo), hint al elegir sábado/domingo, y confeti liviano al
-      enviar (respetando reduced-motion). El campo de horario ya está (rango desde/hasta).
+- [ ] Cotizador v2: hint al elegir sábado/domingo y confeti liviano al enviar (respetando
+      reduced-motion). Ya no deja elegir fechas pasadas y avisa si el horario termina antes
+      de empezar.
 - [ ] Barra CTA fija en mobile (aparece al scrollear pasado el hero): "💬 Cotizá tu fecha".
       Hoy solo está el botón flotante de WhatsApp.
 - [ ] Countdown honesto en la CTA final: "Quedan N sábados de <mes>" calculado real.
 
 ## P3 — Pulido
-- [ ] **`ReservaDialog` usa selectores nativos**: es el único formulario que quedó con
-      `<input type="date">`, `<input type="time">` (×2) y `<select>` nativos, que `CLAUDE.md`
-      prohíbe — sus popups usan el estilo del sistema operativo y no se pueden restylear.
-      Migrarlo a `DatePicker`, `TimePicker` y `Select` de `components/ui/`. Salió a la luz al
-      arreglar los desplegables dentro de diálogos: no estaban rotos, simplemente nunca se
-      migraron.
+- [ ] **`ReservaDialog` usa selectores nativos**: quedó con `<input type="date">`,
+      `<input type="time">` (×2) y `<select>` nativos, que `CLAUDE.md` prohíbe — sus popups
+      usan el estilo del sistema operativo y no se pueden restylear. Los dos filtros de
+      `ReservasView` tienen el mismo problema. Migrarlos a `DatePicker`, `TimePicker` y
+      `Select` de `components/ui/`. Salió a la luz al arreglar los desplegables dentro de
+      diálogos: no estaban rotos, simplemente nunca se migraron.
+- [ ] **Hallazgos medios y bajos de la auditoría UX/UI (nov 2026)**: aviso al guardar una
+      Consulta en un día ya reservado; reservas ordenadas con la fecha más lejana primero;
+      "Cancelar" descarta sin avisar; el monto del KPI se sale de su tarjeta; calendario
+      desborda a 320px; mensaje de `/quinta` sin nombre ("Soy —"); miniaturas del visor bajan
+      la foto de 1280px; cotizador de un solo artículo; la franja ofrece Deportivos y Livings
+      que no están en el catálogo; blanco sobre `rojo` da 4,22:1 en texto chico.
 
 - [x] Lightbox / visor de detalle por producto con galería.
 - [x] Visor de fotos genérico (`VisorFotos`) para heros y galerías de la quinta.

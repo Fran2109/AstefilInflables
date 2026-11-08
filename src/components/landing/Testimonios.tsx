@@ -194,6 +194,9 @@ function FormularioComentario() {
   const [enviando, setEnviando] = useState(false);
   const [enviado, setEnviado] = useState<ComentarioNuevo | null>(null);
   const [error, setError] = useState("");
+  // Arranca cerrado: abierto ocupaba ~1200px en el celular y empujaba el
+  // cotizador, que es la conversión real, para abajo de todo.
+  const [abierto, setAbierto] = useState(false);
 
   const nombresModelos = useMemo(
     () => [...new Set(modelos.map((m) => m.nombre))].sort((a, b) => a.localeCompare(b, "es")),
@@ -290,6 +293,16 @@ function FormularioComentario() {
 
   if (!haySupabase) return null;
 
+  if (!abierto) {
+    return (
+      <div className="mt-8 text-center">
+        <Button variant="blanco" onClick={() => setAbierto(true)}>
+          Dejanos tu comentario
+        </Button>
+      </div>
+    );
+  }
+
   return (
     <div className="mx-auto mt-11 max-w-[620px] rounded-[calc(var(--radio)+6px)] border-3 border-tinta bg-papel p-6 shadow-hard md:p-7">
       <h3 className="text-[1.25rem] font-extrabold leading-tight">Dejanos tu comentario</h3>
@@ -305,6 +318,7 @@ function FormularioComentario() {
           <input
             id="c-nombre"
             type="text"
+            autoFocus
             placeholder="Ej: Caro"
             maxLength={LIMITES_COMENTARIO.quien}
             className={inputCls}

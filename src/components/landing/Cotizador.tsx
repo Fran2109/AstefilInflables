@@ -10,6 +10,7 @@ import { OPCIONES_LUGAR, SITIO } from "@/data/site";
 import { linkCotizacion } from "@/lib/whatsapp";
 import { useLanding } from "@/context/LandingContext";
 import { useCatalogo } from "@/context/CatalogoContext";
+import { hoyLocal } from "@/lib/utils";
 
 const inputCls =
   "w-full rounded-xl border-3 border-tinta bg-white px-3.5 py-3 font-body text-base text-tinta shadow-[inset_3px_3px_0_rgba(27,19,16,.08)] focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-azul";
@@ -37,6 +38,9 @@ export function Cotizador() {
     direccion,
   };
   const waLink = linkCotizacion(datos);
+  // No se bloquea: una fiesta de 20 a 02 hs es válida, pero también puede ser
+  // un error de tipeo. 'HH:MM' ordena igual como texto que como hora.
+  const terminaAntes = !!horarioDesde && !!horarioHasta && horarioHasta <= horarioDesde;
 
   const delInventario = useMemo(() => nombresDeModelos(categorias, modelos), [categorias, modelos]);
 
@@ -52,7 +56,7 @@ export function Cotizador() {
     <section id="cotizar" className="py-16">
       <div className="container">
         <TituloSeccion
-          bandaClassName="bg-verde text-white"
+          bandaClassName="bg-verde text-tinta"
           sub="Completá lo que sepas, tocá el botón y te abrimos WhatsApp con el mensaje ya armado. Sin vueltas."
         >
           Cotizá en 30 segundos
@@ -102,6 +106,7 @@ export function Cotizador() {
                 ariaLabelledBy="f-fecha-label"
                 value={fecha}
                 onChange={setFecha}
+                min={hoyLocal()}
                 triggerClassName={inputCls}
               />
             </div>
@@ -126,6 +131,11 @@ export function Cotizador() {
                   triggerClassName={inputCls}
                 />
               </div>
+              {terminaAntes && (
+                <p role="status" className="mt-1.5 text-[.85rem] text-[#5a4a41]">
+                  Ojo: termina antes de la hora de inicio. Si sigue al día siguiente, dejalo así.
+                </p>
+              )}
             </div>
             <div>
               <label htmlFor="f-zona" className={labelCls}>

@@ -1,7 +1,7 @@
 import { TituloSeccion } from "@/components/landing/TituloSeccion";
 import { PASOS } from "@/data/site";
 
-const COLOR_NUM = ["bg-rojo text-white", "bg-azul text-white", "bg-amarillo text-tinta", "bg-verde text-white"];
+const COLOR_NUM = ["bg-rojo text-white", "bg-azul text-white", "bg-amarillo text-tinta", "bg-verde text-tinta"];
 
 export function ComoFunciona() {
   return (

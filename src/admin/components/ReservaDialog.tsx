@@ -96,6 +96,12 @@ export function ReservaDialog({ open, onClose, reserva, fechaSugerida }: Props) 
     if (!f.fecha) return mostrarToast("Falta la fecha");
     if (!f.cliente.trim()) return mostrarToast("Poné el nombre del cliente");
     if (!f.articuloIds.length) return mostrarToast("Elegí al menos un artículo");
+    if (Number(f.precio) < 0 || Number(f.sena) < 0) {
+      return mostrarToast("El precio y la seña no pueden ser negativos", "error");
+    }
+    if (Number(f.sena) > Number(f.precio)) {
+      return mostrarToast("La seña no puede ser mayor al precio", "error");
+    }
     if (confs.length) {
       const ok = await confirmar({
         titulo: "Conflicto de reserva",

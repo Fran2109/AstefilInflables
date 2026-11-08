@@ -137,12 +137,16 @@ export function InicioView({ onAbrirReserva }: { onAbrirReserva: (r: Reserva | n
       <Panel titulo="📈 Ingresos últimos 6 meses">
         <div className="flex h-[120px] items-end gap-2.5 pt-2">
           {barras.map((b) => (
-            <div key={b.mes} className="flex flex-1 flex-col items-center gap-1.5">
-              <div
-                title={plata(b.val)}
-                className={`w-full max-w-[46px] rounded-t-lg border-3 border-tinta shadow-hard-sm ${b.ultimo ? "bg-rojo" : "bg-azul"}`}
-                style={{ height: b.pct + "%" }}
-              />
+            <div key={b.mes} className="flex h-full flex-1 flex-col items-center gap-1.5">
+              {/* El `height` en % necesita un padre con altura definida: sin esta
+                  caja se resolvía contra `auto` y todas las barras medían 6px. */}
+              <div className="flex min-h-0 w-full flex-1 items-end justify-center">
+                <div
+                  title={plata(b.val)}
+                  className={`w-full max-w-[46px] rounded-t-lg border-3 border-tinta shadow-hard-sm ${b.ultimo ? "bg-rojo" : "bg-azul"}`}
+                  style={{ height: b.pct + "%" }}
+                />
+              </div>
               <span className="font-alt text-[.72rem] font-bold text-[#5a4a41]">{b.mes}</span>
             </div>
           ))}

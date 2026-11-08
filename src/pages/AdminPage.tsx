@@ -4,6 +4,7 @@ import { AdminProvider, useAdmin } from "@/admin/store/AdminContext";
 import { Rail, type Vista } from "@/admin/components/Rail";
 import { Gate } from "@/admin/components/Gate";
 import { Login } from "@/admin/components/Login";
+import { NuevaClave } from "@/admin/components/NuevaClave";
 import { ConfirmProvider } from "@/admin/components/Confirm";
 import { Toast } from "@/admin/components/Toast";
 import { ReservaDialog } from "@/admin/components/ReservaDialog";
@@ -54,7 +55,7 @@ export function AdminPage() {
 }
 
 function AdminInner() {
-  const { cargando, config, online, sesion, esAdmin } = useAdmin();
+  const { cargando, config, online, sesion, recuperando, esAdmin } = useAdmin();
   const [gateOk, setGateOk] = useState(false);
   const [vista, setVista] = useState<Vista>("inicio");
   // Vistas solo para admin: si un empleado cae en una, se muestra Inicio.
@@ -90,6 +91,16 @@ function AdminInner() {
   const abrirCategoria = (c: Categoria | null) => setDlgCategoria({ open: true, categoria: c });
   const abrirZona = (z: Zona | null) => setDlgZona({ open: true, zona: z });
   const abrirDia = (iso: string) => setDlgDia({ open: true, iso });
+
+  // Llegó por el link de recuperación: ya tiene sesión, falta la clave nueva.
+  if (recuperando) {
+    return (
+      <div className="font-body text-tinta">
+        <NuevaClave />
+        <Toast />
+      </div>
+    );
+  }
 
   // Modo Supabase: login real. Sin sesión → pantalla de login.
   if (online && sesion === false) {
