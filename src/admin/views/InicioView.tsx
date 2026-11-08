@@ -158,8 +158,15 @@ export function InicioView({ onAbrirReserva }: { onAbrirReserva: (r: Reserva | n
 
 function Kpi({ valor, etq, color }: { valor: string; etq: string; color: string }) {
   return (
-    <div className="rounded-2xl border-3 border-tinta bg-white px-[18px] py-4 shadow-hard-sm">
-      <div className={`font-display text-[2rem] leading-none ${color}`}>{valor}</div>
+    <div className="rounded-2xl border-3 border-tinta bg-white px-3 py-4 shadow-hard-sm [container-type:inline-size] sm:px-[18px]">
+      {/* El tamaño baja según el largo: un monto de 7 cifras no entra a 2rem en
+          la media tarjeta del celular. `cqw` es el ancho interno de la tarjeta. */}
+      <div
+        className={`whitespace-nowrap font-display text-[2rem] leading-none ${color}`}
+        style={{ fontSize: `min(2rem, ${(100 / (valor.length * 0.56)).toFixed(1)}cqw)` }}
+      >
+        {valor}
+      </div>
       <div className="mt-1.5 font-alt text-[.82rem] font-bold text-[#5a4a41]">{etq}</div>
     </div>
   );

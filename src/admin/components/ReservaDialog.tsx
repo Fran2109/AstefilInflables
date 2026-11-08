@@ -120,6 +120,20 @@ export function ReservaDialog({ open, onClose, reserva, fechaSugerida }: Props) 
     [reserva, f.estado, f.fecha, f.articuloIds, reservas, articulos]
   );
 
+  // Una Consulta no bloquea, así que no es conflicto, pero conviene saber que
+  // ese día ya está tomado antes de prometerle algo al cliente.
+  const ocupados = useMemo(
+    () =>
+      f.estado === "Consulta"
+        ? conflictosDe(
+            { id: reserva?.id ?? "", estado: "Reservado", fecha: f.fecha, articuloIds: f.articuloIds },
+            reservas,
+            articulos
+          )
+        : [],
+    [reserva, f.estado, f.fecha, f.articuloIds, reservas, articulos]
+  );
+
   const guardar = async () => {
     if (!f.fecha) return mostrarToast("Falta la fecha");
     if (!f.cliente.trim()) return mostrarToast("Poné el nombre del cliente");
@@ -248,6 +262,13 @@ export function ReservaDialog({ open, onClose, reserva, fechaSugerida }: Props) 
             <div className="font-alt text-[.78rem] font-semibold text-rojo">
               ⚠ Ese día ya está reservado:{" "}
               {confs.map((c) => c.articulos.join("/") + " (" + (c.res.cliente || "otra reserva") + ")").join(" · ")}
+            </div>
+          )}
+          {ocupados.length > 0 && (
+            <div role="status" className="font-alt text-[.78rem] font-semibold text-[#5a4a41]">
+              Ojo: ese día ya está reservado:{" "}
+              {ocupados.map((c) => c.articulos.join("/") + " (" + (c.res.cliente || "otra reserva") + ")").join(" · ")}.
+              La consulta se guarda igual.
             </div>
           )}
         </Campo>

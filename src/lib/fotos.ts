@@ -20,6 +20,11 @@ export function srcsetDeFoto(url: string): string | null {
   return ANCHOS.map((a) => `${url.replace("-1280.webp", `-${a}.webp`)} ${a}w`).join(", ");
 }
 
+/** La variante chica de una foto subida, para miniaturas. Cualquier otra queda igual. */
+export function miniaturaDeFoto(url: string): string {
+  return url.replace(/-1280\.webp(\?|$)/, "-400.webp$1");
+}
+
 /**
  * Una entrada de `fotos` puede ser dos cosas distintas: la URL/path real de
  * una foto subida al Storage, o una clave para generar un placeholder

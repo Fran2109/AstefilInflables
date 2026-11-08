@@ -39,7 +39,13 @@ export function ReservasView({ onAbrirReserva }: { onAbrirReserva: (r: Reserva |
     if (q) l = l.filter((r) => (r.cliente || "").toLowerCase().includes(q) || (r.zona || "").toLowerCase().includes(q));
     if (fEstado) l = l.filter((r) => r.estado === fEstado);
     if (fMes) l = l.filter((r) => r.fecha.startsWith(fMes));
-    return l.sort((a, b) => b.fecha.localeCompare(a.fecha));
+    // Lo que viene primero, de la más cercana a la más lejana; lo pasado, al final.
+    const hoy = hoyStr();
+    return l.sort((a, b) => {
+      const aPasada = a.fecha < hoy;
+      if (aPasada !== b.fecha < hoy) return aPasada ? 1 : -1;
+      return aPasada ? b.fecha.localeCompare(a.fecha) : a.fecha.localeCompare(b.fecha);
+    });
   }, [reservas, busca, fEstado, fMes]);
 
   const avanzar = async (r: Reserva) => {

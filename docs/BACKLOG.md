@@ -39,12 +39,9 @@ verdad vs. placeholder).
 ## P3 — Pulido
 - [x] **Selectores nativos en reservas**: `ReservaDialog` y los filtros de `ReservasView`
       ya usan `DatePicker`, `TimePicker` y `Select`.
-- [ ] **Hallazgos medios y bajos de la auditoría UX/UI (nov 2026)**: aviso al guardar una
-      Consulta en un día ya reservado; reservas ordenadas con la fecha más lejana primero;
-      el monto del KPI se sale de su tarjeta; calendario
-      desborda a 320px; mensaje de `/quinta` sin nombre ("Soy —"); miniaturas del visor bajan
-      la foto de 1280px; cotizador de un solo artículo; la franja ofrece Deportivos y Livings
-      que no están en el catálogo; blanco sobre `rojo` da 4,22:1 en texto chico.
+- [ ] **Lo que queda de la auditoría UX/UI (nov 2026)**: cotizador de un solo artículo; la
+      franja ofrece Deportivos y Livings que no están en el catálogo; blanco sobre `rojo` da
+      4,22:1 en texto chico.
 
 - [x] Lightbox / visor de detalle por producto con galería.
 - [x] Visor de fotos genérico (`VisorFotos`) para heros y galerías de la quinta.

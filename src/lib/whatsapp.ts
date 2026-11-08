@@ -68,7 +68,9 @@ function textoFechas(fecha: string, hasta: string): string {
 /** Construye el link de WhatsApp con el mensaje de consulta por la quinta. */
 export function linkConsultaQuinta(d: DatosConsultaQuinta): string {
   let msg = "¡Hola Astefil! 🌳\n";
-  msg += "Soy " + (d.nombre || "—") + " y quiero consultar por la quinta El Esfuerzo.\n\n";
+  msg += d.nombre
+    ? "Soy " + d.nombre + " y quiero consultar por la quinta El Esfuerzo.\n\n"
+    : "Quiero consultar por la quinta El Esfuerzo.\n\n";
   msg += "• Fecha: " + textoFechas(d.fecha, d.fechaHasta) + "\n";
   if (d.personas) msg += "• Personas: " + d.personas + "\n";
   if (d.motivo) msg += "• Motivo: " + d.motivo + "\n";

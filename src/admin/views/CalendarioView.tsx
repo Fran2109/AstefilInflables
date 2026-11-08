@@ -32,7 +32,7 @@ export function CalendarioView({ onAbrirDia }: { onAbrirDia: (iso: string) => vo
             <Button variant="blanco" size="mini" onClick={() => setMesCal(mueveMes(mesCal, -1))} aria-label="Mes anterior">
               ◀
             </Button>
-            <span className="min-w-[210px] text-center font-display text-[1.5rem]">
+            <span className="text-center font-display text-[1.2rem] sm:min-w-[210px] sm:text-[1.5rem]">
               {MESES[m - 1]} {y}
             </span>
             <Button variant="blanco" size="mini" onClick={() => setMesCal(mueveMes(mesCal, 1))} aria-label="Mes siguiente">
@@ -43,7 +43,7 @@ export function CalendarioView({ onAbrirDia }: { onAbrirDia: (iso: string) => vo
       />
 
       <Panel>
-        <div className="grid grid-cols-7 gap-2">
+        <div className="grid grid-cols-7 gap-1 md:gap-2">
           {DOWS.map((d) => (
             <div key={d} className="py-1 text-center font-alt text-[.78rem] font-extrabold text-[#5a4a41]">
               {d}
@@ -51,7 +51,7 @@ export function CalendarioView({ onAbrirDia }: { onAbrirDia: (iso: string) => vo
           ))}
         </div>
 
-        <div className="mt-1.5 grid grid-cols-7 gap-2">
+        <div className="mt-1.5 grid grid-cols-7 gap-1 md:gap-2">
           {Array.from({ length: primerDow }).map((_, i) => (
             <div key={"b" + i} className="min-h-[58px] rounded-xl border-2 border-tinta opacity-35 md:min-h-[84px]" />
           ))}
@@ -67,7 +67,7 @@ export function CalendarioView({ onAbrirDia }: { onAbrirDia: (iso: string) => vo
                 key={iso}
                 onClick={() => onAbrirDia(iso)}
                 className={cn(
-                  "flex min-h-[58px] flex-col gap-1 rounded-xl border-2 border-tinta bg-white p-1.5 text-left transition hover:-translate-y-0.5 hover:shadow-hard-sm md:min-h-[84px]",
+                  "flex min-h-[58px] flex-col gap-1 rounded-xl border-2 border-tinta bg-white p-1 text-left transition hover:-translate-y-0.5 hover:shadow-hard-sm md:min-h-[84px] md:p-1.5",
                   finde && "bg-[#FFF7E0]",
                   esHoy && "bg-cielo"
                 )}
@@ -78,7 +78,7 @@ export function CalendarioView({ onAbrirDia }: { onAbrirDia: (iso: string) => vo
                     <span
                       key={r.id}
                       title={r.cliente || ""}
-                      className={cn("h-3.5 w-3.5 rounded-full border-2 border-tinta", PIN_CLS[r.estado])}
+                      className={cn("h-2.5 w-2.5 rounded-full border-2 border-tinta md:h-3.5 md:w-3.5", PIN_CLS[r.estado])}
                     />
                   ))}
                   {delDia.length > 6 && "+"}

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { X, ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { miniaturaDeFoto } from "@/lib/fotos";
 
 export interface FotoVisor {
   src: string;
@@ -201,7 +202,7 @@ export function VisorFotos({ fotos, indice, onCerrar, detalle, etiqueta }: Props
                       i === idx ? "opacity-100 outline outline-4 outline-amarillo" : "opacity-65"
                     )}
                   >
-                    <img src={f.src} alt="" loading="lazy" className="h-full w-full object-cover" />
+                    <img src={miniaturaDeFoto(f.src)} alt="" loading="lazy" className="h-full w-full object-cover" />
                   </button>
                 ))}
               </div>
