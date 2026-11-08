@@ -37,15 +37,11 @@ verdad vs. placeholder).
 - [ ] Countdown honesto en la CTA final: "Quedan N sábados de <mes>" calculado real.
 
 ## P3 — Pulido
-- [ ] **`ReservaDialog` usa selectores nativos**: quedó con `<input type="date">`,
-      `<input type="time">` (×2) y `<select>` nativos, que `CLAUDE.md` prohíbe — sus popups
-      usan el estilo del sistema operativo y no se pueden restylear. Los dos filtros de
-      `ReservasView` tienen el mismo problema. Migrarlos a `DatePicker`, `TimePicker` y
-      `Select` de `components/ui/`. Salió a la luz al arreglar los desplegables dentro de
-      diálogos: no estaban rotos, simplemente nunca se migraron.
+- [x] **Selectores nativos en reservas**: `ReservaDialog` y los filtros de `ReservasView`
+      ya usan `DatePicker`, `TimePicker` y `Select`.
 - [ ] **Hallazgos medios y bajos de la auditoría UX/UI (nov 2026)**: aviso al guardar una
       Consulta en un día ya reservado; reservas ordenadas con la fecha más lejana primero;
-      "Cancelar" descarta sin avisar; el monto del KPI se sale de su tarjeta; calendario
+      el monto del KPI se sale de su tarjeta; calendario
       desborda a 320px; mensaje de `/quinta` sin nombre ("Soy —"); miniaturas del visor bajan
       la foto de 1280px; cotizador de un solo artículo; la franja ofrece Deportivos y Livings
       que no están en el catálogo; blanco sobre `rojo` da 4,22:1 en texto chico.

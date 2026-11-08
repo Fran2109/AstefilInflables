@@ -11,7 +11,14 @@ import { CabeceraVista, Vacio } from "@/admin/views/comunes";
 import { EstadoBadge } from "@/admin/components/EstadoBadge";
 import { campoInputCls } from "@/admin/components/Campo";
 import { Button } from "@/components/ui/button";
+import { Select } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
+
+const TODOS_ESTADOS = "Todos los estados";
+const TODOS_MESES = "Todos los meses";
+
+/** 'YYYY-MM' → 'Noviembre 2026'. */
+const etiquetaMes = (m: string) => MESES[Number(m.slice(5)) - 1] + " " + m.slice(0, 4);
 
 export function ReservasView({ onAbrirReserva }: { onAbrirReserva: (r: Reserva | null) => void }) {
   const { reservas, articulos, avanzarEstado, mostrarToast } = useAdmin();
@@ -73,20 +80,18 @@ export function ReservasView({ onAbrirReserva }: { onAbrirReserva: (r: Reserva |
           value={busca}
           onChange={(e) => setBusca(e.target.value)}
         />
-        <select className={cn(campoInputCls, "max-w-[200px]")} value={fEstado} onChange={(e) => setFEstado(e.target.value)}>
-          <option value="">Todos los estados</option>
-          {ESTADOS.map((e) => (
-            <option key={e} value={e}>{e}</option>
-          ))}
-        </select>
-        <select className={cn(campoInputCls, "max-w-[200px]")} value={fMes} onChange={(e) => setFMes(e.target.value)}>
-          <option value="">Todos los meses</option>
-          {meses.map((m) => (
-            <option key={m} value={m}>
-              {MESES[Number(m.slice(5)) - 1]} {m.slice(0, 4)}
-            </option>
-          ))}
-        </select>
+        <Select
+          value={fEstado || TODOS_ESTADOS}
+          onChange={(v) => setFEstado(v === TODOS_ESTADOS ? "" : v)}
+          options={[TODOS_ESTADOS, ...ESTADOS]}
+          triggerClassName={cn(campoInputCls, "max-w-[200px]")}
+        />
+        <Select
+          value={fMes ? etiquetaMes(fMes) : TODOS_MESES}
+          onChange={(v) => setFMes(meses.find((m) => etiquetaMes(m) === v) ?? "")}
+          options={[TODOS_MESES, ...meses.map(etiquetaMes)]}
+          triggerClassName={cn(campoInputCls, "max-w-[200px]")}
+        />
       </div>
 
       <div className="flex flex-col gap-3">

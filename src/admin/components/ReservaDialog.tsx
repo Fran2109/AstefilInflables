@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { Estado, Reserva } from "@/admin/types";
 import { ESTADOS } from "@/admin/types";
 import { conflictosDe } from "@/admin/lib/conflictos";
@@ -9,6 +9,9 @@ import { useConfirmar } from "@/admin/components/Confirm";
 import { Modal } from "@/admin/components/Modal";
 import { Campo, campoInputCls } from "@/admin/components/Campo";
 import { Button } from "@/components/ui/button";
+import { Select } from "@/components/ui/select";
+import { DatePicker } from "@/components/ui/date-picker";
+import { TimePicker } from "@/components/ui/time-picker";
 
 interface Props {
   open: boolean;
@@ -60,10 +63,35 @@ export function ReservaDialog({ open, onClose, reserva, fechaSugerida }: Props) 
     .map((z) => z.nombre);
   const confirmar = useConfirmar();
   const [f, setF] = useState<FormState>(() => estadoInicial(reserva, fechaSugerida));
+  // Con qué abrió el formulario, para saber si hay algo que se perdería al salir.
+  const refInicial = useRef(f);
+  const refPreguntando = useRef(false);
 
   useEffect(() => {
-    if (open) setF(estadoInicial(reserva, fechaSugerida));
+    if (!open) return;
+    const inicial = estadoInicial(reserva, fechaSugerida);
+    refInicial.current = inicial;
+    setF(inicial);
   }, [open, reserva, fechaSugerida]);
+
+  // Cancelar, la ✕, Escape y el click afuera pasan todos por acá. El candado
+  // es porque Escape puede llegar dos veces (ver `Modal`).
+  const pedirCierre = async () => {
+    if (refPreguntando.current) return;
+    if (JSON.stringify(f) !== JSON.stringify(refInicial.current)) {
+      refPreguntando.current = true;
+      const ok = await confirmar({
+        titulo: "Descartar cambios",
+        mensaje: "Tenés cambios sin guardar. Si salís ahora, se pierden.",
+        textoConfirmar: "Descartar",
+        textoCancelar: "Seguir editando",
+        peligro: true,
+      });
+      refPreguntando.current = false;
+      if (!ok) return;
+    }
+    onClose();
+  };
 
   const set = <K extends keyof FormState>(k: K, v: FormState[K]) =>
     setF((prev) => ({ ...prev, [k]: v }));
@@ -159,7 +187,7 @@ export function ReservaDialog({ open, onClose, reserva, fechaSugerida }: Props) 
   return (
     <Modal
       open={open}
-      onClose={onClose}
+      onClose={pedirCierre}
       titulo={reserva ? "Editar reserva" : "Nueva reserva"}
       footer={
         <>
@@ -169,7 +197,7 @@ export function ReservaDialog({ open, onClose, reserva, fechaSugerida }: Props) 
             </Button>
           )}
           <div className="ml-auto flex gap-2.5">
-            <Button variant="blanco" onClick={onClose}>
+            <Button variant="blanco" onClick={pedirCierre}>
               Cancelar
             </Button>
             <Button variant="verde" onClick={guardar} disabled={guardando}>
@@ -180,15 +208,11 @@ export function ReservaDialog({ open, onClose, reserva, fechaSugerida }: Props) 
       }
     >
       <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
-        <Campo label="Fecha *" htmlFor="r-fecha">
-          <input id="r-fecha" type="date" className={campoInputCls} value={f.fecha} onChange={(e) => set("fecha", e.target.value)} />
+        <Campo label="Fecha *" htmlFor="r-fecha" labelId="r-fecha-label">
+          <DatePicker id="r-fecha" ariaLabelledBy="r-fecha-label" value={f.fecha} onChange={(v) => set("fecha", v)} triggerClassName={campoInputCls} />
         </Campo>
-        <Campo label="Estado" htmlFor="r-estado">
-          <select id="r-estado" className={campoInputCls} value={f.estado} onChange={(e) => set("estado", e.target.value as Estado)}>
-            {ESTADOS.map((e) => (
-              <option key={e} value={e}>{e}</option>
-            ))}
-          </select>
+        <Campo label="Estado" htmlFor="r-estado" labelId="r-estado-label">
+          <Select id="r-estado" ariaLabelledBy="r-estado-label" value={f.estado} onChange={(v) => set("estado", v as Estado)} options={[...ESTADOS]} triggerClassName={campoInputCls} />
         </Campo>
         <Campo label="Cliente *" htmlFor="r-cliente">
           <input id="r-cliente" placeholder="Nombre" className={campoInputCls} value={f.cliente} onChange={(e) => set("cliente", e.target.value)} />
@@ -197,10 +221,10 @@ export function ReservaDialog({ open, onClose, reserva, fechaSugerida }: Props) 
           <input id="r-tel" inputMode="tel" placeholder="11 1234-5678" className={campoInputCls} value={f.telefono} onChange={(e) => set("telefono", e.target.value)} />
         </Campo>
         <Campo label="Hora entrega" htmlFor="r-hent">
-          <input id="r-hent" type="time" className={campoInputCls} value={f.horaEntrega} onChange={(e) => set("horaEntrega", e.target.value)} />
+          <TimePicker id="r-hent" ariaLabel="Hora entrega" value={f.horaEntrega} onChange={(v) => set("horaEntrega", v)} triggerClassName={campoInputCls} />
         </Campo>
         <Campo label="Hora retiro" htmlFor="r-hret">
-          <input id="r-hret" type="time" className={campoInputCls} value={f.horaRetiro} onChange={(e) => set("horaRetiro", e.target.value)} />
+          <TimePicker id="r-hret" ariaLabel="Hora retiro" value={f.horaRetiro} onChange={(v) => set("horaRetiro", v)} triggerClassName={campoInputCls} />
         </Campo>
 
         <Campo label="Artículos / juegos *" ancho>

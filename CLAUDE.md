@@ -145,7 +145,9 @@ puerto 5173). El screenshot a veces se cuelga en `/admin`; ahí inspeccionar el 
   `PASSWORD_RECOVERY` prende `recuperando` y `AdminPage` muestra `<NuevaClave>`.
 - **Confirmación de acciones** (`components/Confirm.tsx`): `ConfirmProvider` + `useConfirmar()`
   proveen un modal de confirmación con el estilo del panel (basado en `<Modal>`, promesa
-  `await confirmar({titulo, mensaje, textoConfirmar, peligro})`).
+  `await confirmar({titulo, mensaje, textoConfirmar, peligro})`). Se abre encima de otros
+  diálogos: `Modal` hace que Escape le llegue solo al de más arriba. `ReservaDialog` pregunta
+  antes de cerrar si hay cambios sin guardar (`pedirCierre`).
 - **Modelo** (`types.ts`):
   - `Reserva`: `{id, fecha:'YYYY-MM-DD', estado, cliente, telefono, horaEntrega, horaRetiro,
     articuloIds[], zona, direccion, precio, sena, notas, creado}`

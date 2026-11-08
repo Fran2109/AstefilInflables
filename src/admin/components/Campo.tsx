@@ -8,15 +8,17 @@ export const campoInputCls =
 interface CampoProps {
   label: string;
   htmlFor?: string;
+  /** Id del label, para el `ariaLabelledBy` de `Select` y `DatePicker`. */
+  labelId?: string;
   children: ReactNode;
   /** Ocupa todo el ancho de la grilla. */
   ancho?: boolean;
 }
 
-export function Campo({ label, htmlFor, children, ancho }: CampoProps) {
+export function Campo({ label, htmlFor, labelId, children, ancho }: CampoProps) {
   return (
     <div className={cn("flex flex-col gap-1.5", ancho && "col-span-full")}>
-      <label htmlFor={htmlFor} className="font-alt text-[.82rem] font-extrabold">
+      <label id={labelId} htmlFor={htmlFor} className="font-alt text-[.82rem] font-extrabold">
         {label}
       </label>
       {children}

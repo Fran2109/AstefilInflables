@@ -9,6 +9,9 @@ interface ModalProps {
   footer?: ReactNode;
 }
 
+/** Los diálogos abiertos ahora mismo, el último es el de más arriba. */
+const abiertos: HTMLDialogElement[] = [];
+
 /**
  * Diálogo modal con el estilo del panel (cabecera amarilla, sombra dura).
  *
@@ -19,16 +22,24 @@ interface ModalProps {
  *
  * Escape se maneja a mano además del `cancel` nativo: el panel de preview del
  * proyecto no despacha `cancel`, y no conviene tener un cierre que no se pueda
- * verificar. Llamar dos veces a `onClose` es inofensivo.
+ * verificar. `onClose` puede llegar a llamarse dos veces: tiene que aguantarlo.
+ *
+ * Solo responde el diálogo de más arriba (`abiertos`). Un `Confirm` se abre
+ * encima del formulario y los dos escuchan Escape en `window`: sin esto, el
+ * Escape que descartaba la confirmación cerraba también el formulario.
  */
 export function Modal({ open, onClose, titulo, children, footer }: ModalProps) {
   const refDialog = useRef<HTMLDialogElement>(null);
 
   useEffect(() => {
     const d = refDialog.current;
-    if (!d) return;
-    if (open && !d.open) d.showModal();
-    else if (!open && d.open) d.close();
+    if (!d || !open) return;
+    if (!d.open) d.showModal();
+    abiertos.push(d);
+    return () => {
+      abiertos.splice(abiertos.indexOf(d), 1);
+      if (d.open) d.close();
+    };
   }, [open]);
 
   useEffect(() => {
@@ -39,7 +50,7 @@ export function Modal({ open, onClose, titulo, children, footer }: ModalProps) {
       onClose();
     };
     const alTeclear = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
+      if (e.key === "Escape" && abiertos[abiertos.length - 1] === d) {
         e.preventDefault();
         onClose();
       }
