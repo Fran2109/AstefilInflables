@@ -14,6 +14,7 @@ import { Zonas } from "@/components/landing/Zonas";
 import { Faq } from "@/components/landing/Faq";
 import { CtaFinal } from "@/components/landing/CtaFinal";
 import { BandaQuinta } from "@/components/landing/BandaQuinta";
+import { BotonCotizarFijo } from "@/components/landing/BotonCotizarFijo";
 
 export function LandingPage() {
   return (
@@ -43,6 +44,7 @@ export function LandingPage() {
           <CtaFinal />
         </main>
         <Footer />
+        <BotonCotizarFijo />
         <WhatsAppFloat />
       </LandingProvider>
     </CatalogoProvider>

@@ -14,7 +14,7 @@ export function Hero() {
   const [fotoAbierta, setFotoAbierta] = useState(false);
 
   return (
-    <section className="relative py-14 pt-9 md:pt-14">
+    <section id="hero" className="relative py-14 pt-9 md:pt-14">
       <div className="container grid items-center gap-9 md:grid-cols-[1.1fr_.9fr] md:gap-11">
         <div>
           <h1 className="text-[clamp(2.6rem,6vw,4.6rem)]">

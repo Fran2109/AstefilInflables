@@ -32,8 +32,7 @@ verdad vs. placeholder).
 - [ ] Cotizador v2: hint al elegir sábado/domingo y confeti liviano al enviar (respetando
       reduced-motion). Ya no deja elegir fechas pasadas y avisa si el horario termina antes
       de empezar.
-- [ ] Barra CTA fija en mobile (aparece al scrollear pasado el hero): "💬 Cotizá tu fecha".
-      Hoy solo está el botón flotante de WhatsApp.
+- [x] Botón fijo en mobile "💬 Cotizá tu fecha" (`BotonCotizarFijo`), al pasar el hero.
 - [ ] Countdown honesto en la CTA final: "Quedan N sábados de <mes>" calculado real.
 
 ## P3 — Pulido

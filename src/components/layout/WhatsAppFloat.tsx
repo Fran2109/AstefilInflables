@@ -1,7 +1,8 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useLocation } from "react-router-dom";
 import { linkWhatsApp, mensajeConsulta } from "@/lib/whatsapp";
 import { cn } from "@/lib/utils";
+import { useMedirAlScrollear } from "@/lib/use-medir-al-scrollear";
 
 /**
  * Botón flotante de WhatsApp. El mensaje se ajusta a la ruta.
@@ -17,46 +18,18 @@ export function WhatsAppFloat() {
   const { pathname } = useLocation();
   const [tapaAlgo, setTapaAlgo] = useState(false);
 
-  useEffect(() => {
-    // Se mide con un listener de scroll y no con IntersectionObserver a
-    // propósito: el panel de preview del proyecto no ejecuta los callbacks de
-    // IO, así que una implementación con IO no se puede verificar acá ni en
-    // las sesiones que vengan. Con dos elementos observados y rAF de por medio
-    // el costo es irrelevante, y esto sí se puede probar.
-    let frame = 0;
-
-    const medir = () => {
-      const ctas = document.querySelectorAll("[data-cta-conversion]");
-      const alto = window.innerHeight;
-      let alguno = false;
-      ctas.forEach((c) => {
-        const r = c.getBoundingClientRect();
-        // El margen de 80px hace que el flotante se vaya un poco antes de
-        // llegar a pisar el botón, no justo cuando ya lo está pisando.
-        if (r.top < alto - 80 && r.bottom > 0) alguno = true;
-      });
-      setTapaAlgo(alguno);
-    };
-
-    // Cancelar y volver a pedir en vez de un flag "ya hay uno pendiente": si el
-    // frame se descarta (pestaña en segundo plano, panel oculto), un flag queda
-    // trabado en true y la medición no vuelve a correr nunca.
-    const alScrollear = () => {
-      cancelAnimationFrame(frame);
-      frame = requestAnimationFrame(medir);
-    };
-
-    medir();
-    window.addEventListener("scroll", alScrollear, { passive: true });
-    window.addEventListener("resize", alScrollear);
-    document.addEventListener("visibilitychange", medir);
-    return () => {
-      cancelAnimationFrame(frame);
-      window.removeEventListener("scroll", alScrollear);
-      window.removeEventListener("resize", alScrollear);
-      document.removeEventListener("visibilitychange", medir);
-    };
-  }, [pathname]);
+  useMedirAlScrollear(() => {
+    const ctas = document.querySelectorAll("[data-cta-conversion]");
+    const alto = window.innerHeight;
+    let alguno = false;
+    ctas.forEach((c) => {
+      const r = c.getBoundingClientRect();
+      // El margen de 80px hace que el flotante se vaya un poco antes de
+      // llegar a pisar el botón, no justo cuando ya lo está pisando.
+      if (r.top < alto - 80 && r.bottom > 0) alguno = true;
+    });
+    setTapaAlgo(alguno);
+  });
 
   return (
     <a
