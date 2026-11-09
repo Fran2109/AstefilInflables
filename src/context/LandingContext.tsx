@@ -57,7 +57,8 @@ export function LandingProvider({ children }: { children: ReactNode }) {
     // de tiempo. `scrollend` avisa el momento exacto; el timeout queda solo de
     // red de seguridad por si el evento no llega (o el scroll nunca arranca,
     // que pasa cuando el cotizador ya estaba en pantalla).
-    const enfocar = () => document.getElementById("f-fecha")?.focus({ preventScroll: true });
+    // Al botón del calendario y no al campo: enfocar el campo abriría el teclado del celular.
+    const enfocar = () => document.getElementById("f-fecha-calendario")?.focus({ preventScroll: true });
     // El `in` sobre `window` directo lo estrecha a `never` (TS no conoce
     // `onscrollend`); el cast a object deja hacer la detección sin romper.
     const soportaScrollend = "onscrollend" in (window as object);

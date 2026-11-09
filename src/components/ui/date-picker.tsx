@@ -10,13 +10,8 @@ interface Props {
   onChange: (v: string) => void;
   id?: string;
   /**
-   * Id del `<label>` visible que nombra este campo.
-   *
-   * El disparador es un `<button>`, y un `<button>` no es un elemento
-   * "labelable": un `<label for>` apuntándole NO crea la asociación, así que
-   * el nombre accesible terminaba siendo el placeholder ("dd/mm/aaaa") y el
-   * texto visible del campo no se anunciaba nunca. `aria-labelledby` sí
-   * funciona y no duplica el texto.
+   * Id del `<label>` visible que nombra este campo. Sin esto el nombre
+   * accesible termina siendo el placeholder ("dd/mm/aaaa").
    */
   ariaLabelledBy?: string;
   placeholder?: string;
@@ -32,7 +27,7 @@ interface Props {
    * que todavía no pasó.
    */
   min?: string;
-  /** Clases del botón disparador (define el estilo del "campo" en cada contexto). */
+  /** Clases de la caja del campo (define su estilo en cada contexto). */
   triggerClassName: string;
 }
 
@@ -61,6 +56,19 @@ function formatearCorta(iso: string): string {
   return String(d.getDate()).padStart(2, "0") + "/" + String(d.getMonth() + 1).padStart(2, "0") + "/" + d.getFullYear();
 }
 
+/** Dígitos → 'dd/mm/aaaa'. La barra aparece con el dígito siguiente, así borrar no se traba en ella. */
+function enmascarar(digitos: string): string {
+  return [digitos.slice(0, 2), digitos.slice(2, 4), digitos.slice(4, 8)].filter(Boolean).join("/");
+}
+
+/** 'ddmmaaaa' → 'YYYY-MM-DD', o null si esa fecha no existe (31/02, mes 13…). */
+function isoDeDigitos(digitos: string): string | null {
+  const [d, m, y] = [digitos.slice(0, 2), digitos.slice(2, 4), digitos.slice(4)].map(Number);
+  const fecha = new Date(y, m - 1, d);
+  if (y < 2000 || y > 2100 || fecha.getMonth() !== m - 1 || fecha.getDate() !== d) return null;
+  return aISO(fecha);
+}
+
 /** Los 42 días (6 semanas) que se muestran para el mes de `vista`, arrancando el domingo previo. */
 function grilla(vista: Date): Date[] {
   const primero = new Date(vista.getFullYear(), vista.getMonth(), 1);
@@ -77,6 +85,10 @@ function grilla(vista: Date): Date[] {
  * Selector de fecha con estilo propio (reemplaza al `<input type="date">`, cuyo
  * calendario emergente usa el widget nativo del sistema operativo y no se puede
  * restylear). Mismo mecanismo de portal que `Select`.
+ *
+ * La fecha se escribe en el campo o se elige con el botón del calendario. Lo
+ * escrito vive en `borrador` hasta que forma una fecha válida: `onChange` solo
+ * recibe fechas completas o "".
  */
 export function DatePicker({
   value,
@@ -89,12 +101,53 @@ export function DatePicker({
   triggerClassName,
 }: Props) {
   const [open, setOpen] = useState(false);
-  const { refTrigger, refPanel, estilo, contenedor } = usePanelFlotante({
+  // El panel se ancla a la caja entera, no al botoncito del calendario.
+  const { refTrigger, refPanel, estilo, contenedor } = usePanelFlotante<HTMLDivElement, HTMLDivElement>({
     abierto: open,
     cerrar: () => setOpen(false),
     ancho: 300,
   });
   const [vista, setVista] = useState(() => deISO(value) ?? new Date());
+  const [borrador, setBorrador] = useState<string | null>(null);
+  const [error, setError] = useState("");
+
+  const problemaDe = (iso: string | null): string => {
+    if (!iso) return "Esa fecha no existe";
+    if (min && iso < min) return "No puede ser antes del " + formatearCorta(min);
+    if (max && iso > max) return "No puede ser después del " + formatearCorta(max);
+    return "";
+  };
+
+  /** Valida 'ddmmaaaa' y publica el resultado. Devuelve si quedó aceptada. */
+  const confirmarDigitos = (digitos: string): boolean => {
+    const iso = isoDeDigitos(digitos);
+    const problema = problemaDe(iso);
+    setError(problema);
+    onChange(problema ? "" : (iso as string));
+    return !problema;
+  };
+
+  const escribir = (texto: string) => {
+    const digitos = texto.replace(/\D/g, "").slice(0, 8);
+    setBorrador(enmascarar(digitos));
+    if (digitos.length === 8) {
+      confirmarDigitos(digitos);
+    } else {
+      setError("");
+      if (value) onChange("");
+    }
+  };
+
+  const alSalir = () => {
+    if (borrador === null) return;
+    const digitos = borrador.replace(/\D/g, "");
+    if (!digitos) return setBorrador(null);
+    // Año corto: 12/11/26 es 2026.
+    const completos = digitos.length === 6 ? digitos.slice(0, 4) + "20" + digitos.slice(4) : digitos;
+    if (completos.length < 8) return setError("Completá la fecha: dd/mm/aaaa");
+    if (confirmarDigitos(completos)) setBorrador(null);
+    else setBorrador(enmascarar(completos));
+  };
 
   const toggle = () => {
     // Al reabrir, volver al mes de la fecha ya elegida. La posición del panel
@@ -104,6 +157,8 @@ export function DatePicker({
   };
 
   const elegir = (d: Date) => {
+    setBorrador(null);
+    setError("");
     onChange(aISO(d));
     setOpen(false);
   };
@@ -114,21 +169,43 @@ export function DatePicker({
 
   return (
     <>
-      <button
+      <div
         ref={refTrigger}
-        id={id}
-        type="button"
-        aria-labelledby={ariaLabelledBy}
-        aria-haspopup="dialog"
-        aria-expanded={open}
-        onClick={toggle}
-        className={cn(triggerClassName, "flex items-center justify-between gap-2 text-left")}
+        className={cn(
+          triggerClassName,
+          "flex items-center justify-between gap-2 focus-within:outline focus-within:outline-4 focus-within:outline-azul"
+        )}
       >
-        <span className={cn("truncate", !value && "text-gris")}>
-          {value ? formatearCorta(value) : placeholder || "dd/mm/aaaa"}
-        </span>
-        <Calendar className="h-4 w-4 flex-none" strokeWidth={3} />
-      </button>
+        <input
+          id={id}
+          type="text"
+          inputMode="numeric"
+          autoComplete="off"
+          aria-labelledby={ariaLabelledBy}
+          aria-invalid={!!error}
+          placeholder={placeholder || "dd/mm/aaaa"}
+          value={borrador ?? formatearCorta(value)}
+          onChange={(e) => escribir(e.target.value)}
+          onBlur={alSalir}
+          className="w-full min-w-0 flex-1 bg-transparent outline-none"
+        />
+        <button
+          id={id && id + "-calendario"}
+          type="button"
+          aria-label="Abrir calendario"
+          aria-haspopup="dialog"
+          aria-expanded={open}
+          onClick={toggle}
+          className="-my-2.5 -mr-2 flex h-10 w-10 flex-none items-center justify-center rounded-lg hover:bg-cielo"
+        >
+          <Calendar className="h-4 w-4" strokeWidth={3} />
+        </button>
+      </div>
+      {error && (
+        <p role="alert" className="mt-1 font-alt text-[.8rem] font-bold text-rojo">
+          {error}
+        </p>
+      )}
 
       {open &&
         createPortal(
@@ -209,6 +286,8 @@ export function DatePicker({
                 <button
                   type="button"
                   onClick={() => {
+                    setBorrador(null);
+                    setError("");
                     onChange("");
                     setOpen(false);
                   }}

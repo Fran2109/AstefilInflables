@@ -364,6 +364,8 @@ Patrones no negociables:
   panel `position: fixed` calculado desde el trigger (`getBoundingClientRect`), cierre con
   Escape / click afuera / al scrollear la página. Reciben `triggerClassName` para adoptar el
   estilo del formulario que los usa (`campoInputCls` en el admin, `inputCls` en la landing).
+  `DatePicker` además deja escribir la fecha (`dd/mm/aaaa`, respeta `min`/`max`); el calendario
+  se abre con su botón.
   **Ojo al tocarlos**: el listener de "cerrar al scrollear" debe ignorar los scrolls que
   ocurren *dentro* del propio panel (`panelRef.current?.contains(e.target)` antes de cerrar) —
   si no, scrollear una lista larga de opciones (p. ej. las horas del `TimePicker`) cierra el

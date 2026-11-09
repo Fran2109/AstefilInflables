@@ -38,12 +38,11 @@ interface Posicion {
  *    lo cortado. Ahora se clampea contra los bordes y, si no entra abajo, se
  *    abre hacia arriba.
  */
-export function usePanelFlotante<P extends HTMLElement = HTMLDivElement>({
-  abierto,
-  cerrar,
-  ancho,
-}: Opciones) {
-  const refTrigger = useRef<HTMLButtonElement>(null);
+export function usePanelFlotante<
+  P extends HTMLElement = HTMLDivElement,
+  T extends HTMLElement = HTMLButtonElement,
+>({ abierto, cerrar, ancho }: Opciones) {
+  const refTrigger = useRef<T>(null);
   const refPanel = useRef<P>(null);
   const [pos, setPos] = useState<Posicion | null>(null);
   const [contenedor, setContenedor] = useState<HTMLElement | null>(null);
